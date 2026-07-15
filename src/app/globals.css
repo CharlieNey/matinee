@@ -1,26 +1,101 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* Theatr design tokens — see DESIGN.md (source of truth) */
+@theme {
+  --color-cream: #f4f3f2;
+  --color-paper: #ffffff;
+  --color-ink: #200604;
+  --color-ink-soft: #8a8380;
+  --color-ink-faint: #b9b4b1;
+  --color-espresso: #220c06;
+  --color-espresso-glow: #43230c;
+  --color-espresso-raised: #4e3d38;
+  --color-vermilion: #d7492b;
+  --color-vermilion-pressed: #bc3c21;
+  --color-blush: #f7eae7;
+  --color-inset: #e9e6e6;
+  --color-gold: #f4aa1b;
+  --color-sage: #dee8da;
+  --color-sage-ink: #3f5c46;
+  --color-line: #e7e4e3;
+  --color-toggle-off: #d9d4cf;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --radius-thumb: 12px;
+  --radius-card: 20px;
+  --radius-sheet: 24px;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --shadow-float: 0 1px 3px rgb(43 29 22 / 0.06);
+
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+
+  --text-display: 34px;
+  --text-display--line-height: 1.1;
+  --text-display--font-weight: 800;
+  --text-display--letter-spacing: -0.01em;
+
+  --text-title: 22px;
+  --text-title--line-height: 1.2;
+  --text-title--font-weight: 700;
+  --text-title--letter-spacing: -0.01em;
+
+  --text-heading: 20px;
+  --text-heading--line-height: 1.25;
+  --text-heading--font-weight: 700;
+  --text-heading--letter-spacing: -0.01em;
+
+  --text-body: 17px;
+  --text-body--line-height: 1.4;
+
+  --text-caption: 14px;
+  --text-caption--line-height: 1.35;
+
+  --text-label: 12px;
+  --text-label--line-height: 1.2;
+  --text-label--font-weight: 500;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-cream);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+/* Motion: iOS-quiet (DESIGN.md §7) — 200-300ms ease-out, no loops */
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.page-enter {
+  animation: page-enter 250ms ease-out both;
+}
+
+@keyframes card-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.card-enter {
+  animation: card-enter 300ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

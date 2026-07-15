@@ -29,6 +29,7 @@ Hex values are **pixel-sampled from the screenshots** (PIL, solid fill regions),
 | `blush` | `#F7EAE7` | Tinted info banner bg ("Your Notify Matches") |
 | `card-inset` | `#E9E6E6` | Inset cards on white (show rows inside timeline cards) |
 | `gold` | `#F4AA1B` | Praise/recommend accents ("Recommend it" 👍), ratings |
+| `sage` / `sage-ink` | `#DEE8DA` / `#3F5C46` | Positive/quiet-confirmation tint: "Public" visibility pill (log screen), "Below face" price chips. Never a CTA |
 | `line` | `#E7E4E3` | Hairline dividers on light; use `#FFFFFF14` on espresso |
 
 ### Rules
@@ -119,6 +120,9 @@ Left rail: 10px dot + 1.5px vertical line in `line` color. Entries: date 20/700 
 
 ### Empty state
 Centered, upper-third: outline glyph 64px `ink-faint` → "Nothing here yet…" 20/400 `ink-faint` → underlined `ink` link to the escape action ("See all tickets on Marketplace"). No illustration sets, no mascots.
+
+### Log screen (diary entry — from live app, July 2026)
+Back arrow left, **Publish** as bare vermilion text top-right (no pill — text-button is the exception for editor screens). Stacked white cards with hairline-divided rows: what-you-saw (44px poster thumb + title 20/700 + venue 17 `ink-soft`; calendar + date row; seat row). "Share Your Thoughts" card: 3-option sentiment row (gold thumbs-up+star = Recommend it, gray-circle faces for Mixed feelings / Didn't like it; active = full-color icon + 17/600 `ink` label, inactive = muted icon + `ink-soft`), free-text area, outlined `# Tag` chips (rounded-lg 8px — squarer than control pills; selected = espresso fill), 130px Upload Photo bordered box, sage "Public" visibility pill (rounded-lg, eye icon). Separate "Private Note" card. Sentiment/tags/visibility state lives in color, never layout.
 
 ### Accordion (Orders)
 Chevron (rotates open) + 20/700 label, 24px vertical rhythm; collapsed sections show nothing else. Empty section body: "Nothing here yet." 17 `ink-faint`, indented to label start.
