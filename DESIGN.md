@@ -13,26 +13,29 @@ cream paper, espresso ink, one loud vermilion, and show art doing all the decora
 
 ### Core palette
 
+Hex values are **pixel-sampled from the screenshots** (PIL, solid fill regions), not estimates.
+
 | Token | Hex | Usage |
 |---|---|---|
-| `cream` | `#F4F2EF` | App background (light surfaces). Never pure white page bg |
-| `paper` | `#FFFFFF` | Cards, sheets, tab bar — anything that "sits on" cream |
-| `ink` | `#2B1D16` | Primary text, active icons. Warm near-black, never `#000` |
-| `ink-soft` | `#8A817C` | Secondary text: criteria lines, timestamps, "Broadway · Musical" |
-| `ink-faint` | `#B8B1AC` | Placeholders, disabled, empty-state text |
-| `espresso` | `#31201A` | Dark surface (profile header), toggle-on track, dark pills |
-| `espresso-raised` | `#43302A` | Pills/buttons sitting on espresso (Orders / Wallet / Notify) |
-| `vermilion` | `#E8532C` | THE accent. Primary CTA fill, Sell button, active highlights |
-| `blush` | `#F8E3DA` | Tinted info banner bg ("Your Notify Matches") |
-| `card-inset` | `#EDEAE7` | Inset cards on white (show rows inside timeline cards) |
-| `gold` | `#E9A23B` | Praise/recommend accents ("Recommend it" 👍), ratings |
-| `line` | `#E5E1DD` | Hairline dividers on light; use `#FFFFFF14` on espresso |
+| `cream` | `#F4F3F2` | App background (light surfaces). Never pure white page bg |
+| `paper` | `#FFFFFF` | Cards, sheets, tab bar, filter pills — anything that "sits on" cream |
+| `ink` | `#200604` | Primary text, active icons, toggle-on track. A near-black espresso red — never `#000` |
+| `ink-soft` | `#8A8380` | Secondary text: criteria lines, timestamps, "Broadway · Musical" |
+| `ink-faint` | `#B9B4B1` | Placeholders, disabled, empty-state text |
+| `espresso` | `#220C06` | Dark surface base (profile header); pairs with `espresso-glow` gradient |
+| `espresso-glow` | `#43230C` | Top of the profile-header gradient (see rule below) |
+| `espresso-raised` | `#4E3D38` | Pills/buttons sitting on espresso (Orders / Wallet / Notify) |
+| `vermilion` | `#D7492B` | THE accent. Primary CTA fill, Sell button. Measured identical on both |
+| `blush` | `#F7EAE7` | Tinted info banner bg ("Your Notify Matches") |
+| `card-inset` | `#E9E6E6` | Inset cards on white (show rows inside timeline cards) |
+| `gold` | `#F4AA1B` | Praise/recommend accents ("Recommend it" 👍), ratings |
+| `line` | `#E7E4E3` | Hairline dividers on light; use `#FFFFFF14` on espresso |
 
 ### Rules
 
 - **One accent.** Vermilion appears at most twice per screen (one primary CTA + the Sell tab). Everything else earns attention through type weight and poster art.
 - **Warm grays only.** Every neutral carries a brown/red cast. No cool grays, no blue-grays.
-- **Dark surfaces are brown, not black.** The profile header is espresso with a subtle top-darker gradient (`#241511 → #31201A`). White text at 100%, secondary at 60% white.
+- **Dark surfaces are brown, not black.** The profile header is *top-lit*: a vertical gradient from `espresso-glow #43230C` at the very top down to `espresso #220C06` where the light sheet begins — like stage lighting falling off. White text at 100%, secondary at 60% white.
 - **Poster art is the color system.** UI chrome stays quiet so show art (any palette) never clashes.
 
 ---
@@ -149,7 +152,7 @@ Nothing in the screenshots suggests exuberant motion; keep it iOS-quiet:
 - `ink` on `cream` = ~13:1 ✓. `ink-soft` on `cream` = ~4.6:1 — body-size only, never under 14px.
 - Never set text over poster art without the 35% espresso scrim.
 - Touch targets ≥ 44px; pills already comply (48–56px).
-- Vermilion on white = ~3.2:1 — fine for 17px/600 button text + icon, don't use it for small body text.
+- White on vermilion `#D7492B` = ~3.9:1 — fine for 17px/600 button text + icon, don't use vermilion for small body text.
 - Toggle state must not rely on color alone (thumb position carries it) ✓.
 
 ---
@@ -159,14 +162,14 @@ Nothing in the screenshots suggests exuberant motion; keep it iOS-quiet:
 ```ts
 // tailwind: extend
 colors: {
-  cream: '#F4F2EF',
-  ink: { DEFAULT: '#2B1D16', soft: '#8A817C', faint: '#B8B1AC' },
-  espresso: { DEFAULT: '#31201A', raised: '#43302A' },
-  vermilion: { DEFAULT: '#E8532C', pressed: '#D2481F' },
-  blush: '#F8E3DA',
-  inset: '#EDEAE7',
-  gold: '#E9A23B',
-  line: '#E5E1DD',
+  cream: '#F4F3F2',
+  ink: { DEFAULT: '#200604', soft: '#8A8380', faint: '#B9B4B1' },
+  espresso: { DEFAULT: '#220C06', glow: '#43230C', raised: '#4E3D38' },
+  vermilion: { DEFAULT: '#D7492B', pressed: '#BC3C21' },
+  blush: '#F7EAE7',
+  inset: '#E9E6E6',
+  gold: '#F4AA1B',
+  line: '#E7E4E3',
 },
 borderRadius: { thumb: '12px', card: '20px', sheet: '24px' },
 boxShadow: { float: '0 1px 3px rgb(43 29 22 / 0.06)' },
