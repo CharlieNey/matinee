@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import { LayoutToggle } from "@/components/LayoutToggle";
 import { Providers } from "@/components/Providers";
+import { TimeMachine } from "@/components/TimeMachine";
 import { WebNav } from "@/components/WebNav";
 import "./globals.css";
 
@@ -44,6 +45,7 @@ export default function RootLayout({
             {children}
           </div>
           <LayoutToggle />
+          <TimeMachine />
         </Providers>
       </body>
     </html>

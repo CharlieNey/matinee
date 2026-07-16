@@ -90,6 +90,8 @@ Free-tier findings (verified 2026-07-16):
 
 *Added 2026-07-16. The rush layer is invisible outside program windows — a visitor landing at 3pm sees a dead board. Fix: let them move the clock.*
 
+**Built 2026-07-16.** `DemoTimeProvider` holds one `offsetMs` (sessionStorage, per-tab); `useNow()` carries it, so RushBanner/RushFeed/ShowPrograms re-derive instantly. Floating bottom-left control: live pill (clock + time) → card with 7 day chips + 5-min slider + "Back to live"; simulated state = espresso pill + gold dot + "· demo" label. Verified: 50 open at 12:32 PM → 2 open at 11:55 PM (only the genuinely overnight windows), persistence across reload, reset to live. Server-side push pipeline intentionally unaffected.
+
 - **Global `now` override**: a demo-time control (a draggable "It's 9:47 AM" pill / day scrubber) that feeds `useNow()`. Every status, countdown, and feed section re-derives instantly because the status engine is already a pure function of `now` — this is the payoff of that design.
 - Scrubbing across a day flips the whole board open → closes-soon → closed: the demo moment for screen recordings and portfolio visitors.
 - Override lives in the client store (sessionStorage); a clear affordance returns to real time. Real time is always the default; simulated time is visibly labeled so it can't be mistaken for live data.
