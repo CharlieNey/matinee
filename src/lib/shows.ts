@@ -123,6 +123,8 @@ const SHOWS: Show[] = [
     tier: "Off-Broadway",
     genre: "Musical",
     venue: 'Minetta Lane Theatre',
+    // Minetta Lane run ended Oct 2025; Daryl Roth return closed May 17, 2026
+    currentlyRunning: false,
     faceValue: 69,
     poster: {
       bg: "linear-gradient(135deg, #d94f2b 0%, #a63258 55%, #6e2a7d 100%)",
@@ -198,6 +200,8 @@ const SHOWS: Show[] = [
     tier: "Off-Broadway",
     genre: "Play",
     venue: 'Atlantic Theater Company',
+    // Closed March 22, 2026 (Atlantic run ended)
+    currentlyRunning: false,
     faceValue: 69,
     poster: {
       bg: "linear-gradient(180deg, #ece8de 0%, #ddd7c8 100%)",
@@ -224,9 +228,11 @@ const SHOWS: Show[] = [
   {
     slug: "the-fear-of-13",
     title: "The Fear of 13",
-    tier: "Off-Broadway",
+    tier: "Broadway",
     genre: "Play",
     venue: 'James Earl Jones Theatre',
+    // Closed June 28, 2026
+    currentlyRunning: false,
     faceValue: 99,
     poster: {
       bg: "linear-gradient(180deg, #4a4a4e 0%, #232326 100%)",
@@ -242,6 +248,8 @@ const SHOWS: Show[] = [
     tier: "Off-Broadway",
     genre: "Play",
     venue: 'Signature Theatre',
+    // Closed March 22, 2026 (Signature run ended)
+    currentlyRunning: false,
     faceValue: 59,
     poster: {
       bg: "linear-gradient(160deg, #d6b02f 0%, #b7922a 100%)",
