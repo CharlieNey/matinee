@@ -1,4 +1,5 @@
 import { BadgeCheck, ExternalLink, Ticket } from "lucide-react";
+import { allInForProvider, allInLabel } from "@/lib/fees";
 import { OfficialTicketLink } from "@/lib/officialTickets";
 import { Show } from "@/lib/shows";
 
@@ -9,6 +10,7 @@ export function OfficialTicketsCard({
   show: Show;
   ticketLink: OfficialTicketLink;
 }) {
+  const allIn = allInForProvider(show.faceValue, ticketLink.provider);
   return (
     <a
       href={ticketLink.url}
@@ -30,6 +32,11 @@ export function OfficialTicketsCard({
         <span className="mt-0.5 block truncate text-caption text-ink-soft">
           Primary seller for {show.venue}
         </span>
+        {allIn && (
+          <span className="mt-0.5 block truncate text-caption text-ink-soft">
+            ${show.faceValue} face · {allInLabel(allIn)}
+          </span>
+        )}
       </span>
       <ExternalLink
         className="size-5 shrink-0 text-ink-soft"

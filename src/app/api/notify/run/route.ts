@@ -10,7 +10,22 @@ type SubscriptionRow = {
   p256dh: string;
   auth: string;
   slugs: string[];
+  entries: { key: string; day: string }[];
 };
+
+/** Slug-followers get window events; claim watches need a matching entry. */
+function eventApplies(
+  sub: SubscriptionRow,
+  event: ReturnType<typeof duePushEvents>[number],
+): boolean {
+  if (event.requiresEntry) {
+    const { key, days } = event.requiresEntry;
+    return (sub.entries ?? []).some(
+      (entry) => entry.key === key && days.includes(entry.day),
+    );
+  }
+  return sub.slugs.includes(event.slug);
+}
 
 /**
  * Evaluate program windows and send due pushes. Driven by an external
@@ -39,7 +54,7 @@ export async function POST(request: Request) {
   const db = supabaseAdmin();
   const { data: subs, error: subsError } = await db
     .from("push_subscriptions")
-    .select("endpoint,p256dh,auth,slugs")
+    .select("endpoint,p256dh,auth,slugs,entries")
     .returns<SubscriptionRow[]>();
   if (subsError) {
     console.error("loading subscriptions failed:", subsError.message);
@@ -56,10 +71,10 @@ export async function POST(request: Request) {
   };
   if (!subs?.length || !events.length) return Response.json(summary);
 
-  // Every (subscriber, due event) pair for a followed show...
+  // Every applicable (subscriber, due event) pair...
   const pairs = subs.flatMap((sub) =>
     events
-      .filter((event) => sub.slugs.includes(event.slug))
+      .filter((event) => eventApplies(sub, event))
       .map((event) => ({ sub, event })),
   );
   if (!pairs.length) return Response.json(summary);

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { onLotteryLogChange, readLotteryLog } from "./entries";
 
 export type PushStatus =
   | "unavailable" // browser can't, or the app isn't configured for push
@@ -23,10 +24,11 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
 }
 
 async function saveSubscription(sub: PushSubscription, slugs: string[]) {
+  const entries = readLotteryLog().map(({ key, day }) => ({ key, day }));
   await fetch("/api/push", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ subscription: sub.toJSON(), slugs }),
+    body: JSON.stringify({ subscription: sub.toJSON(), slugs, entries }),
   });
 }
 
@@ -77,6 +79,18 @@ export function usePush(slugs: string[]) {
     const sub = subscriptionRef.current;
     if (status !== "on" || !sub) return;
     saveSubscription(sub, slugsKey ? slugsKey.split(",") : []).catch(() => {});
+  }, [status, slugsKey]);
+
+  // Re-sync when the "I entered" log changes, so claim watches can arm.
+  useEffect(() => {
+    if (status !== "on") return;
+    return onLotteryLogChange(() => {
+      const sub = subscriptionRef.current;
+      if (!sub) return;
+      saveSubscription(sub, slugsKey ? slugsKey.split(",") : []).catch(
+        () => {},
+      );
+    });
   }, [status, slugsKey]);
 
   const subscribe = useCallback(async () => {

@@ -1,6 +1,20 @@
-import { CalendarClock, ExternalLink, ShieldAlert } from "lucide-react";
-import { Poster } from "@/components/Poster";
+"use client";
+
+import { useState } from "react";
 import {
+  CalendarClock,
+  Check,
+  ChevronDown,
+  ExternalLink,
+  Lightbulb,
+  ShieldAlert,
+  Trophy,
+} from "lucide-react";
+import { Poster } from "@/components/Poster";
+import { allInForPlatform, allInLabel } from "@/lib/fees";
+import { useEnteredToday } from "@/lib/entries";
+import {
+  ClaimChannel,
   isProgramStale,
   Program,
   programKindLabel,
@@ -15,6 +29,12 @@ const easternDateTime = new Intl.DateTimeFormat("en-US", {
   hour: "numeric",
   minute: "2-digit",
 });
+
+const CHANNEL_VERBS: Record<ClaimChannel, string> = {
+  email: "emailed",
+  text: "texted",
+  app: "pinged in the app",
+};
 
 function countdown(ms: number): string {
   const minutes = Math.max(1, Math.ceil(ms / 60_000));
@@ -72,7 +92,11 @@ function StatusLine({ status }: { status: ProgramStatus | null }) {
 
 function statusClasses(status: ProgramStatus | null): string {
   if (!status) return "bg-cream text-ink-soft";
-  if (status.state === "open" || status.state === "closes-soon") {
+  // Closing window = live urgency: warm chip + marquee pulse (DESIGN.md §11).
+  if (status.state === "closes-soon") {
+    return "marquee-pulse bg-gold/15 text-ink";
+  }
+  if (status.state === "open") {
     return "bg-sage text-sage-ink";
   }
   if (status.state === "opens-later-today") {
@@ -93,51 +117,66 @@ export function ProgramCard({
   now: Date | null;
 }) {
   const stale = now ? isProgramStale(program, now) : false;
+  const [tipsOpen, setTipsOpen] = useState(false);
+  const { entered, toggle } = useEnteredToday(program, now);
+  const isLottery =
+    program.kind === "digital-lottery" || program.kind === "in-person-lottery";
+  const allIn = allInForPlatform(program.price, program.platform);
+  const tips = program.tips ?? [];
 
   return (
-    <a
-      href={program.entryUrl}
-      target="_blank"
-      rel="noreferrer"
-      className="block rounded-card bg-paper p-4 transition-transform duration-150 active:scale-[0.985]"
-    >
-      <div className="flex gap-3.5">
-        <Poster show={show} className="size-[72px] rounded-thumb" />
-        <div className="min-w-0 flex-1">
-          <div className="flex items-start justify-between gap-2">
-            <h3 className="line-clamp-2 text-body font-semibold leading-tight">
-              {show.title}
-            </h3>
-            <ExternalLink
-              className="mt-0.5 size-4 shrink-0 text-ink-faint"
-              strokeWidth={1.9}
-              aria-hidden="true"
-            />
-            <span className="sr-only">Opens entry site in a new tab</span>
+    <div className="rounded-card bg-paper p-4">
+      <a
+        href={program.entryUrl}
+        target="_blank"
+        rel="noreferrer"
+        className="block transition-transform duration-150 active:scale-[0.985]"
+      >
+        <div className="flex gap-3.5">
+          <Poster show={show} className="size-[72px] rounded-thumb" />
+          <div className="min-w-0 flex-1">
+            <div className="flex items-start justify-between gap-2">
+              <h3 className="line-clamp-2 text-body font-semibold leading-tight">
+                {show.title}
+              </h3>
+              <ExternalLink
+                className="mt-0.5 size-4 shrink-0 text-ink-faint"
+                strokeWidth={1.9}
+                aria-hidden="true"
+              />
+              <span className="sr-only">Opens entry site in a new tab</span>
+            </div>
+            <p className="mt-1 text-caption text-ink-soft">
+              {program.name ?? programKindLabel(program.kind)} ·{" "}
+              {programPlatformLabel(program.platform)}
+            </p>
+            <p className="mt-1.5 line-clamp-2 text-label leading-snug text-ink-soft">
+              {program.schedule.summary}
+            </p>
           </div>
-          <p className="mt-1 text-caption text-ink-soft">
-            {program.name ?? programKindLabel(program.kind)} ·{" "}
-            {programPlatformLabel(program.platform)}
-          </p>
-          <p className="mt-1.5 line-clamp-2 text-label leading-snug text-ink-soft">
-            {program.schedule.summary}
-          </p>
         </div>
-      </div>
 
-      <div className="mt-4 flex items-center justify-between gap-3 border-t border-line pt-3">
-        <div
-          className={`min-w-0 rounded-full px-3 py-2 text-label font-semibold ${statusClasses(status)}`}
-        >
-          <StatusLine status={status} />
+        <div className="mt-4 flex items-center justify-between gap-3 border-t border-line pt-3">
+          <div
+            className={`min-w-0 rounded-full px-3 py-2 text-label font-semibold ${statusClasses(status)}`}
+          >
+            <StatusLine status={status} />
+          </div>
+          <div className="shrink-0 text-right">
+            <p className="text-caption text-ink-soft">
+              <strong className="text-[20px] font-bold leading-none text-ink">
+                ${program.price}
+              </strong>{" "}
+              each
+            </p>
+            {allIn && (
+              <p className="mt-0.5 text-label text-ink-faint">
+                {allInLabel(allIn)}
+              </p>
+            )}
+          </div>
         </div>
-        <p className="shrink-0 text-right text-caption text-ink-soft">
-          <strong className="text-[20px] font-bold leading-none text-ink">
-            ${program.price}
-          </strong>{" "}
-          each
-        </p>
-      </div>
+      </a>
 
       <div className="mt-3 flex items-start gap-2 text-label text-ink-soft">
         {stale ? (
@@ -155,6 +194,75 @@ export function ProgramCard({
           </>
         )}
       </div>
-    </a>
+
+      {program.claimWindow && (
+        <p className="mt-2 flex items-start gap-2 text-label text-ink-soft">
+          <Trophy
+            className="mt-px size-3.5 shrink-0 text-gold"
+            strokeWidth={1.9}
+            aria-hidden="true"
+          />
+          <span>
+            If you win: {CHANNEL_VERBS[program.claimWindow.channel]}{" "}
+            {program.claimWindow.notifiedAround} ·{" "}
+            <b className="font-semibold text-ink">
+              {program.claimWindow.minutes} min
+            </b>{" "}
+            to claim — the clock starts on send.
+          </span>
+        </p>
+      )}
+
+      {(tips.length > 0 || isLottery) && (
+        <div className="mt-3 flex items-center justify-between gap-3 border-t border-line pt-2.5">
+          {tips.length > 0 ? (
+            <button
+              type="button"
+              aria-expanded={tipsOpen}
+              onClick={() => setTipsOpen((v) => !v)}
+              className="flex items-center gap-1.5 py-1 text-caption font-semibold text-ink-soft transition-colors duration-150 hover:text-ink"
+            >
+              <Lightbulb className="size-4" strokeWidth={1.9} aria-hidden="true" />
+              Tips
+              <ChevronDown
+                className={`size-4 transition-transform duration-200 ${tipsOpen ? "rotate-180" : ""}`}
+                strokeWidth={2}
+                aria-hidden="true"
+              />
+            </button>
+          ) : (
+            <span />
+          )}
+          {isLottery && now && (
+            <button
+              type="button"
+              aria-pressed={entered}
+              onClick={toggle}
+              className={`flex h-9 items-center gap-1.5 rounded-full px-3.5 text-caption font-semibold transition-[background-color,color,transform] duration-150 active:scale-[0.97] ${
+                entered
+                  ? "bg-sage text-sage-ink"
+                  : "bg-cream text-ink-soft"
+              }`}
+            >
+              {entered && <Check className="size-4" strokeWidth={2.2} />}
+              {entered ? "Entered today" : "I entered"}
+            </button>
+          )}
+        </div>
+      )}
+
+      {tipsOpen && tips.length > 0 && (
+        <ul className="mt-2 flex flex-col gap-2">
+          {tips.map((tip) => (
+            <li
+              key={tip}
+              className="rounded-thumb bg-cream px-3 py-2.5 text-label leading-snug text-ink-soft"
+            >
+              {tip}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }

@@ -7,7 +7,25 @@ type SubscribeBody = {
     keys?: { p256dh?: unknown; auth?: unknown };
   };
   slugs?: unknown;
+  entries?: unknown;
 };
+
+/** Validate the synced lottery-log entries: {key, day} pairs, capped. */
+function sanitizeEntries(raw: unknown): { key: string; day: string }[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter(
+      (item): item is { key: string; day: string } =>
+        typeof item === "object" &&
+        item !== null &&
+        typeof (item as { key?: unknown }).key === "string" &&
+        (item as { key: string }).key.length <= 120 &&
+        typeof (item as { day?: unknown }).day === "string" &&
+        /^\d{4}-\d{2}-\d{2}$/.test((item as { day: string }).day),
+    )
+    .map(({ key, day }) => ({ key, day }))
+    .slice(-200);
+}
 
 /** Create or update a subscription (also used to re-sync followed shows). */
 export async function POST(request: Request) {
@@ -44,7 +62,14 @@ export async function POST(request: Request) {
   const { error } = await supabaseAdmin()
     .from("push_subscriptions")
     .upsert(
-      { endpoint, p256dh, auth, slugs, updated_at: new Date().toISOString() },
+      {
+        endpoint,
+        p256dh,
+        auth,
+        slugs,
+        entries: sanitizeEntries(body.entries),
+        updated_at: new Date().toISOString(),
+      },
       { onConflict: "endpoint" },
     );
   if (error) {

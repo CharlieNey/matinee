@@ -33,6 +33,21 @@ export type ProgramSchedule = {
   windows: readonly ScheduleWindow[];
 };
 
+export type ClaimChannel = "email" | "text" | "app";
+
+/**
+ * What happens after you win (Phase 8): the claim clock starts when the
+ * notification is SENT, not read — the sharpest documented pain in lottery
+ * folk knowledge. Curated per program, like everything else.
+ */
+export type ClaimWindow = {
+  /** Minutes to claim once notified. */
+  minutes: number;
+  channel: ClaimChannel;
+  /** Human phrasing of when winners usually hear, e.g. "after the 3 PM drawing". */
+  notifiedAround: string;
+};
+
 export type Program = {
   showSlug: string;
   kind: ProgramKind;
@@ -45,6 +60,9 @@ export type Program = {
   schedule: ProgramSchedule;
   lastVerified: string;
   notes?: string;
+  claimWindow?: ClaimWindow;
+  /** Platform folk knowledge, curated from community reports (MARKET.md). */
+  tips?: readonly string[];
 };
 
 export type ProgramStatusState =
@@ -77,7 +95,7 @@ function program(
   maxTickets: number,
   entryUrl: string,
   schedule: ProgramSchedule,
-  options: Pick<Program, "name" | "notes"> = {},
+  options: Pick<Program, "name" | "notes" | "claimWindow" | "tips"> = {},
 ): Program {
   return {
     showSlug,
@@ -123,7 +141,17 @@ function telechargeLottery(
       "00:00",
       "15:00",
     ),
-    { notes: "Winners are drawn at 10 AM and 3 PM." },
+    {
+      notes: "Winners are drawn at 10 AM and 3 PM.",
+      claimWindow: {
+        minutes: 60,
+        channel: "email",
+        notifiedAround: "after the 10 AM and 3 PM drawings",
+      },
+      tips: [
+        "Telecharge lotteries require a US phone number for verification — international visitors should set one up before entering.",
+      ],
+    },
   );
 }
 
@@ -146,7 +174,17 @@ function luckySeatLottery(
       closesAt,
       MONDAY_TO_FRIDAY,
     ),
-    { notes: "Winners are selected after entries close." },
+    {
+      notes: "Winners are selected after entries close.",
+      claimWindow: {
+        minutes: 60,
+        channel: "email",
+        notifiedAround: "within a few hours of entries closing",
+      },
+      tips: [
+        "Lucky Seat occasionally switches winners to box-office pickup — bring the ID you entered with.",
+      ],
+    },
   );
 }
 
@@ -169,7 +207,17 @@ function broadwayDirectLottery(
       opensAt,
       closesAt,
     ),
-    { notes: "Winners have 60 minutes to purchase." },
+    {
+      notes: "Winners have 60 minutes to purchase.",
+      claimWindow: {
+        minutes: 60,
+        channel: "email",
+        notifiedAround: "shortly after the window closes",
+      },
+      tips: [
+        "Broadway Direct entries actually open at 12:01 AM — set the alarm a minute past midnight, not midnight.",
+      ],
+    },
   );
 }
 
@@ -252,7 +300,12 @@ function todayTixRush(
       PERFORMANCE_DAYS,
       true,
     ),
-    { notes: "First come, first served in the TodayTix app." },
+    {
+      notes: "First come, first served in the TodayTix app.",
+      tips: [
+        "If TodayTix says all tickets are being held, those are pending carts that can time out — keep trying for a few minutes.",
+      ],
+    },
   );
 }
 
@@ -286,7 +339,14 @@ const PROGRAMS: readonly Program[] = [
       "09:00",
       "15:00",
     ),
-    { notes: "Winners have 60 minutes to purchase." },
+    {
+      notes: "Winners have 60 minutes to purchase.",
+      claimWindow: {
+        minutes: 60,
+        channel: "email",
+        notifiedAround: "shortly after 3 PM",
+      },
+    },
   ),
 
   luckySeatLottery(
@@ -381,7 +441,14 @@ const PROGRAMS: readonly Program[] = [
         { days: [5], opensAt: "10:00", closesAt: "12:00", closesDayOffset: 6 },
       ],
     },
-    { notes: "Winners are notified Thursday afternoon." },
+    {
+      notes: "Winners are notified Thursday afternoon.",
+      claimWindow: {
+        minutes: 60,
+        channel: "email",
+        notifiedAround: "Thursday afternoon",
+      },
+    },
   ),
 
   program(
@@ -398,7 +465,15 @@ const PROGRAMS: readonly Program[] = [
         { days: [1], opensAt: "00:01", closesAt: "13:00", closesDayOffset: 4 },
       ],
     },
-    { name: "Friday Forty", notes: "40 tickets are offered each week." },
+    {
+      name: "Friday Forty",
+      notes: "40 tickets are offered each week.",
+      claimWindow: {
+        minutes: 60,
+        channel: "app",
+        notifiedAround: "Friday afternoon",
+      },
+    },
   ),
 
   telechargeLottery("joe-turners-come-and-gone"),
@@ -498,7 +573,14 @@ const PROGRAMS: readonly Program[] = [
       "09:00",
       MONDAY_TO_SATURDAY,
     ),
-    { notes: "Winners have one hour to claim tickets." },
+    {
+      notes: "Winners have one hour to claim tickets.",
+      claimWindow: {
+        minutes: 60,
+        channel: "app",
+        notifiedAround: "after the 9 AM drawing",
+      },
+    },
   ),
 
   broadwayDirectLottery(
@@ -716,6 +798,45 @@ function occurrences(now: Date, item: Program): Occurrence[] {
 
 export function allPrograms(): readonly Program[] {
   return PROGRAMS;
+}
+
+/** Stable identity for a program — (show, kind, platform) is unique. */
+export function programKey(item: Program): string {
+  return `${item.showSlug}/${item.kind}/${item.platform}`;
+}
+
+export type ProgramOccurrence = {
+  opensAt: Date;
+  closesAt: Date;
+  whileSuppliesLast: boolean;
+};
+
+/**
+ * Concrete entry windows within ±7 days of `around` — the raw material for
+ * trip mode and the claim-watch cron, which need windows on days other than
+ * "now".
+ */
+export function programOccurrencesNear(
+  around: Date,
+  item: Program,
+): ProgramOccurrence[] {
+  return occurrences(around, item).map((occurrence) => ({
+    opensAt: occurrence.opensAt,
+    closesAt: occurrence.closesAt,
+    whileSuppliesLast: occurrence.whileSuppliesLast,
+  }));
+}
+
+const etDayFormat = new Intl.DateTimeFormat("en-CA", {
+  timeZone: TIMEZONE,
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+
+/** NYC calendar date (YYYY-MM-DD) of an instant — the entry-log day key. */
+export function etDayKey(date: Date): string {
+  return etDayFormat.format(date);
 }
 
 export function programsForShow(showSlug: string): readonly Program[] {

@@ -80,9 +80,8 @@ Moving parts:
 
 One-time setup:
 
-1. Create a free Supabase project and run
-   `supabase/migrations/20260716120000_push_notifications.sql` in the SQL
-   editor.
+1. Create a free Supabase project and run the files in
+   `supabase/migrations/` (in filename order) in the SQL editor.
 2. Copy `.env.example` → `.env.local` and fill it in (`npx web-push
    generate-vapid-keys` for the key pair). Set the same variables in Vercel.
 3. Add `APP_URL` (deployed origin) and `CRON_SECRET` as GitHub Actions
