@@ -5,12 +5,23 @@ import { useState } from "react";
 /** iOS-style switch. On = espresso track — never vermilion (DESIGN.md §5). */
 export function Toggle({
   defaultOn = false,
+  on: controlledOn,
+  onChange,
   label,
 }: {
   defaultOn?: boolean;
+  /** Pass to control the switch; omit for uncontrolled behavior. */
+  on?: boolean;
+  onChange?: (on: boolean) => void;
   label: string;
 }) {
-  const [on, setOn] = useState(defaultOn);
+  const [internalOn, setInternalOn] = useState(defaultOn);
+  const on = controlledOn ?? internalOn;
+
+  const handleClick = () => {
+    if (controlledOn === undefined) setInternalOn(!on);
+    onChange?.(!on);
+  };
 
   return (
     <button
@@ -18,7 +29,7 @@ export function Toggle({
       role="switch"
       aria-checked={on}
       aria-label={label}
-      onClick={() => setOn((v) => !v)}
+      onClick={handleClick}
       className={`relative h-8 w-[52px] shrink-0 rounded-full transition-colors duration-150 after:absolute after:-inset-2 after:content-[''] ${
         on ? "bg-espresso" : "bg-toggle-off"
       }`}

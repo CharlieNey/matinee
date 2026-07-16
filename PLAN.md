@@ -1,14 +1,15 @@
 # Plan: Theatr — from clone to portfolio product
 
-*Working plan, revised 2026-07-15. Grounded in RESEARCH.md. Portfolio piece, web-first.*
+*Working plan, revised 2026-07-16. Grounded in RESEARCH.md. Portfolio piece, web-first.*
 
 ## Goal
 
-Keep the design language; make three things real, in this order of importance:
+Keep the design language; make four things real, in this order of importance:
 
 1. A **curated rush/lottery layer** with live open/closed statuses, deadline countdowns, and deep links — the differentiator no competitor does well.
 2. **Real show data** — Ticketmaster Discovery API where it has coverage, curated data everywhere else.
 3. **Working notifications** for lottery/rush deadlines.
+4. **A standout presentation layer** (added 2026-07-16): demo time machine, theater-district map, and colophon — the reframe from "clone with extras" to "the live board for Broadway rush & lotteries, in a design shell I reverse-engineered."
 
 All purchasing happens via deep links out. We are the index, never the checkout.
 
@@ -61,9 +62,16 @@ Freshness mechanics (portfolio-visible honesty):
 
 ## Phase 3 — Notifications (make Notify real)
 
+**Built 2026-07-16.** Remaining is one-time provisioning only (Supabase project + migration, Vercel env vars, GitHub Actions secrets) — steps in README §Notifications. Email fallback (Resend) not built; still optional.
+
 - Web push via service worker + PWA manifest (iOS requires installed PWA): "lottery opens/closes soon" for followed shows.
 - Requires minimal persistence for push subscriptions + a cron to evaluate schedules: Vercel KV or Supabase, whichever is less ceremony.
 - Optional email fallback (Resend).
+
+Free-tier findings (verified 2026-07-16):
+- **Vercel Hobby** works for hosting (100GB bandwidth, 100K invocations/mo, hard caps so no surprise bills; non-commercial use only — fine for a portfolio). BUT its cron jobs are capped at **once per day**, timing guaranteed only within the hour — too coarse for deadline pushes.
+- **Scheduler instead**: GitHub Actions schedule (~15-min cadence) or cron-job.org hitting a secret-protected route handler that evaluates program windows and sends pushes (`web-push`, VAPID keys).
+- **Supabase free** works for subscription persistence (500MB Postgres, 50K MAU auth, 500K edge-fn invocations). BUT free projects **pause after 7 days without API requests**. Mitigation: the notification cron queries Supabase on every run, doubling as the keepalive.
 
 ## Phase 4 — Web/mobile layout toggle
 
@@ -73,6 +81,35 @@ Freshness mechanics (portfolio-visible honesty):
 - **Web mode**: a real responsive web app — nav rail/top bar, multi-column feeds, poster-hero show pages.
 - Toggle is a persistent UI control (and remembered per visitor); components and tokens are shared, only layout shells differ.
 - Rewrite DESIGN.md's viewport section ("this is a phone product…") to define both modes and the toggle.
+
+## Phase 5 — Demo time machine
+
+*Added 2026-07-16. The rush layer is invisible outside program windows — a visitor landing at 3pm sees a dead board. Fix: let them move the clock.*
+
+- **Global `now` override**: a demo-time control (a draggable "It's 9:47 AM" pill / day scrubber) that feeds `useNow()`. Every status, countdown, and feed section re-derives instantly because the status engine is already a pure function of `now` — this is the payoff of that design.
+- Scrubbing across a day flips the whole board open → closes-soon → closed: the demo moment for screen recordings and portfolio visitors.
+- Override lives in the client store (sessionStorage); a clear affordance returns to real time. Real time is always the default; simulated time is visibly labeled so it can't be mistaken for live data.
+- Consumers: `/rush` feed, show-page "Ways to save", Discover banner, notifications preview, and the district map (Phase 6).
+- Smallest phase in the plan — build first; the map depends on it.
+
+## Phase 6 — Theater district map (the hero page)
+
+*Added 2026-07-16. One page that fuses the "who actually sells Broadway tickets" explainer, the live rush/lottery board, and the show catalog into a single artifact: a living map of Broadway.*
+
+- **Stylized SVG map** of the theater district (roughly 41st–54th St, 6th–8th Ave) drawn in the DESIGN.md language — NOT a Mapbox/Leaflet embed. A hand-drawn map of hand-curated data is the project's ethos made visible; no API keys, no tile servers. Inset for outliers (e.g. Vivian Beaumont at Lincoln Center).
+- **Ownership layer** (always on): every Broadway house colored by owner→ticketer (Shubert→Telecharge, Nederlander/Disney→Ticketmaster, ATG→ATG Tickets, nonprofits→own). The legend *is* the explainer — tapping a legend entry highlights that owner's houses. This is the genuinely confusing information the aggregator sites bury.
+- **Now-playing layer**: current show per house (poster chip + title) from the catalog; dark theaters render as *dark* — itself informative.
+- **Live rush/lottery layer**: houses pulse/badge when a program is open or closing soon — same status engine, driven by the Phase 5 time machine. Scrub to 10am and watch the district light up.
+- **Tap a theater** → card: show, owner, official ticketer + buy link, program statuses → through to the show page.
+- **Data model** (`src/lib/theaters.ts`): all ~41 Broadway houses (not just catalog shows) — `{ name, owner, ticketer, address, coords, currentShowSlug | null }`. Stable, hand-curated facts; the map is the reason to expand the catalog toward ~35 shows.
+- Lives at `/district`, linked from Discover; candidate hero page for web mode (Phase 4).
+
+## Phase 7 — Colophon & open dataset
+
+*Added 2026-07-16. Make the engineering honesty visible — for a technical audience, judgment reads rarer than code.*
+
+- **Colophon page** (`/about`): how it works and why — why hand-curation beats scraping *for this data*, the `lastVerified` staleness mechanics, the fragmented-ticketing reality, and what was deliberately rejected (scraping, lottery automation, resale APIs) with reasons. Material already exists in RESEARCH.md; this is editing, not research.
+- **Open dataset**: publish the curated data at `/api/programs.json` and `/api/theaters.json` with `lastVerified` stamps, documented on the colophon. The dataset is the product's spine — let others build on it.
 
 ## Stretch goals — AI features (decided 2026-07-15)
 

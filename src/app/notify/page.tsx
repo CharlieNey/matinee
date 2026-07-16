@@ -5,6 +5,7 @@ import Link from "next/link";
 import { AnimatePresence, motion } from "motion/react";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { BackHeader } from "@/components/BackHeader";
+import { NotifyPushCard } from "@/components/NotifyPushCard";
 import { Poster } from "@/components/Poster";
 import { Sheet } from "@/components/Sheet";
 import { ShowPicker } from "@/components/ShowPicker";
@@ -123,6 +124,8 @@ export default function NotifyPage() {
           {shownMatches} match{shownMatches === 1 ? "" : "es"}
         </p>
       </Link>
+
+      <NotifyPushCard />
 
       <h2 className="mt-9 text-heading">Notify Alerts</h2>
       <div className="mt-4 flex flex-col gap-3.5">

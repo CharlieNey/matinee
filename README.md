@@ -5,8 +5,9 @@ marketplace with a built-in show diary. Built as a personal prototype from
 screenshots of the live app (see `reference/theatr-screens/`), then extended
 with flows the app doesn't have yet.
 
-Presents as a phone product: a centered 430px column on cream. Everything is
-client-side with mock data; state persists to `localStorage`.
+Presents as a phone product: a centered 430px column on cream. The UI is
+client-side with mock data and `localStorage` persistence; the one real
+backend piece is deadline push notifications (see **Notifications** below).
 
 ## Getting started
 
@@ -27,7 +28,8 @@ the `theatr-state-v1` key in localStorage.
 |---|---|
 | `/` | Marketplace — "Selling fast" shelf, show-grouped grid ("from $42 · 3 listings"), working Date/Quantity/Cheapest filters with faceted result counts |
 | `/shows/[slug]` | Show listings — urgency strip ("3 sold today · median $55"), listing grid, sold-listings social proof; empty pages capture demand with a pre-filled Notify alert CTA |
-| `/notify` | Your Notify — matches banner (count-up), alert cards with toggles, add/edit/delete with undo |
+| `/notify` | Your Notify — matches banner (count-up), deadline-push opt-in, alert cards with toggles, add/edit/delete with undo |
+| `/rush` | Rush & Lottery — curated program feed grouped by Open now / Later today / Coming up, live countdowns, deep links to entry pages |
 | `/orders` | Orders — Buy/Sell toggle, accordions; sell listings carry a **Listed → Sold → Paid** pipeline with a prototype control to simulate the buyer side |
 | `/profile` | Espresso identity header (edit profile, settings, wallet, share), Activity / Listing / Collection tabs; diary entries render as rich ticket-stub cards |
 | `/discover` | The diary home — My Top 10, live Interested shelf (bookmarks), Attended, "For you" recommendations, and the **Log a show** entry point |
@@ -57,6 +59,37 @@ the `theatr-state-v1` key in localStorage.
 - **Motion** is deliberately iOS-quiet (DESIGN.md §7): 200–300ms ease-out
   sheets and page transitions, staggered card reveals, one-shot count-ups.
   `prefers-reduced-motion` is respected globally.
+
+## Notifications (deadline pushes)
+
+The "Deadline pushes" card on `/notify` subscribes the browser to web push:
+when a rush/lottery program for a show you have an alert on opens, or enters
+its final hour, you get a notification that deep-links to the entry page.
+Moving parts:
+
+- `src/app/manifest.ts` + `public/sw.js` — PWA manifest and service worker
+  (iOS delivers push only after Add to Home Screen, 16.4+).
+- `src/app/api/push` — subscription storage (Supabase, server-side secret
+  key only; RLS on with no public policies).
+- `src/app/api/notify/run` — the evaluator: computes due events from the
+  program status engine (`src/lib/pushEvents.ts`), dedupes per occurrence
+  via `notification_log`, sends via `web-push`, prunes dead endpoints.
+- `.github/workflows/notify-cron.yml` — the scheduler (~every 15 min;
+  Vercel Hobby cron is daily-only). Each run doubles as the keepalive that
+  stops the free-tier Supabase project from pausing.
+
+One-time setup:
+
+1. Create a free Supabase project and run
+   `supabase/migrations/20260716120000_push_notifications.sql` in the SQL
+   editor.
+2. Copy `.env.example` → `.env.local` and fill it in (`npx web-push
+   generate-vapid-keys` for the key pair). Set the same variables in Vercel.
+3. Add `APP_URL` (deployed origin) and `CRON_SECRET` as GitHub Actions
+   secrets so the workflow can call the evaluator.
+4. Smoke test: toggle on at `/notify`, then
+   `curl -X POST -H "Authorization: Bearer $CRON_SECRET" <origin>/api/notify/run`
+   — the JSON summary reports events, sends, dedupes, and pruned endpoints.
 
 ## Poster art
 

@@ -1,0 +1,20 @@
+name: Notify cron
+
+# Drives deadline pushes: Vercel Hobby cron is daily-only, so GitHub Actions
+# is the scheduler. Each run also keeps the free-tier Supabase project awake.
+# Schedules can lag a few minutes under load — copy treats times as "soon",
+# never to-the-minute.
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+jobs:
+  evaluate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Evaluate program windows and send due pushes
+        run: |
+          curl -fsS -X POST \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "${{ secrets.APP_URL }}/api/notify/run"
