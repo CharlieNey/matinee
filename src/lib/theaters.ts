@@ -22,6 +22,9 @@ export type Theater = {
   /** Horizontal position on the stylized grid, 0–1000 west→east. */
   x: number;
   inset?: boolean;
+  /** Schema insurance for a future second market (PLAN.md Phase 12);
+   *  absence means "nyc". */
+  market?: "nyc";
 };
 
 export const TICKETER_LABELS: Record<Ticketer, string> = {

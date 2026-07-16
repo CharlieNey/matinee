@@ -511,6 +511,8 @@ const PROGRAMS: readonly Program[] = [
     startDay: "tuesday",
   }),
 
+  // $20.64 is real, not a typo: the show is set in the year 2064 and the
+  // production prices its lottery as a nod to it.
   telechargeLottery("maybe-happy-ending", 20.64),
   boxOfficeProgram("maybe-happy-ending", "rush", 49, "Belasco Theatre"),
   program(
@@ -625,6 +627,30 @@ const PROGRAMS: readonly Program[] = [
     "09:00",
     "15:00",
   ),
+
+  /*
+   * Off-Broadway programs (Phase 12), verified 2026-07-16 against the shows'
+   * sites and the NYTG Off-Broadway guide. Only rows we could confirm —
+   * shows without a verified program correctly render "No verified program
+   * listed" on their pages.
+   */
+  {
+    ...telechargeLottery("little-shop-of-horrors", 35),
+    lastVerified: "2026-07-16",
+  },
+  {
+    ...telechargeLottery("the-play-that-goes-wrong", 35),
+    lastVerified: "2026-07-16",
+  },
+  {
+    ...boxOfficeProgram(
+      "perfect-crime",
+      "student-rush",
+      30,
+      "The Theater Center",
+    ),
+    lastVerified: "2026-07-16",
+  },
 ];
 
 const KIND_LABELS: Record<ProgramKind, string> = {
