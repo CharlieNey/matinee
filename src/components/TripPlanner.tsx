@@ -62,7 +62,7 @@ function SlotRow({ slot }: { slot: TripSlot }) {
           {windowLabel(slot)}
         </span>
         <span className="mt-0.5 block text-caption text-ink-soft">
-          ${program.price}
+          {program.price === 0 ? "Free" : `$${program.price}`}
         </span>
       </span>
       <ExternalLink

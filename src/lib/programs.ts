@@ -651,6 +651,55 @@ const PROGRAMS: readonly Program[] = [
     ),
     lastVerified: "2026-07-16",
   },
+
+  // Free Shakespeare in the Park — the platonic ideal of this dataset:
+  // completely free, two entry paths, chronically confusing to newcomers.
+  {
+    ...program(
+      "the-winters-tale",
+      "digital-lottery",
+      "todaytix",
+      0,
+      2,
+      "https://www.todaytix.com/nyc/shows/free-shakespeare-in-the-park",
+      dailyWindow(
+        "Midnight–noon the day of the performance",
+        "00:00",
+        "12:00",
+        [0, 2, 3, 4, 5, 6],
+      ),
+      {
+        notes: "Performances begin July 25. Winners drawn after noon.",
+        claimWindow: {
+          minutes: 60,
+          channel: "app",
+          notifiedAround: "early afternoon",
+        },
+      },
+    ),
+    lastVerified: "2026-07-16",
+  },
+  {
+    ...program(
+      "the-winters-tale",
+      "rush",
+      "box-office",
+      0,
+      2,
+      "https://publictheater.org/free-shakespeare-in-the-park/",
+      dailyWindow(
+        "Free tickets distributed at noon at the Delacorte — line up early",
+        "08:00",
+        "12:00",
+        [0, 2, 3, 4, 5, 6],
+        true,
+      ),
+      {
+        notes: "Performances begin July 25. Two tickets per person.",
+      },
+    ),
+    lastVerified: "2026-07-16",
+  },
 ];
 
 const KIND_LABELS: Record<ProgramKind, string> = {
