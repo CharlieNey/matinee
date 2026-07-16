@@ -1,12 +1,9 @@
 "use client";
 
-import { useState } from "react";
 import {
   CalendarClock,
   Check,
-  ChevronDown,
   ExternalLink,
-  Lightbulb,
   ShieldAlert,
   Trophy,
 } from "lucide-react";
@@ -117,12 +114,10 @@ export function ProgramCard({
   now: Date | null;
 }) {
   const stale = now ? isProgramStale(program, now) : false;
-  const [tipsOpen, setTipsOpen] = useState(false);
   const { entered, toggle } = useEnteredToday(program, now);
   const isLottery =
     program.kind === "digital-lottery" || program.kind === "in-person-lottery";
   const allIn = allInForPlatform(program.price, program.platform);
-  const tips = program.tips ?? [];
 
   return (
     <div className="rounded-card bg-paper p-4">
@@ -213,55 +208,20 @@ export function ProgramCard({
         </p>
       )}
 
-      {(tips.length > 0 || isLottery) && (
-        <div className="mt-3 flex items-center justify-between gap-3 border-t border-line pt-2.5">
-          {tips.length > 0 ? (
-            <button
-              type="button"
-              aria-expanded={tipsOpen}
-              onClick={() => setTipsOpen((v) => !v)}
-              className="flex items-center gap-1.5 py-1 text-caption font-semibold text-ink-soft transition-colors duration-150 hover:text-ink"
-            >
-              <Lightbulb className="size-4" strokeWidth={1.9} aria-hidden="true" />
-              Tips
-              <ChevronDown
-                className={`size-4 transition-transform duration-200 ${tipsOpen ? "rotate-180" : ""}`}
-                strokeWidth={2}
-                aria-hidden="true"
-              />
-            </button>
-          ) : (
-            <span />
-          )}
-          {isLottery && now && (
-            <button
-              type="button"
-              aria-pressed={entered}
-              onClick={toggle}
-              className={`flex h-9 items-center gap-1.5 rounded-full px-3.5 text-caption font-semibold transition-[background-color,color,transform] duration-150 active:scale-[0.97] ${
-                entered
-                  ? "bg-sage text-sage-ink"
-                  : "bg-cream text-ink-soft"
-              }`}
-            >
-              {entered && <Check className="size-4" strokeWidth={2.2} />}
-              {entered ? "Entered today" : "I entered"}
-            </button>
-          )}
+      {isLottery && now && (
+        <div className="mt-3 flex justify-end border-t border-line pt-2.5">
+          <button
+            type="button"
+            aria-pressed={entered}
+            onClick={toggle}
+            className={`flex h-9 items-center gap-1.5 rounded-full px-3.5 text-caption font-semibold transition-[background-color,color,transform] duration-150 active:scale-[0.97] ${
+              entered ? "bg-sage text-sage-ink" : "bg-cream text-ink-soft"
+            }`}
+          >
+            {entered && <Check className="size-4" strokeWidth={2.2} />}
+            {entered ? "Entered today" : "I entered"}
+          </button>
         </div>
-      )}
-
-      {tipsOpen && tips.length > 0 && (
-        <ul className="mt-2 flex flex-col gap-2">
-          {tips.map((tip) => (
-            <li
-              key={tip}
-              className="rounded-thumb bg-cream px-3 py-2.5 text-label leading-snug text-ink-soft"
-            >
-              {tip}
-            </li>
-          ))}
-        </ul>
       )}
     </div>
   );

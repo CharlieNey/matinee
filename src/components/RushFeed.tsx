@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Clock3, Search, X } from "lucide-react";
+import { PlatformTips } from "@/components/PlatformTips";
 import { ProgramCard } from "@/components/ProgramCard";
 import {
   allPrograms,
@@ -171,7 +172,14 @@ export function RushFeed() {
           (b.status.nextOpenAt?.getTime() ?? Infinity),
       );
 
-    return { total: entries.length, matched: matches.length, open, later, coming };
+    return {
+      total: entries.length,
+      matched: matches.length,
+      programs: matches.map((entry) => entry.program),
+      open,
+      later,
+      coming,
+    };
   }, [now, query, kind, platform, underFifty]);
 
   if (!now || !result) {
@@ -243,6 +251,9 @@ export function RushFeed() {
           </Chip>
         ))}
       </div>
+
+      {/* Platform folk knowledge, deduped — reacts to the active filters */}
+      <PlatformTips programs={result.programs} />
 
       {hasFilters && (
         <p className="mt-3 text-caption text-ink-soft">

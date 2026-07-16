@@ -1,5 +1,6 @@
 "use client";
 
+import { PlatformTips } from "@/components/PlatformTips";
 import { ProgramCard } from "@/components/ProgramCard";
 import { getProgramStatus, programsForShow } from "@/lib/programs";
 import { Show } from "@/lib/shows";
@@ -46,6 +47,7 @@ export function ShowPrograms({ show }: { show: Show }) {
           />
         ))}
       </div>
+      <PlatformTips programs={programs} />
     </section>
   );
 }
