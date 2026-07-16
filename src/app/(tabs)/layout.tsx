@@ -7,7 +7,7 @@ export default function TabsLayout({
 }) {
   return (
     <>
-      <div className="pb-36">{children}</div>
+      <div className="pb-36 web:pb-16">{children}</div>
       <TabBar />
     </>
   );

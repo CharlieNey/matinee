@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { Flame } from "lucide-react";
 import { BackHeader } from "@/components/BackHeader";
+import { Poster } from "@/components/Poster";
 import { ListingBrowser } from "@/components/ListingBrowser";
 import { ListingCard } from "@/components/ListingCard";
 import { OfficialTicketsCard } from "@/components/OfficialTicketsCard";
@@ -45,9 +46,25 @@ export default async function ShowListingsPage({
   const officialTickets = officialTicketsForShow(slug);
 
   return (
-    <main className="pb-10">
-      <div className="px-4">
-        <BackHeader title={show.title} />
+    <main className="pb-10 web:mx-auto web:max-w-[1160px]">
+      <div className="px-4 web:px-6">
+        {/* Mobile: back header carries the title. Web: poster hero does. */}
+        <div className="web:hidden">
+          <BackHeader title={show.title} />
+        </div>
+        <div className="mt-2 hidden items-end gap-8 pt-6 web:flex">
+          <Poster show={show} className="w-[230px] shrink-0 rounded-card" />
+          <div className="pb-1">
+            <p className="text-caption font-medium text-ink-soft">
+              {show.tier} · {show.genre} · {show.venue}
+            </p>
+            <h1 className="mt-1.5 text-display">{show.title}</h1>
+            <p className="mt-3 text-body text-ink-soft">
+              Face value <b className="font-semibold text-ink">${show.faceValue}</b>{" "}
+              at the box office
+            </p>
+          </div>
+        </div>
         <div className="mt-2">
           <UrgencyStrip sold={soldForShow} />
         </div>
@@ -61,11 +78,11 @@ export default async function ShowListingsPage({
 
       <ShowPrograms show={show} />
 
-      <section className="mt-6 border-t border-line px-4 pt-7">
+      <section className="mt-6 border-t border-line px-4 pt-7 web:px-6">
         <h2 className="text-center text-[20px] font-semibold text-ink-soft">
           Sold Listings
         </h2>
-        <div className="mt-5 grid grid-cols-2 items-start gap-3">
+        <div className="mt-5 grid grid-cols-2 items-start gap-3 web:grid-cols-4">
           {soldListings.map((listing, i) => (
             <div
               key={listing.id}

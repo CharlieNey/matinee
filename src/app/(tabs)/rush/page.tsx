@@ -9,7 +9,7 @@ export default function RushPage() {
     .size;
 
   return (
-    <main className="pb-6">
+    <main className="pb-6 web:mx-auto web:max-w-[1160px]">
       <BackHeader title="Rush & Lottery" />
       <div className="px-4">
         <p className="mt-2 text-body text-ink-soft">

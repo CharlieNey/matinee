@@ -112,7 +112,7 @@ export default function NotifyPage() {
   };
 
   return (
-    <main className="px-4 pb-10">
+    <main className="px-4 pb-10 web:mx-auto web:max-w-[560px]">
       <BackHeader title="Your Notify" />
 
       <Link

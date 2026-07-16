@@ -275,7 +275,7 @@ export function ListingBrowser({
           />
         </div>
       ) : (
-        <div className="mt-4 grid grid-cols-2 items-start gap-3">
+        <div className="mt-4 grid grid-cols-2 items-start gap-3 web:grid-cols-4">
           <AnimatePresence mode="popLayout">
             {mode === "shows"
               ? groups.map((g, i) => (

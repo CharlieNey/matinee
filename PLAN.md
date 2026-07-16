@@ -64,6 +64,8 @@ Freshness mechanics (portfolio-visible honesty):
 
 **Built 2026-07-16.** Remaining is one-time provisioning only (Supabase project + migration, Vercel env vars, GitHub Actions secrets) — steps in README §Notifications. Email fallback (Resend) not built; still optional.
 
+Success bar (added 2026-07-16): **real users.** Even ~30 theatergoers relying on deadline alerts is what separates "portfolio demo" from "product with users" — no clone has that story. Requires the public-deploy blockers resolved (open questions 4–5).
+
 - Web push via service worker + PWA manifest (iOS requires installed PWA): "lottery opens/closes soon" for followed shows.
 - Requires minimal persistence for push subscriptions + a cron to evaluate schedules: Vercel KV or Supabase, whichever is less ceremony.
 - Optional email fallback (Resend).
@@ -76,6 +78,8 @@ Free-tier findings (verified 2026-07-16):
 ## Phase 4 — Web/mobile layout toggle
 
 *Decided 2026-07-15: not a one-way web rework — an explicit **layout toggle** so visitors can explore both presentations.*
+
+**Built 2026-07-16.** Pre-paint `html[data-layout]` script + `web:`/`mobile:` Tailwind variants; WebNav top bar; floating Phone/Web pill (≥1024px); inventory pages wide (1160px, grids 2→4 col), identity pages narrow (560px). DESIGN.md §10 defines both modes. Gotcha for posterity: Turbopack's persistent cache served stale Tailwind output after `@custom-variant` was added — `rm -rf .next` fixed it.
 
 - **Mobile mode**: the current experience — centered 430px phone column, floating tab bar. Stays pixel-faithful to the reference screenshots.
 - **Web mode**: a real responsive web app — nav rail/top bar, multi-column feeds, poster-hero show pages.
@@ -135,3 +139,5 @@ Anti-features (won't build): AI-written show synopses or editorial (hallucinatio
 1. Phase order — does the web-first layout rework (Phase 4) move before Phases 2–3?
 2. Does `/rush` deserve a tab-bar slot (e.g. replacing Orders) or stay a Discover-linked page?
 3. TKTS daily board — worth a manual probe for an undocumented feed (research gap)?
+4. **Rename before public deploy?** Carrying the cloned app's name reads as a clone regardless of what's inside. Theater-slang candidates: *Half Hour*, *Standby*, *Rush*, *Cheap Seats*.
+5. **Poster art for public deploy** — current images are copyrighted marketing material (README warning). Lean into the generated typographic tiles as the visual identity, or replace/license. Decide before Phases 6–7 ship publicly, since it shapes the map and hero pages.

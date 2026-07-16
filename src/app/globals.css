@@ -1,5 +1,13 @@
 @import "tailwindcss";
 
+/*
+ * Layout modes (DESIGN.md §10): a pre-paint script stamps
+ * html[data-layout="mobile"|"web"]; these variants let components style per
+ * mode (`web:grid-cols-4`) without any hydration dance.
+ */
+@custom-variant web (&:where([data-layout="web"] *));
+@custom-variant mobile (&:where([data-layout="mobile"] *));
+
 /* Theatr design tokens — see DESIGN.md (source of truth) */
 @theme {
   --color-cream: #f4f3f2;

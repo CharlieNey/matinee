@@ -36,7 +36,7 @@ function FeedSection({
         <span className="text-caption text-ink-soft">{entries.length}</span>
       </div>
       {entries.length > 0 ? (
-        <div className="mt-3 space-y-3">
+        <div className="mt-3 space-y-3 web:grid web:grid-cols-2 web:gap-3 web:space-y-0">
           {entries.map((entry, index) => (
             <div
               key={`${entry.program.showSlug}-${entry.program.kind}-${entry.program.platform}`}

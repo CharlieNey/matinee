@@ -91,7 +91,7 @@ export function TabBar() {
   const slots = [TABS[0], TABS[1], null, TABS[2], TABS[3]];
 
   return (
-    <nav className="fixed bottom-0 left-1/2 z-50 w-full max-w-[430px] -translate-x-1/2">
+    <nav className="fixed bottom-0 left-1/2 z-50 w-full max-w-[430px] -translate-x-1/2 web:hidden">
       {/* cream disc carves the notch under the raised Sell button */}
       <div className="absolute -top-[26px] left-1/2 size-[88px] -translate-x-1/2 rounded-full bg-cream" />
 

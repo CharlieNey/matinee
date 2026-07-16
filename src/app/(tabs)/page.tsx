@@ -33,7 +33,7 @@ function SellingFastShelf() {
 
 export default function MarketplacePage() {
   return (
-    <main className="px-4 pt-6">
+    <main className="px-4 pt-6 web:mx-auto web:max-w-[1160px] web:px-6">
       <h1 className="text-display">Marketplace</h1>
       <SellingFastShelf />
       <div className="mt-7">

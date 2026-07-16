@@ -295,7 +295,7 @@ export function TicketDetails({ id }: { id: string }) {
   };
 
   return (
-    <main className="min-h-dvh bg-cream pb-32">
+    <main className="min-h-dvh bg-cream pb-32 web:mx-auto web:max-w-[560px]">
       <header className="sticky top-0 z-30 flex h-16 items-center justify-between bg-cream/95 px-3 backdrop-blur">
         <button
           type="button"

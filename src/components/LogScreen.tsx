@@ -194,7 +194,7 @@ export function LogScreen({ show }: { show: Show }) {
   const fieldCard = "rounded-card bg-paper";
 
   return (
-    <main className="px-4 pb-12">
+    <main className="px-4 pb-12 web:mx-auto web:max-w-[560px]">
       <header className="flex h-14 items-center justify-between">
         <button
           type="button"

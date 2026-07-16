@@ -78,7 +78,7 @@ export default function DiscoverPage() {
   const reason = savedShows[0] ?? attended[0];
 
   return (
-    <main className="px-4 pt-6">
+    <main className="px-4 pt-6 web:mx-auto web:max-w-[1160px] web:px-6">
       <h1 className="text-display">Discover</h1>
 
       <RushBanner />

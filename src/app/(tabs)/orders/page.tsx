@@ -176,7 +176,7 @@ export default function OrdersPage() {
   };
 
   return (
-    <main className="px-5 pt-8">
+    <main className="px-5 pt-8 web:mx-auto web:max-w-[560px]">
       <div className="flex items-baseline gap-6">
         {(["buy", "sell"] as const).map((s) => (
           <button

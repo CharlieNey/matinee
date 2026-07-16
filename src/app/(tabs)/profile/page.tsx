@@ -390,7 +390,7 @@ export default function ProfilePage() {
     "transition-transform duration-150 active:scale-90";
 
   return (
-    <main>
+    <main className="web:mx-auto web:max-w-[560px]">
       {/* Dark = identity: espresso header, top-lit like stage lighting */}
       <header
         className="px-4 pb-12 pt-4 text-white"

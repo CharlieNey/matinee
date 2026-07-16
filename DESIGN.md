@@ -193,4 +193,19 @@ fontSize: {
 },
 ```
 
-Viewport: design mobile-first at 390px (iPhone frame); desktop gets a centered 430px column on `cream` — this is a phone product and should present as one.
+---
+
+## 10. Layout modes
+
+The app has **two presentations**, switched by a visitor-facing toggle (floating Phone/Web pill, bottom-right, ≥1024px viewports only). A pre-paint script stamps `html[data-layout="mobile"|"web"]` — saved choice (`theatr-layout-v1`) or default: web on ≥1024px viewports, mobile otherwise. All mode styling hangs off the `web:`/`mobile:` Tailwind variants (see `globals.css`); components and tokens are 100% shared — only layout shells differ.
+
+**Mobile mode** (the clone, pixel-faithful to the reference screenshots):
+- Centered 430px column on `cream`, hairline side borders; design mobile-first at 390px.
+- Floating notched tab bar; `BackHeader` on detail screens.
+- This mode must never drift from the screenshots — it's the "before" of the portfolio story.
+
+**Web mode** (the product):
+- Sticky top bar on `cream/95` + blur: ticket mark + wordmark, the five tab destinations as in-page-tab-style links (active = `ink` + 2px underline; inactive `ink-soft`), vermilion "Sell tickets" pill right — the tab bar's raised Sell, translated.
+- **Inventory pages are wide** (max 1160px): Marketplace / Discover / Rush / show pages. Grids widen instead of stretching: listing grids 2→4 columns, rush feed sections 2 columns, shelves show more posters. Show pages swap `BackHeader` for a poster hero (230px art + tier·genre·venue, display title, face value).
+- **Identity & utility pages stay narrow** (560px centered): Profile / Orders / Notify / ticket details / log. Dark = identity keeps its phone proportions on purpose — the espresso header reads as a card, not a banner.
+- The rule of thumb when adding screens: *commerce breathes, identity stays intimate.*
