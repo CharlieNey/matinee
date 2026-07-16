@@ -124,6 +124,12 @@ Centered, upper-third: outline glyph 64px `ink-faint` → "Nothing here yet…" 
 ### Log screen (diary entry — from live app, July 2026)
 Back arrow left, **Publish** as bare vermilion text top-right (no pill — text-button is the exception for editor screens). Stacked white cards with hairline-divided rows: what-you-saw (44px poster thumb + title 20/700 + venue 17 `ink-soft`; calendar + date row; seat row). "Share Your Thoughts" card: 3-option sentiment row (gold thumbs-up+star = Recommend it, gray-circle faces for Mixed feelings / Didn't like it; active = full-color icon + 17/600 `ink` label, inactive = muted icon + `ink-soft`), free-text area, outlined `# Tag` chips (rounded-lg 8px — squarer than control pills; selected = espresso fill), 130px Upload Photo bordered box, sage "Public" visibility pill (rounded-lg, eye icon). Separate "Private Note" card. Sentiment/tags/visibility state lives in color, never layout.
 
+### Status pipeline (Orders, seller side)
+Three steps — Listed → Sold → Paid — as a dot rail inside the listing card, below a hairline. Completed/current: espresso-filled dot + `ink` label; future: hollow `ink-faint` dot, `line` connector. State changes are 200ms color transitions only — no layout shift. One-line helper caption (`caption`, `ink-soft`) under the rail states what happens next. Tapping opens a sheet with the same rail larger plus one espresso (never vermilion) action pill.
+
+### Diary card (timeline "ticket stub")
+Diary-logged attendance renders richer than static feed entries: white `r-card` wrapping the inset show row, italic quoted public thoughts, photo (3:4, `r-thumb`, max ~220px), read-only `# tag` chips (outlined, caption, `ink-soft`), armchair + seat caption, and — when present — a hairline-divided private-note row: EyeOff icon + "Only you · …" in `ink-faint`. Sentiment: gold "Recommend it" chip; "Mixed feelings" / "Didn't like it" are quiet `inset` chips, never vermilion.
+
 ### Accordion (Orders)
 Chevron (rotates open) + 20/700 label, 24px vertical rhythm; collapsed sections show nothing else. Empty section body: "Nothing here yet." 17 `ink-faint`, indented to label start.
 

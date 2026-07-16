@@ -23,6 +23,42 @@ type Sentiment = "recommend" | "mixed" | "disliked";
 const PRESET_TAGS = ["First Preview", "Preview", "Opening Night"];
 const SEAT = "Center ORCH / Row B / Seat 102";
 
+/** Downscale a picked photo (≤900px long edge, JPEG q0.8) to a data URL
+ *  small enough to survive localStorage persistence. */
+function downscalePhoto(file: File): Promise<string | null> {
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      try {
+        const MAX_EDGE = 900;
+        const scale = Math.min(
+          1,
+          MAX_EDGE / Math.max(img.naturalWidth, img.naturalHeight),
+        );
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.max(1, Math.round(img.naturalWidth * scale));
+        canvas.height = Math.max(1, Math.round(img.naturalHeight * scale));
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          resolve(null);
+          return;
+        }
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL("image/jpeg", 0.8));
+      } catch {
+        resolve(null);
+      }
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      resolve(null);
+    };
+    img.src = url;
+  });
+}
+
 /* Sentiment glyphs — gold thumbs-up with star; gray faces for the rest */
 function RecommendGlyph({ active }: { active: boolean }) {
   return (
@@ -149,6 +185,7 @@ export function LogScreen({ show }: { show: Show }) {
       tags,
       visibility,
       note: note.trim() || null,
+      photo,
     });
     toast({ message: "Published to your diary" });
     router.push("/profile");
@@ -289,7 +326,7 @@ export function LogScreen({ show }: { show: Show }) {
           <div className="mt-4">
             {photo ? (
               <div className="relative w-[130px]">
-                {/* blob: URL preview — next/image can't optimize object URLs */}
+                {/* data: URL preview — next/image can't optimize data URLs */}
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={photo}
@@ -317,7 +354,11 @@ export function LogScreen({ show }: { show: Show }) {
                   className="hidden"
                   onChange={(e) => {
                     const file = e.target.files?.[0];
-                    if (file) setPhoto(URL.createObjectURL(file));
+                    if (!file) return;
+                    void downscalePhoto(file).then((dataUrl) => {
+                      if (dataUrl) setPhoto(dataUrl);
+                      else toast({ message: "Couldn't read that photo" });
+                    });
                   }}
                 />
               </label>

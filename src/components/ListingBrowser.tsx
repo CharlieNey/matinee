@@ -165,9 +165,11 @@ export function ListingBrowser({
   const [sheet, setSheet] = useState<null | "date" | "qty">(null);
 
   const merged = useMemo(() => {
+    // Only still-listed tickets are buyable; sold/paid ones live in Orders.
+    const live = userListings.filter((l) => l.status === "listed");
     const mine = show
-      ? userListings.filter((l) => l.show.slug === show.slug)
-      : userListings;
+      ? live.filter((l) => l.show.slug === show.slug)
+      : live;
     return [...mine, ...listings];
   }, [listings, userListings, show]);
 

@@ -3,7 +3,10 @@ import { Flame } from "lucide-react";
 import { BackHeader } from "@/components/BackHeader";
 import { ListingBrowser } from "@/components/ListingBrowser";
 import { ListingCard } from "@/components/ListingCard";
+import { OfficialTicketsCard } from "@/components/OfficialTicketsCard";
+import { ShowPrograms } from "@/components/ShowPrograms";
 import { Listing, marketplaceListings, soldListings } from "@/lib/data";
+import { officialTicketsForShow } from "@/lib/officialTickets";
 import { allShows, getShow } from "@/lib/shows";
 
 export function generateStaticParams() {
@@ -39,6 +42,7 @@ export default async function ShowListingsPage({
 
   const active = marketplaceListings.filter((l) => l.show.slug === slug);
   const soldForShow = soldListings.filter((l) => l.show.slug === slug);
+  const officialTickets = officialTicketsForShow(slug);
 
   return (
     <main className="pb-10">
@@ -47,10 +51,15 @@ export default async function ShowListingsPage({
         <div className="mt-2">
           <UrgencyStrip sold={soldForShow} />
         </div>
+        {officialTickets && (
+          <OfficialTicketsCard show={show} ticketLink={officialTickets} />
+        )}
         <div className="min-h-[48dvh]">
           <ListingBrowser listings={active} show={show} />
         </div>
       </div>
+
+      <ShowPrograms show={show} />
 
       <section className="mt-6 border-t border-line px-4 pt-7">
         <h2 className="text-center text-[20px] font-semibold text-ink-soft">

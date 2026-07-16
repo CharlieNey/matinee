@@ -16,8 +16,9 @@ function SellerAvatar({ initial, color }: { initial: string; color: string }) {
 export function ListingCard({ listing }: { listing: Listing }) {
   return (
     <Link
-      href={`/shows/${listing.show.slug}`}
+      href={`/tickets/${listing.id}`}
       className="block overflow-hidden rounded-card bg-paper shadow-float transition-transform duration-150 active:scale-[0.98]"
+      aria-label={`${listing.show.title}, ${listing.seat}, $${listing.price} each`}
     >
       <div className="relative">
         <Poster show={listing.show} className="w-full" />

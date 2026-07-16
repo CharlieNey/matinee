@@ -33,6 +33,8 @@ type PersistedState = {
     when: Listing["when"];
     postedAgo: string;
     seller: Listing["seller"];
+    /** Optional so saved state from before the pipeline still loads. */
+    status?: ListingStatus;
   }[];
   saved: string[];
   profile: { name: string; handle: string; bio: string | null };
@@ -46,10 +48,17 @@ type PersistedState = {
     tags: string[];
     visibility: DiaryEntry["visibility"];
     note: string | null;
+    /** Optional so saved state from before photos still loads. */
+    photo?: string | null;
   }[];
 };
 
 type ProfileInfo = { name: string; handle: string; bio: string | null };
+
+export type ListingStatus = "listed" | "sold" | "paid";
+
+/** A listing the user posted — carries its seller-pipeline status. */
+export type UserListing = Listing & { status: ListingStatus };
 
 export type DiaryEntry = {
   id: string;
@@ -62,6 +71,8 @@ export type DiaryEntry = {
   tags: string[];
   visibility: "public" | "private";
   note: string | null;
+  /** Downscaled JPEG data URL so it survives localStorage. */
+  photo: string | null;
 };
 
 type AppState = {
@@ -74,8 +85,12 @@ type AppState = {
   restoreAlert: (alert: NotifyAlert, index: number) => void;
 
   /* Selling */
-  userListings: Listing[];
+  userListings: UserListing[];
   addUserListing: (listing: Omit<Listing, "id" | "seller">) => void;
+  /** Moves a listing listed→sold→paid; no-op once paid. */
+  advanceListing: (id: string) => void;
+  /** Sum of price × qty across paid listings. */
+  walletBalance: number;
 
   /* Bookmarks */
   isSaved: (slug: string) => boolean;
@@ -97,7 +112,7 @@ let nextId = 1;
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [alerts, setAlerts] = useState<NotifyAlert[]>(initialAlerts);
-  const [userListings, setUserListings] = useState<Listing[]>([]);
+  const [userListings, setUserListings] = useState<UserListing[]>([]);
   // timeline shows start bookmarked, matching the reference screenshots
   const [saved, setSaved] = useState<Set<string>>(
     () =>
@@ -136,7 +151,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           setUserListings(
             data.listings.flatMap((l) => {
               const s = getShow(l.slug);
-              return s ? [{ ...l, show: s }] : [];
+              return s
+                ? [{ ...l, show: s, status: l.status ?? "listed" }]
+                : [];
             }),
           );
           setSaved(new Set(data.saved));
@@ -144,7 +161,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           setDiary(
             (data.diary ?? []).flatMap((d) => {
               const s = getShow(d.slug);
-              return s ? [{ ...d, show: s }] : [];
+              return s ? [{ ...d, show: s, photo: d.photo ?? null }] : [];
             }),
           );
         }
@@ -218,12 +235,23 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           ...listing,
           id: `u-${nextId++}`,
           seller: { initial: profile.name[0] ?? "C", color: "#2563ab" },
+          status: "listed" as const,
         },
         ...prev,
       ]);
     },
     [profile.name],
   );
+
+  const advanceListing = useCallback((id: string) => {
+    setUserListings((prev) =>
+      prev.map((l) =>
+        l.id === id && l.status !== "paid"
+          ? { ...l, status: l.status === "listed" ? "sold" : "paid" }
+          : l,
+      ),
+    );
+  }, []);
 
   const isSaved = useCallback((slug: string) => saved.has(slug), [saved]);
 
@@ -249,6 +277,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     [saved],
   );
 
+  const walletBalance = useMemo(
+    () =>
+      userListings.reduce(
+        (sum, l) => (l.status === "paid" ? sum + l.price * l.qty : sum),
+        0,
+      ),
+    [userListings],
+  );
+
   const value = useMemo<AppState>(
     () => ({
       alerts,
@@ -260,6 +297,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       restoreAlert,
       userListings,
       addUserListing,
+      advanceListing,
+      walletBalance,
       isSaved,
       toggleSaved,
       savedShows,
@@ -276,6 +315,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       restoreAlert,
       userListings,
       addUserListing,
+      advanceListing,
+      walletBalance,
       isSaved,
       toggleSaved,
       savedShows,

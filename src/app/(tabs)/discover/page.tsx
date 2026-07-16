@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { NotebookPen } from "lucide-react";
 import { Poster } from "@/components/Poster";
+import { RushBanner } from "@/components/RushBanner";
 import { Sheet } from "@/components/Sheet";
 import { ShowPicker } from "@/components/ShowPicker";
 import { TopTenShelf } from "@/components/TopTenShelf";
@@ -79,6 +80,8 @@ export default function DiscoverPage() {
   return (
     <main className="px-4 pt-6">
       <h1 className="text-display">Discover</h1>
+
+      <RushBanner />
 
       <div className="mt-6">
         <TopTenShelf />

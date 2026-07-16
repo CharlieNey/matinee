@@ -4,9 +4,11 @@ import { useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "motion/react";
 import {
+  Armchair,
   BellPlus,
   Bookmark,
   Calendar,
+  EyeOff,
   Forward,
   Mail,
   Settings,
@@ -29,7 +31,7 @@ import {
   collection,
   profile as profileData,
 } from "@/lib/data";
-import { useApp } from "@/lib/store";
+import { DiaryEntry, useApp } from "@/lib/store";
 import { allShows, Show } from "@/lib/shows";
 
 type Tab = "activity" | "listing" | "collection";
@@ -72,58 +74,132 @@ function HeaderPill({
   );
 }
 
+/** Sentiment suffix on the "Marked as attended" line. Recommend keeps its
+ *  gold chip; mixed/disliked stay quiet — never vermilion. */
+function SentimentChip({
+  sentiment,
+}: {
+  sentiment: DiaryEntry["sentiment"];
+}) {
+  if (sentiment === "recommend") {
+    return (
+      <span className="flex items-center gap-1.5 text-[15px] font-semibold text-gold">
+        <ThumbsUp className="size-4" strokeWidth={2} fill="currentColor" />
+        Recommend it
+      </span>
+    );
+  }
+  return (
+    <span className="rounded-full bg-inset px-2.5 py-1 text-caption font-medium text-ink-soft">
+      {sentiment === "mixed" ? "Mixed feelings" : "Didn't like it"}
+    </span>
+  );
+}
+
+/** Rich "ticket stub" card for an entry logged through the diary flow. */
+function DiaryCard({ entry }: { entry: DiaryEntry }) {
+  return (
+    <div className="mt-4 flex flex-col gap-3 rounded-card bg-paper p-3.5">
+      <InsetShowRow show={entry.show} />
+      {entry.visibility === "public" && entry.thoughts && (
+        <p className="text-body italic text-ink-soft">“{entry.thoughts}”</p>
+      )}
+      {entry.photo && (
+        // data: URL from the log flow — next/image can't optimize it
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={entry.photo}
+          alt={`Your photo from ${entry.show.title}`}
+          className="aspect-[3/4] w-full max-w-[220px] rounded-thumb object-cover"
+        />
+      )}
+      {entry.tags.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {entry.tags.map((tag) => (
+            <span
+              key={tag}
+              className="rounded-lg border border-line px-2.5 py-1 text-caption text-ink-soft"
+            >
+              # {tag}
+            </span>
+          ))}
+        </div>
+      )}
+      <p className="flex items-center gap-2 text-caption text-ink-soft">
+        <Armchair className="size-4 shrink-0" strokeWidth={1.8} />
+        {entry.seat}
+      </p>
+      {entry.note && (
+        <p className="flex items-start gap-2 border-t border-line pt-3 text-caption text-ink-faint">
+          <EyeOff className="mt-0.5 size-4 shrink-0" strokeWidth={1.8} />
+          <span>
+            <span className="font-medium">Only you</span> · {entry.note}
+          </span>
+        </p>
+      )}
+    </div>
+  );
+}
+
+type TimelineItem =
+  | { kind: "diary"; entry: DiaryEntry }
+  | { kind: "static"; entry: ActivityEntry };
+
 function ActivityTimeline() {
   const { diary } = useApp();
 
   // Fresh diary entries stack on top of the static feed.
-  const entries: ActivityEntry[] = [
-    ...diary.map(
-      (d): ActivityEntry => ({
-        kind: "event",
-        date: new Date(d.loggedAt).toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-        }),
-        action: "Marked as attended",
-        recommend: d.sentiment === "recommend",
-        shows: [d.show],
-        thoughts:
-          d.visibility === "public" ? d.thoughts ?? undefined : undefined,
-      }),
-    ),
-    ...activityFeed,
+  const items: TimelineItem[] = [
+    ...diary.map((entry): TimelineItem => ({ kind: "diary", entry })),
+    ...activityFeed.map((entry): TimelineItem => ({ kind: "static", entry })),
   ];
 
   return (
     <ol className="pt-6">
-      {entries.map((entry, i) => {
-        const last = i === entries.length - 1;
+      {items.map((item, i) => {
+        const last = i === items.length - 1;
+        const key = item.kind === "diary" ? item.entry.id : `static-${i}`;
         return (
-          <li key={i} className="relative pl-9 pb-9">
+          <li key={key} className="relative pl-9 pb-9">
             {!last && (
               <span className="absolute left-[4px] top-4 bottom-[-8px] w-[1.5px] bg-line" />
             )}
-            {entry.kind === "milestone" ? (
+            {item.kind === "diary" ? (
+              <>
+                <span className="absolute left-0 top-1.5 size-2.5 rounded-full bg-espresso-raised" />
+                <h3 className="text-heading">
+                  {new Date(item.entry.loggedAt).toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                  })}
+                </h3>
+                <p className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-body text-ink-soft">
+                  Marked as attended
+                  <SentimentChip sentiment={item.entry.sentiment} />
+                </p>
+                <DiaryCard entry={item.entry} />
+              </>
+            ) : item.entry.kind === "milestone" ? (
               <>
                 <span className="absolute left-0 top-1 size-2.5 rounded-full bg-espresso-raised" />
-                <p className="text-body text-ink-soft">{entry.text}</p>
+                <p className="text-body text-ink-soft">{item.entry.text}</p>
               </>
             ) : (
               <>
-                {entry.yearMarker && (
+                {item.entry.yearMarker && (
                   <p className="mb-4 -mt-1 text-body text-ink-faint">
-                    {entry.yearMarker}
+                    {item.entry.yearMarker}
                   </p>
                 )}
                 <span
                   className={`absolute left-0 size-2.5 rounded-full bg-espresso-raised ${
-                    entry.yearMarker ? "top-10" : "top-1.5"
+                    item.entry.yearMarker ? "top-10" : "top-1.5"
                   }`}
                 />
-                <h3 className="text-heading">{entry.date}</h3>
+                <h3 className="text-heading">{item.entry.date}</h3>
                 <p className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-body text-ink-soft">
-                  {entry.action}
-                  {entry.recommend && (
+                  {item.entry.action}
+                  {item.entry.recommend && (
                     <span className="flex items-center gap-1.5 text-[15px] font-semibold text-gold">
                       <ThumbsUp
                         className="size-4"
@@ -134,13 +210,13 @@ function ActivityTimeline() {
                     </span>
                   )}
                 </p>
-                {entry.thoughts && (
+                {item.entry.thoughts && (
                   <p className="mt-3 text-body italic text-ink-soft">
-                    “{entry.thoughts}”
+                    “{item.entry.thoughts}”
                   </p>
                 )}
                 <div className="mt-4 flex flex-col gap-2.5">
-                  {entry.shows.map((show) => (
+                  {item.entry.shows.map((show) => (
                     <InsetShowRow key={show.slug} show={show} />
                   ))}
                 </div>
@@ -280,7 +356,7 @@ function PersonRow({
 export default function ProfilePage() {
   const [tab, setTab] = useState<Tab>("activity");
   const [sheet, setSheet] = useState<SheetName>(null);
-  const { profile, updateProfile } = useApp();
+  const { profile, updateProfile, walletBalance } = useApp();
   const toast = useToast();
 
   const [draftName, setDraftName] = useState(profile.name);
@@ -567,7 +643,7 @@ export default function ProfilePage() {
       >
         <div className="mt-5 rounded-card bg-paper p-6 text-center">
           <p className="text-caption text-ink-soft">Available balance</p>
-          <p className="mt-1 text-display">$0.00</p>
+          <p className="mt-1 text-display">${walletBalance.toFixed(2)}</p>
           <p className="mt-2 text-caption text-ink-soft">
             Ticket sales land here after the show
           </p>

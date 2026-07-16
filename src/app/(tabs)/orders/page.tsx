@@ -1,31 +1,113 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
+import { Fragment, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { ChevronDown } from "lucide-react";
 import { Poster } from "@/components/Poster";
-import { Listing } from "@/lib/data";
-import { useApp } from "@/lib/store";
+import { Sheet } from "@/components/Sheet";
+import { useToast } from "@/components/Toast";
+import { ListingStatus, UserListing, useApp } from "@/lib/store";
 
-function OrderRow({ listing }: { listing: Listing }) {
+const STEPS: { key: ListingStatus; label: string }[] = [
+  { key: "listed", label: "Listed" },
+  { key: "sold", label: "Sold" },
+  { key: "paid", label: "Paid" },
+];
+
+function statusHelp(listing: UserListing): string {
+  switch (listing.status) {
+    case "listed":
+      return "We'll notify you when it sells.";
+    case "sold":
+      return "Sold — payout lands in your Wallet after the show.";
+    case "paid":
+      return `Paid — $${listing.price * listing.qty} is in your Wallet.`;
+  }
+}
+
+/** Listed → Sold → Paid rail. State lives in color: completed steps are
+ *  espresso-filled, future steps hollow ink-faint (DESIGN.md §6). */
+function StatusPipeline({
+  status,
+  large = false,
+}: {
+  status: ListingStatus;
+  large?: boolean;
+}) {
+  const activeIdx = STEPS.findIndex((s) => s.key === status);
   return (
-    <Link
-      href={`/shows/${listing.show.slug}`}
-      className="flex items-center gap-3.5 rounded-card bg-paper p-3.5 transition-transform duration-150 active:scale-[0.99]"
+    <div
+      className="flex items-center gap-2"
+      aria-label={`Status: ${STEPS[activeIdx].label}`}
     >
-      <Poster show={listing.show} className="w-14 rounded-thumb" />
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-body font-semibold">{listing.show.title}</p>
-        <p className="mt-0.5 text-caption text-ink-soft">
-          {listing.seat} · {listing.qty} ticket{listing.qty > 1 ? "s" : ""}
+      {STEPS.map((step, i) => {
+        const done = i <= activeIdx;
+        return (
+          <Fragment key={step.key}>
+            {i > 0 && (
+              <span
+                aria-hidden
+                className={`h-[1.5px] min-w-3 flex-1 rounded-full transition-colors duration-200 ease-out ${
+                  done ? "bg-espresso" : "bg-line"
+                }`}
+              />
+            )}
+            <span className="flex items-center gap-1.5">
+              <span
+                aria-hidden
+                className={`rounded-full transition-[background-color,border-color] duration-200 ease-out ${
+                  large ? "size-3" : "size-2.5"
+                } ${done ? "bg-espresso" : "border-[1.5px] border-ink-faint"}`}
+              />
+              <span
+                className={`font-medium transition-colors duration-200 ease-out ${
+                  large ? "text-body" : "text-caption"
+                } ${done ? "text-ink" : "text-ink-faint"}`}
+              >
+                {step.label}
+              </span>
+            </span>
+          </Fragment>
+        );
+      })}
+    </div>
+  );
+}
+
+/** Seller listing card: row content on top, pipeline + helper below.
+ *  Tapping opens the status sheet. */
+function ListingStatusCard({
+  listing,
+  onOpen,
+}: {
+  listing: UserListing;
+  onOpen: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className="w-full rounded-card bg-paper p-3.5 text-left transition-transform duration-150 active:scale-[0.99]"
+    >
+      <div className="flex items-center gap-3.5">
+        <Poster show={listing.show} className="w-14 rounded-thumb" />
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-body font-semibold">
+            {listing.show.title}
+          </p>
+          <p className="mt-0.5 text-caption text-ink-soft">
+            {listing.seat} · {listing.qty} ticket{listing.qty > 1 ? "s" : ""}
+          </p>
+        </div>
+        <p className="text-body font-semibold">${listing.price}</p>
+      </div>
+      <div className="mt-3.5 border-t border-line pt-3.5">
+        <StatusPipeline status={listing.status} />
+        <p className="mt-2.5 text-caption text-ink-soft">
+          {statusHelp(listing)}
         </p>
       </div>
-      <div className="text-right">
-        <p className="text-body font-semibold">${listing.price}</p>
-        <p className="mt-0.5 text-caption text-ink-soft">Listed just now</p>
-      </div>
-    </Link>
+    </button>
   );
 }
 
@@ -74,7 +156,24 @@ const EMPTY = (
 
 export default function OrdersPage() {
   const [side, setSide] = useState<"buy" | "sell">("buy");
-  const { userListings } = useApp();
+  const [sheetId, setSheetId] = useState<string | null>(null);
+  const { userListings, advanceListing } = useApp();
+  const toast = useToast();
+
+  const inProgress = userListings.filter((l) => l.status !== "paid");
+  const completed = userListings.filter((l) => l.status === "paid");
+  const activeListing = userListings.find((l) => l.id === sheetId) ?? null;
+
+  const advance = () => {
+    if (!activeListing || activeListing.status === "paid") return;
+    advanceListing(activeListing.id);
+    toast({
+      message:
+        activeListing.status === "listed"
+          ? "Your tickets sold — nice."
+          : "Payout sent to your Wallet",
+    });
+  };
 
   return (
     <main className="px-5 pt-8">
@@ -112,21 +211,77 @@ export default function OrdersPage() {
           ) : (
             <>
               <AccordionSection label="In Progress" defaultOpen>
-                {userListings.length === 0 ? (
+                {inProgress.length === 0 ? (
                   EMPTY
                 ) : (
                   <div className="flex flex-col gap-2.5">
-                    {userListings.map((listing) => (
-                      <OrderRow key={listing.id} listing={listing} />
+                    {inProgress.map((listing) => (
+                      <ListingStatusCard
+                        key={listing.id}
+                        listing={listing}
+                        onOpen={() => setSheetId(listing.id)}
+                      />
                     ))}
                   </div>
                 )}
               </AccordionSection>
-              <AccordionSection label="Completed">{EMPTY}</AccordionSection>
+              <AccordionSection label="Completed">
+                {completed.length === 0 ? (
+                  EMPTY
+                ) : (
+                  <div className="flex flex-col gap-2.5">
+                    {completed.map((listing) => (
+                      <ListingStatusCard
+                        key={listing.id}
+                        listing={listing}
+                        onOpen={() => setSheetId(listing.id)}
+                      />
+                    ))}
+                  </div>
+                )}
+              </AccordionSection>
             </>
           )}
         </motion.div>
       </AnimatePresence>
+
+      {/* Status sheet — the demo's stand-in for the buyer side */}
+      <Sheet
+        open={activeListing !== null}
+        onClose={() => setSheetId(null)}
+        title={activeListing?.show.title}
+      >
+        {activeListing && (
+          <>
+            <div className="mt-6 rounded-card bg-paper p-5">
+              <StatusPipeline status={activeListing.status} large />
+              <p className="mt-3.5 text-body text-ink-soft">
+                {statusHelp(activeListing)}
+              </p>
+            </div>
+            {activeListing.status === "paid" ? (
+              <p className="mt-6 text-center text-body text-ink-soft">
+                All settled — this listing is complete.
+              </p>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={advance}
+                  className="mt-6 flex h-14 w-full items-center justify-center rounded-full bg-espresso text-body font-semibold text-white transition-transform duration-150 active:scale-[0.98]"
+                >
+                  {activeListing.status === "listed"
+                    ? "Simulate sale"
+                    : "Simulate payout"}
+                </button>
+                <p className="mt-2.5 text-center text-caption text-ink-faint">
+                  Prototype control — simulates the buyer side.
+                </p>
+              </>
+            )}
+          </>
+        )}
+      </Sheet>
     </main>
   );
 }
