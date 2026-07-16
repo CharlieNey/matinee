@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   CalendarClock,
   Check,
@@ -8,6 +9,7 @@ import {
   Trophy,
 } from "lucide-react";
 import { Poster } from "@/components/Poster";
+import { WinCardSheet } from "@/components/WinCardSheet";
 import { allInForPlatform, allInLabel } from "@/lib/fees";
 import { useEnteredToday } from "@/lib/entries";
 import {
@@ -114,7 +116,8 @@ export function ProgramCard({
   now: Date | null;
 }) {
   const stale = now ? isProgramStale(program, now) : false;
-  const { entered, toggle } = useEnteredToday(program, now);
+  const { entered, won, toggle, markWon } = useEnteredToday(program, now);
+  const [winOpen, setWinOpen] = useState(false);
   const isLottery =
     program.kind === "digital-lottery" || program.kind === "in-person-lottery";
   const allIn = allInForPlatform(program.price, program.platform);
@@ -209,7 +212,22 @@ export function ProgramCard({
       )}
 
       {isLottery && now && (
-        <div className="mt-3 flex justify-end border-t border-line pt-2.5">
+        <div className="mt-3 flex items-center justify-end gap-2 border-t border-line pt-2.5">
+          {entered && (
+            <button
+              type="button"
+              onClick={() => {
+                markWon();
+                setWinOpen(true);
+              }}
+              className={`flex h-9 items-center gap-1.5 rounded-full px-3.5 text-caption font-semibold transition-[background-color,color,transform] duration-150 active:scale-[0.97] ${
+                won ? "bg-gold/15 text-ink" : "bg-cream text-ink-soft"
+              }`}
+            >
+              <Trophy className="size-4" strokeWidth={2} />
+              {won ? "Won — share it" : "I won"}
+            </button>
+          )}
           <button
             type="button"
             aria-pressed={entered}
@@ -222,6 +240,16 @@ export function ProgramCard({
             {entered ? "Entered today" : "I entered"}
           </button>
         </div>
+      )}
+
+      {winOpen && (
+        <WinCardSheet
+          open={winOpen}
+          onClose={() => setWinOpen(false)}
+          program={program}
+          show={show}
+          now={now}
+        />
       )}
     </div>
   );

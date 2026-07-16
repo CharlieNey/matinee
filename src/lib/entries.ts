@@ -22,6 +22,8 @@ export type LotteryEntry = {
   day: string;
   /** ISO timestamp of the tap — substrate for a possible stats view. */
   at: string;
+  /** Set when the user taps "I won" (Phase 11 win card). */
+  won?: boolean;
 };
 
 export function readLotteryLog(): LotteryEntry[] {
@@ -51,18 +53,22 @@ export function onLotteryLogChange(listener: () => void): () => void {
   return () => window.removeEventListener(SYNC_EVENT, listener);
 }
 
-/** Entered/undo state for one program on the current (possibly demo) day. */
+/** Entered/won state for one program on the current (possibly demo) day. */
 export function useEnteredToday(program: Program, now: Date | null) {
   const key = programKey(program);
   const day = now ? etDayKey(now) : null;
   const [entered, setEntered] = useState(false);
+  const [won, setWon] = useState(false);
 
   useEffect(() => {
     if (!day) return;
-    const sync = () =>
-      setEntered(
-        readLotteryLog().some((e) => e.key === key && e.day === day),
+    const sync = () => {
+      const entry = readLotteryLog().find(
+        (e) => e.key === key && e.day === day,
       );
+      setEntered(entry !== undefined);
+      setWon(entry?.won === true);
+    };
     sync();
     return onLotteryLogChange(sync);
   }, [key, day]);
@@ -78,5 +84,18 @@ export function useEnteredToday(program: Program, now: Date | null) {
     );
   }, [key, day]);
 
-  return { entered, toggle };
+  const markWon = useCallback(() => {
+    if (!day) return;
+    const log = readLotteryLog();
+    const exists = log.some((e) => e.key === key && e.day === day);
+    writeLotteryLog(
+      exists
+        ? log.map((e) =>
+            e.key === key && e.day === day ? { ...e, won: true } : e,
+          )
+        : [...log, { key, day, at: new Date().toISOString(), won: true }],
+    );
+  }, [key, day]);
+
+  return { entered, won, toggle, markWon };
 }
