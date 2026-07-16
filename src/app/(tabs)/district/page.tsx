@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { BackHeader } from "@/components/BackHeader";
 import { DistrictMap } from "@/components/DistrictMap";
 import { allTheaters, theatersLastVerified } from "@/lib/theaters";
@@ -18,7 +19,11 @@ export default function DistrictPage() {
           {new Date(`${theatersLastVerified()}T12:00:00`).toLocaleDateString(
             "en-US",
             { month: "long", day: "numeric" },
-          )}
+          )}{" "}
+          ·{" "}
+          <Link href="/about" className="underline underline-offset-2">
+            how this works
+          </Link>
         </p>
         <div className="mt-5">
           <DistrictMap />
