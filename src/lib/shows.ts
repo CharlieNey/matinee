@@ -118,22 +118,6 @@ const SHOWS: Show[] = [
     },
   },
   {
-    slug: "mexodus",
-    title: "Mexodus",
-    tier: "Off-Broadway",
-    genre: "Musical",
-    venue: 'Minetta Lane Theatre',
-    // Minetta Lane run ended Oct 2025; Daryl Roth return closed May 17, 2026
-    currentlyRunning: false,
-    faceValue: 69,
-    poster: {
-      bg: "linear-gradient(135deg, #d94f2b 0%, #a63258 55%, #6e2a7d 100%)",
-      fg: "#f5d13c",
-      style: "brush",
-      tilt: -4,
-    },
-  },
-  {
     slug: "chess",
     title: "Chess",
     tier: "Broadway",
@@ -195,22 +179,6 @@ const SHOWS: Show[] = [
     },
   },
   {
-    slug: "the-reservoir",
-    title: "The Reservoir",
-    tier: "Off-Broadway",
-    genre: "Play",
-    venue: 'Atlantic Theater Company',
-    // Closed March 22, 2026 (Atlantic run ended)
-    currentlyRunning: false,
-    faceValue: 69,
-    poster: {
-      bg: "linear-gradient(180deg, #ece8de 0%, #ddd7c8 100%)",
-      fg: "#e04e1f",
-      style: "condensed",
-      tilt: -8,
-    },
-  },
-  {
     slug: "death-of-a-salesman",
     title: "Death of a Salesman",
     tier: "Broadway",
@@ -223,40 +191,6 @@ const SHOWS: Show[] = [
       style: "serif",
       caption: "By Arthur Miller",
       captionColor: "#5c564e",
-    },
-  },
-  {
-    slug: "the-fear-of-13",
-    title: "The Fear of 13",
-    tier: "Broadway",
-    genre: "Play",
-    venue: 'James Earl Jones Theatre',
-    // Closed June 28, 2026
-    currentlyRunning: false,
-    faceValue: 99,
-    poster: {
-      bg: "linear-gradient(180deg, #4a4a4e 0%, #232326 100%)",
-      fg: "#f2f0ec",
-      style: "serif",
-      caption: "A New Play",
-      captionColor: "#9d9a96",
-    },
-  },
-  {
-    slug: "mother-russia",
-    title: "Mother Russia",
-    tier: "Off-Broadway",
-    genre: "Play",
-    venue: 'Signature Theatre',
-    // Closed March 22, 2026 (Signature run ended)
-    currentlyRunning: false,
-    faceValue: 59,
-    poster: {
-      bg: "linear-gradient(160deg, #d6b02f 0%, #b7922a 100%)",
-      fg: "#ffffff",
-      style: "sans",
-      caption: "By Lauren Yee",
-      captionColor: "#6e5a17",
     },
   },
   {

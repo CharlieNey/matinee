@@ -122,7 +122,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         "chess",
         "two-strangers",
         "operation-mincemeat",
-        "mexodus",
+        "little-shop-of-horrors",
       ]),
   );
   const [profile, setProfile] = useState<ProfileInfo>({
