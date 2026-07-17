@@ -22,7 +22,7 @@ export function ShowPicker({
             type="button"
             onClick={() => onSelect(show)}
             aria-pressed={active}
-            className={`relative overflow-hidden rounded-thumb transition-all duration-150 active:scale-[0.96] ${
+            className={`relative overflow-hidden rounded-thumb transition-[box-shadow,transform,opacity] duration-150 active:scale-[0.96] ${
               active
                 ? "ring-[2.5px] ring-vermilion ring-offset-2 ring-offset-cream"
                 : "opacity-90"

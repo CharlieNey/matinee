@@ -33,7 +33,7 @@ export function OfficialTicketsCard({
           Primary seller for {show.venue}
         </span>
         {allIn && (
-          <span className="mt-0.5 block truncate text-caption text-ink-soft">
+          <span className="mt-0.5 block text-caption text-ink-soft">
             ${show.faceValue} face · {allInLabel(allIn)}
           </span>
         )}

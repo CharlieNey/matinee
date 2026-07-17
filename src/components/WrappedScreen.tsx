@@ -92,7 +92,7 @@ export function WrappedScreen() {
       shows: data.shows,
       season,
     });
-    const result = await shareImage(blob, "theatr-wrapped.png", season);
+    const result = await shareImage(blob, "matinee-wrapped.png", season);
     toast({
       message: result === "shared" ? "Shared!" : "Image downloaded",
     });
@@ -107,7 +107,7 @@ export function WrappedScreen() {
             "linear-gradient(180deg, var(--color-espresso-glow) 0%, var(--color-espresso) 70%)",
         }}
       >
-        <p className="text-caption font-semibold uppercase tracking-wide text-white/60">
+        <p className="text-caption font-semibold text-white/60">
           {season}
         </p>
         <h2 className="mt-1 text-[28px] font-extrabold leading-tight tracking-tight">

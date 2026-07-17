@@ -1,12 +1,16 @@
 # Matinee (web prototype)
 
-**Matinee** — a poster-forward theatre ticket marketplace with a built-in
-show diary. Live at **[matinee.nyc](https://matinee.nyc)**.
+**Matinee** — the live board for Broadway rush, lotteries, and cheap seats,
+with a built-in show diary. Live at **[matinee.nyc](https://matinee.nyc)**.
 
 Started as a mobile-web clone of the Theatr iOS app, rebuilt from screenshots
-of that app, then rebranded and extended with flows the original doesn't
-have. (The reference screenshots are the original app's copyrighted material
-and are deliberately not distributed with this repo.)
+of that app, then rebranded and rebuilt around what that app doesn't do:
+curated rush/lottery programs, official-ticketer clarity, and the TKTS
+board. The cloned peer-to-peer marketplace was retired outright (PLAN.md
+Phase 14) — every purchase deep-links out to the official seller; we are the
+index, never the checkout. (The reference screenshots are the original
+app's copyrighted material and are deliberately not distributed with this
+repo.)
 
 Presents as a phone product: a centered 430px column on cream. The UI is
 client-side with mock data and `localStorage` persistence; the one real
@@ -22,21 +26,22 @@ npx tsc --noEmit   # typecheck
 npx eslint src     # lint
 ```
 
-To reset all prototype state (listings, alerts, diary, profile edits), clear
-the `matinee-state-v1` key in localStorage (plus the legacy `theatr-state-v1`
-key, which is still read as a migration fallback).
+To reset all prototype state (watches, bookmarks, diary, profile edits),
+clear the `matinee-state-v1` key in localStorage (plus the legacy
+`theatr-state-v1` key, which is still read as a migration fallback).
 
 ## Screens
 
 | Route | Screen |
 |---|---|
-| `/` | Marketplace — "Selling fast" shelf, show-grouped grid ("from $42 · 3 listings"), working Date/Quantity/Cheapest filters with faceted result counts |
-| `/shows/[slug]` | Show listings — urgency strip ("3 sold today · median $55"), listing grid, sold-listings social proof; empty pages capture demand with a pre-filled Notify alert CTA |
-| `/notify` | Your Notify — matches banner (count-up), deadline-push opt-in, alert cards with toggles, add/edit/delete with undo |
+| `/` | Discover, the home — rush banner, the full catalog as a browse grid where every card answers "cheapest way in" ("Digital lottery **$40**"), circuit / rush & lottery / on-TKTS-today / cheapest filters with faceted counts, plus Interested / Attended / For you shelves |
+| `/shows/[slug]` | The show as an answer sheet — official-ticketer card with all-in fee estimate, "Ways to save" (rush/lottery programs, claim windows, platform tips, TKTS row), and a **Watch this show** push CTA |
+| `/notify` | Your Watches — deadline-push opt-in and the shows you follow, each with what its windows are doing next ("Digital lottery opens 12:01 AM") |
 | `/rush` | Rush & Lottery — curated program feed grouped by Open now / Later today / Coming up, live countdowns, deep links to entry pages |
-| `/listings` | Your listings — the seller console; listings carry a **Listed → Sold → Paid** pipeline with a prototype control to simulate the buyer side |
-| `/profile` | Espresso identity header (edit profile, settings, wallet, share), Activity / History / Collection tabs; diary entries render as rich ticket-stub cards, History records what you bought and sold |
-| `/discover` | The diary home — live Interested shelf (bookmarks), Attended, "For you" recommendations, and the **Log a show** entry point |
+| `/district` | The district map — every Broadway house colored by owner→ticketer, live program halos, TKTS booth landmark |
+| `/trip` | Trip mode — day-by-day rush/lottery/TKTS plan for a visit window |
+| `/profile` | Espresso identity header (edit profile, settings, share), Activity / Record / Collection tabs; Record is the lottery log as stats — entries, wins, streak, saved vs face |
+| `/wrapped` | Season Wrapped — shareable recap generated from the diary and lottery log |
 | `/log/[slug]` | Log a show — sentiment (Recommend / Mixed / Didn't like), thoughts, tags, photo upload, Public/Private visibility, private note; publishes to the profile timeline |
 
 ## Architecture
@@ -49,17 +54,18 @@ key, which is still read as a migration fallback).
   `src/app/globals.css` (`bg-vermilion`, `text-ink-soft`, `rounded-card`,
   `text-display`, …). Read it before building any new screen.
 - **`src/lib/shows.ts`** — the show catalog (title, tier, genre, venue, face
-  value, poster palette). **`src/lib/data.ts`** — mock listings, alerts,
-  activity feed, collection.
-- **`src/lib/store.tsx`** — client context store: notify alerts, your
-  listings (with pipeline status), bookmarks, diary entries, profile edits,
-  wallet balance (sum of paid listings). Persists to `localStorage`
-  (`matinee-state-v1`); shows serialize as slugs and rehydrate via `getShow`
-  so stale saved data can never render broken.
+  value, poster palette). **`src/lib/programs.ts`** — the curated
+  rush/lottery dataset and its status engine. **`src/lib/data.ts`** — watch
+  seeds, activity feed, collection.
+- **`src/lib/store.tsx`** — client context store: watches, bookmarks, diary
+  entries, profile edits. Persists to `localStorage` (`matinee-state-v1`);
+  shows serialize as slugs and rehydrate via `getShow` so stale saved data
+  can never render broken. Marketplace-era blobs (listings, purchases,
+  alert prices) load fine and shed those fields on the next write.
 - **`src/components/`** — the component kit: `Sheet` (bottom sheet), `Toast`
-  (with undo actions), `Poster`, `TabBar` (notched raised Sell button),
-  `ListingBrowser` (filters + grid, listing- or show-grouped),
-  `LogScreen`, `Toggle`, `Stepper`, `ShowPicker`, etc.
+  (with undo actions), `Poster`, `TabBar` (raised Log button), `ShowCard`
+  (catalog card with the cheapest-way-in line), `LogScreen`, `Toggle`,
+  `ShowPicker`, etc.
 - **Motion** is deliberately iOS-quiet (DESIGN.md §7): 200–300ms ease-out
   sheets and page transitions, staggered card reveals, one-shot count-ups.
   `prefers-reduced-motion` is respected globally.
@@ -67,9 +73,9 @@ key, which is still read as a migration fallback).
 ## Notifications (deadline pushes)
 
 The "Deadline pushes" card on `/notify` subscribes the browser to web push:
-when a rush/lottery program for a show you have an alert on opens, or enters
-its final hour, you get a notification that deep-links to the entry page.
-Moving parts:
+when a rush/lottery program for a show you watch opens, or enters its final
+hour, you get a notification that deep-links to the entry page. Moving
+parts:
 
 - `src/app/manifest.ts` + `public/sw.js` — PWA manifest and service worker
   (iOS delivers push only after Add to Home Screen, 16.4+).
@@ -108,15 +114,15 @@ typographic tile for any show without an image.
 
 ## Prototype controls
 
-- **Sell flow**: Profile → Listings (or `/listings`) → "List tickets" → the
-  listing appears in the Marketplace and on Your listings.
-- **Pipeline**: tap a listing card on Your listings → "Simulate sale" /
-  "Simulate payout" advance Listed → Sold → Paid; paid listings move to
-  Completed, leave the Marketplace, land in the profile Wallet balance, and
-  show up under Profile → History alongside purchases.
-- **Diary**: Discover → "Log a show" (or `/log/[slug]`) → Publish → rich
-  card on the profile Activity timeline. Photos are downscaled client-side
-  (≤900px JPEG data URL) so they survive localStorage.
+- **Diary**: the Log tab (or `/log/[slug]`) → Publish → rich card on the
+  profile Activity timeline. Photos are downscaled client-side (≤900px JPEG
+  data URL) so they survive localStorage.
+- **Lottery record**: tap "I entered" on any program card on `/rush`, "I
+  won" on an entered one → the profile Record tab and Season Wrapped fill
+  in; wins generate shareable cards.
+- **Demo time machine**: the clock pill (bottom-left) scrubs the app's
+  `now` so the rush board, show pages, and district map re-derive — TKTS
+  stays on real time and says so.
 
 ## Reference material
 

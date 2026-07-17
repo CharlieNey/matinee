@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ExternalLink, MapPin } from "lucide-react";
 import { Poster } from "@/components/Poster";
 import { Sheet } from "@/components/Sheet";
+import { TktsBoardSheet } from "@/components/TktsBoard";
 import { officialTicketsForShow } from "@/lib/officialTickets";
 import {
   getProgramStatus,
@@ -16,6 +17,7 @@ import { Show } from "@/lib/shows";
 import {
   allTheaters,
   currentShowAt,
+  ibdbUrl,
   Theater,
   Ticketer,
   TICKETER_LABELS,
@@ -61,6 +63,15 @@ const LEGEND: { ticketer: Ticketer; label: string }[] = [
 
 const INSET = { x: 700, y: 952, w: 250, h: 128 };
 
+const TKTS_Y = streetY(47);
+const TKTS_X = broadwayX(TKTS_Y);
+
+function dotXY(theater: Theater): { cx: number; cy: number } {
+  return theater.inset
+    ? { cx: INSET.x + 40, cy: INSET.y + 88 }
+    : { cx: theater.x, cy: streetY(theater.street) };
+}
+
 function statusLine(status: ProgramStatus): string {
   const minutes =
     status.countdownMs !== null
@@ -100,6 +111,9 @@ export function DistrictMap() {
   const now = useNow();
   const [filter, setFilter] = useState<Ticketer | null>(null);
   const [selected, setSelected] = useState<Theater | null>(null);
+  const [hovered, setHovered] = useState<Theater | null>(null);
+  const [tktsHover, setTktsHover] = useState(false);
+  const [tktsOpen, setTktsOpen] = useState(false);
 
   const entries = useMemo<Entry[]>(
     () =>
@@ -135,6 +149,34 @@ export function DistrictMap() {
 
   const dimmed = (t: Theater) => filter !== null && t.ticketer !== filter;
 
+  /* Hover card data — one shape for theaters and the TKTS booth. Rendered as
+     an HTML overlay (not SVG text) so it stays crisp at any map scale and
+     sidesteps the title-in-SVG hydration bug noted below. */
+  const hoveredEntry = hovered
+    ? entries.find((e) => e.theater === hovered)
+    : null;
+  const tip = hoveredEntry
+    ? {
+        ...dotXY(hoveredEntry.theater),
+        // Top rows would clip above the card — flip the tip below the dot.
+        flip: !hoveredEntry.theater.inset && hoveredEntry.theater.street >= 53,
+        title: hoveredEntry.theater.name,
+        line: hoveredEntry.show?.title ?? "Dark — between shows",
+        dark: !hoveredEntry.show,
+        open: hoveredEntry.hasOpen,
+      }
+    : tktsHover
+      ? {
+          cx: TKTS_X,
+          cy: TKTS_Y - 10,
+          flip: false,
+          title: "TKTS booth",
+          line: "Same-day discounts · Duffy Square",
+          dark: false,
+          open: false,
+        }
+      : null;
+
   return (
     <div>
       {/* Legend — doubles as the who-sells-what explainer */}
@@ -147,8 +189,8 @@ export function DistrictMap() {
               type="button"
               aria-pressed={active}
               onClick={() => setFilter(active ? null : ticketer)}
-              className={`flex h-9 items-center gap-2 rounded-full bg-paper px-3.5 text-caption font-semibold transition-[opacity,transform] duration-150 active:scale-[0.97] ${
-                filter !== null && !active ? "opacity-40" : ""
+              className={`flex h-9 items-center gap-2 rounded-full bg-paper px-3.5 text-caption font-semibold transition-[opacity,transform,background-color] duration-150 active:scale-[0.97] web:hover:bg-inset ${
+                filter !== null && !active ? "opacity-40 web:hover:opacity-100" : ""
               }`}
             >
               <span
@@ -167,6 +209,7 @@ export function DistrictMap() {
       </p>
 
       <div className="mt-4 rounded-card bg-paper p-3 web:p-5">
+        <div className="relative">
         <svg
           viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
           role="group"
@@ -283,52 +326,66 @@ export function DistrictMap() {
 
           {/* Theaters */}
           {entries.map(({ theater, show, hasOpen }) => {
-            const cx = theater.inset ? INSET.x + 40 : theater.x;
-            const cy = theater.inset ? INSET.y + 88 : streetY(theater.street);
+            const { cx, cy } = dotXY(theater);
             const color = TICKETER_COLORS[theater.ticketer];
             const dark = !show;
             const isSelected = selected === theater;
+            const isHovered = hovered === theater;
             return (
               <g
                 key={theater.name}
                 role="button"
                 tabIndex={0}
                 aria-label={`${theater.name}${show ? ` — ${show.title}` : " — dark"}`}
-                onClick={() => setSelected(theater)}
+                className="outline-none"
+                onClick={() => {
+                  setHovered(null);
+                  setSelected(theater);
+                }}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
                     setSelected(theater);
                   }
                 }}
+                onMouseEnter={() => setHovered(theater)}
+                onMouseLeave={() =>
+                  setHovered((h) => (h === theater ? null : h))
+                }
+                onFocus={() => setHovered(theater)}
+                onBlur={() => setHovered((h) => (h === theater ? null : h))}
                 style={{
                   cursor: "pointer",
-                  opacity: dimmed(theater) ? 0.18 : 1,
+                  opacity: dimmed(theater) && !isHovered ? 0.18 : 1,
                   transition: "opacity 150ms ease-out",
                 }}
               >
-                <title>
-                  {theater.name}
-                  {show ? ` · ${show.title}` : " · dark"}
-                </title>
+                {/* No SVG <title> here: React 19 + WebKit disagree on how a
+                    title-in-SVG hydrates (Safari-only mismatch that knocks
+                    data-layout off <html>). The aria-label above carries the
+                    accessible name; hover detail lives in the HTML tip. */}
                 {/* generous hit area */}
                 <circle cx={cx} cy={cy} r={22} fill="transparent" />
                 {hasOpen && (
+                  /* marquee bulbs: a dotted ring marks a live entry window */
                   <circle
                     cx={cx}
                     cy={cy}
-                    r={16}
+                    r={isHovered ? 18 : 16}
                     fill="none"
                     stroke={color}
-                    strokeWidth={2.5}
-                    opacity={0.45}
+                    strokeWidth={3}
+                    strokeLinecap="round"
+                    strokeDasharray="0.1 6.3"
+                    opacity={0.55}
+                    style={{ transition: "r 150ms ease-out" }}
                   />
                 )}
                 <circle
                   cx={cx}
                   cy={cy}
-                  r={9}
-                  fill={dark ? "var(--color-inset)" : color}
+                  r={isHovered ? 11.5 : 9}
+                  fill={dark ? "var(--color-paper)" : color}
                   stroke={
                     isSelected
                       ? "var(--color-ink)"
@@ -337,6 +394,7 @@ export function DistrictMap() {
                         : "var(--color-paper)"
                   }
                   strokeWidth={isSelected ? 3 : 2}
+                  style={{ transition: "r 150ms ease-out" }}
                 />
                 {theater.inset && (
                   <text
@@ -352,7 +410,99 @@ export function DistrictMap() {
               </g>
             );
           })}
+
+          {/* TKTS booth — the red steps at Duffy Square (Broadway & W 47th) */}
+          <g
+            role="button"
+            tabIndex={0}
+            aria-label="TKTS booth, Duffy Square — same-day discount board"
+            className="outline-none"
+            onClick={() => {
+              setTktsHover(false);
+              setTktsOpen(true);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setTktsOpen(true);
+              }
+            }}
+            onMouseEnter={() => setTktsHover(true)}
+            onMouseLeave={() => setTktsHover(false)}
+            onFocus={() => setTktsHover(true)}
+            onBlur={() => setTktsHover(false)}
+            style={{
+              cursor: "pointer",
+              opacity: filter !== null ? 0.18 : 1,
+              transform: tktsHover ? "scale(1.1)" : undefined,
+              transformBox: "fill-box",
+              transformOrigin: "center",
+              transition: "opacity 150ms ease-out, transform 150ms ease-out",
+            }}
+          >
+            <circle cx={TKTS_X} cy={TKTS_Y - 4} r={22} fill="transparent" />
+            {[
+              { w: 30, dy: 0 },
+              { w: 22, dy: -7 },
+              { w: 14, dy: -14 },
+            ].map(({ w, dy }) => (
+              <rect
+                key={dy}
+                x={TKTS_X - w / 2}
+                y={TKTS_Y + dy - 2.5}
+                width={w}
+                height={5}
+                rx={1.5}
+                fill="var(--color-vermilion)"
+              />
+            ))}
+            <text
+              x={TKTS_X + 24}
+              y={TKTS_Y - 2}
+              fontSize={12}
+              fontWeight={700}
+              fill="var(--color-vermilion)"
+            >
+              TKTS
+            </text>
+          </g>
         </svg>
+
+        {/* Hover tip — HTML, not SVG text, so it renders at native size on
+            top of the scaled map. Hidden in mobile mode (touch has no hover;
+            the tap sheet carries this). */}
+        {tip && (
+          <div
+            aria-hidden
+            className="pointer-events-none absolute z-10 rounded-thumb border border-line bg-paper px-3 py-2 shadow-float mobile:hidden"
+            style={{
+              left: `${Math.min(88, Math.max(12, (tip.cx / VIEW_W) * 100))}%`,
+              top: `${(tip.cy / VIEW_H) * 100}%`,
+              transform: `translate(-50%, ${
+                tip.flip ? "22px" : "calc(-100% - 18px)"
+              })`,
+              animation: "card-fade 150ms ease-out both",
+            }}
+          >
+            <p className="whitespace-nowrap text-caption font-semibold text-ink">
+              {tip.title}
+            </p>
+            <p
+              className={`whitespace-nowrap text-caption ${
+                tip.dark ? "text-ink-faint" : "text-ink-soft"
+              }`}
+            >
+              {tip.line}
+            </p>
+            {tip.open && (
+              <p className="mt-0.5 flex items-center gap-1.5 whitespace-nowrap text-caption font-semibold text-sage-ink">
+                <span className="size-1.5 rounded-full bg-sage-ink" />
+                Entry window open
+              </p>
+            )}
+          </div>
+        )}
+        </div>
       </div>
 
       {/* Theater card */}
@@ -365,8 +515,18 @@ export function DistrictMap() {
           <div className="mt-5">
             <p className="flex items-center gap-2 text-caption text-ink-soft">
               <MapPin className="size-4 shrink-0" strokeWidth={1.8} />
-              {selectedEntry.theater.address} ·{" "}
-              {selectedEntry.theater.owner}
+              <span>
+                {selectedEntry.theater.address} · {selectedEntry.theater.owner}{" "}
+                · ~{selectedEntry.theater.capacity.toLocaleString()} seats ·{" "}
+                <a
+                  href={ibdbUrl(selectedEntry.theater)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline underline-offset-2"
+                >
+                  IBDB
+                </a>
+              </span>
             </p>
 
             {selectedEntry.show ? (
@@ -453,6 +613,8 @@ export function DistrictMap() {
           </div>
         )}
       </Sheet>
+
+      <TktsBoardSheet open={tktsOpen} onClose={() => setTktsOpen(false)} />
     </div>
   );
 }

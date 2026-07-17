@@ -1,10 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ExternalLink, Ticket } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import { Poster } from "@/components/Poster";
 import { Stepper } from "@/components/Stepper";
+import { TktsTripCard } from "@/components/TktsBoard";
 import {
+  etDayKey,
   Program,
   programKindLabel,
   programPlatformLabel,
@@ -175,30 +177,8 @@ export function TripPlanner() {
             );
           })}
 
-          {/* The standing fallback, every day */}
-          <a
-            href="https://www.tdf.org/discount-ticket-programs/tkts-by-tdf/tkts-live/"
-            target="_blank"
-            rel="noreferrer"
-            className="mt-4 flex items-center gap-3 rounded-card bg-inset p-3.5 transition-transform duration-150 active:scale-[0.985]"
-          >
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-paper text-ink">
-              <Ticket className="size-5" strokeWidth={1.9} aria-hidden="true" />
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="block text-body font-semibold">
-                Fallback: TKTS Times Square
-              </span>
-              <span className="mt-0.5 block text-caption text-ink-soft">
-                Same-day discounts under the red steps, typically 3–8 PM
-              </span>
-            </span>
-            <ExternalLink
-              className="size-4 shrink-0 text-ink-faint"
-              strokeWidth={1.9}
-              aria-hidden="true"
-            />
-          </a>
+          {/* The standing fallback, every day — live board for today only */}
+          <TktsTripCard isToday={day.dayKey === etDayKey(new Date())} />
         </section>
       ))}
 

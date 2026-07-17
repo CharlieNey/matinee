@@ -2,7 +2,7 @@ import { BackHeader } from "@/components/BackHeader";
 import { TripPlanner } from "@/components/TripPlanner";
 
 export const metadata = {
-  title: "Trip mode — Theatr",
+  title: "Trip mode — Matinee",
   description:
     "In town for a few days? A day-by-day plan of every rush and lottery window during your visit.",
 };

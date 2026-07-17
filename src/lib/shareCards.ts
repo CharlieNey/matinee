@@ -13,12 +13,13 @@ const POSTER_SRC: Record<string, string> = posterImages;
 
 const W = 1080;
 const H = 1350;
-const CREAM = "#F4F3F2";
+// House Velvet palette (DESIGN.md §12) — share images match the app.
+const CREAM = "#F5EFE3";
 const PAPER = "#FFFFFF";
-const INK = "#200604";
-const INK_SOFT = "#8A8380";
-const VERMILION = "#D7492B";
-const GOLD = "#F4AA1B";
+const INK = "#241418";
+const INK_SOFT = "#8C7A7E";
+const VERMILION = "#A61E33";
+const GOLD = "#C9A227";
 
 const SANS =
   '-apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif';
@@ -74,7 +75,7 @@ async function drawPoster(
     const dh = img.height * scale;
     ctx.drawImage(img, x + (size - dw) / 2, y + (size - dh) / 2, dw, dh);
   } else {
-    ctx.fillStyle = firstHex(show.poster.bg, "#220C06");
+    ctx.fillStyle = firstHex(show.poster.bg, "#3A0D19");
     ctx.fillRect(x, y, size, size);
     ctx.fillStyle = show.poster.fg;
     ctx.font = font(800, size * 0.11);
@@ -114,21 +115,23 @@ function wrapText(
 
 /** Brand footer: the ticket mark + wordmark, quiet. */
 function drawBrand(ctx: CanvasRenderingContext2D, y: number) {
-  ctx.textAlign = "center";
-  // Ticket glyph
-  const tx = W / 2 - 86;
+  const WORDMARK = "Matinee";
+  const glyphW = 64;
+  const gap = 20;
+  ctx.font = font(800, 44);
+  ctx.textAlign = "left";
+  // Center the whole glyph + wordmark lockup as one unit.
+  const tx = (W - (glyphW + gap + ctx.measureText(WORDMARK).width)) / 2;
   ctx.fillStyle = VERMILION;
-  roundRectPath(ctx, tx, y - 26, 64, 42, 10);
+  roundRectPath(ctx, tx, y - 26, glyphW, 42, 10);
   ctx.fill();
   ctx.fillStyle = CREAM;
   ctx.beginPath();
   ctx.arc(tx, y - 5, 9, 0, Math.PI * 2);
-  ctx.arc(tx + 64, y - 5, 9, 0, Math.PI * 2);
+  ctx.arc(tx + glyphW, y - 5, 9, 0, Math.PI * 2);
   ctx.fill();
   ctx.fillStyle = INK;
-  ctx.font = font(800, 44);
-  ctx.textAlign = "left";
-  ctx.fillText("Theatr", tx + 84, y + 10);
+  ctx.fillText(WORDMARK, tx + glyphW + gap, y + 10);
 }
 
 function cardBase(ctx: CanvasRenderingContext2D) {
@@ -243,7 +246,7 @@ export function renderWrappedCard(options: {
     ctx.textAlign = "center";
     ctx.fillStyle = INK_SOFT;
     ctx.font = font(600, 36);
-    ctx.fillText(season.toUpperCase(), W / 2, 150);
+    ctx.fillText(season, W / 2, 150);
     ctx.fillStyle = INK;
     ctx.font = font(800, 76);
     ctx.fillText("A season at the theater", W / 2, 236);

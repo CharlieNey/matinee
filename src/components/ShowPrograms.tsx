@@ -1,7 +1,8 @@
 "use client";
 
 import { PlatformTips } from "@/components/PlatformTips";
-import { ProgramCard } from "@/components/ProgramCard";
+import { ProgramRows } from "@/components/ProgramRows";
+import { TktsShowRow } from "@/components/TktsBoard";
 import { getProgramStatus, programsForShow } from "@/lib/programs";
 import { Show } from "@/lib/shows";
 import { useNow } from "@/lib/useNow";
@@ -12,7 +13,10 @@ export function ShowPrograms({ show }: { show: Show }) {
 
   if (programs.length === 0) {
     return (
-      <section className="border-t border-line px-4 pt-7">
+      <section
+      id="ways-to-save"
+      className="scroll-mt-20 border-t border-line px-4 pt-7 web:px-6"
+    >
         <h2 className="text-heading">Ways to save</h2>
         <div className="mt-4 rounded-card bg-paper px-4 py-5">
           <p className="text-body font-semibold">No verified program listed</p>
@@ -21,12 +25,16 @@ export function ShowPrograms({ show }: { show: Show }) {
             Check the official box office before planning your visit.
           </p>
         </div>
+        <TktsShowRow slug={show.slug} />
       </section>
     );
   }
 
   return (
-    <section className="border-t border-line px-4 pt-7">
+    <section
+      id="ways-to-save"
+      className="scroll-mt-20 border-t border-line px-4 pt-7 web:px-6"
+    >
       <div className="flex items-baseline justify-between">
         <h2 className="text-heading">Ways to save</h2>
         <span className="text-caption text-ink-soft">
@@ -36,18 +44,20 @@ export function ShowPrograms({ show }: { show: Show }) {
       <p className="mt-1 text-caption text-ink-soft">
         Official rush and lottery options, updated with live entry windows.
       </p>
-      <div className="mt-4 space-y-3">
-        {programs.map((program) => (
-          <ProgramCard
-            key={`${program.kind}-${program.platform}`}
-            program={program}
-            show={show}
-            status={now ? getProgramStatus(now, program) : null}
-            now={now}
-          />
-        ))}
+      <div className="mt-4 rounded-card bg-paper px-4 py-1.5">
+        <ProgramRows
+          show={show}
+          entries={programs.map((program) => ({
+            program,
+            status: now ? getProgramStatus(now, program) : null,
+          }))}
+          now={now}
+          defaultOpen
+          flushTop
+        />
       </div>
-      <PlatformTips programs={programs} />
+      <TktsShowRow slug={show.slug} />
+      <PlatformTips programs={programs} labeled />
     </section>
   );
 }

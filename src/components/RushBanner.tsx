@@ -7,11 +7,17 @@ import { useNow } from "@/lib/useNow";
 
 export function RushBanner() {
   const now = useNow();
+  // Count shows, not programs — the feed's "Open now" header counts show
+  // cards, and this banner must land on a number that matches it.
   const openCount = now
-    ? allPrograms().filter((program) => {
-        const state = getProgramStatus(now, program).state;
-        return state === "open" || state === "closes-soon";
-      }).length
+    ? new Set(
+        allPrograms()
+          .filter((program) => {
+            const state = getProgramStatus(now, program).state;
+            return state === "open" || state === "closes-soon";
+          })
+          .map((program) => program.showSlug),
+      ).size
     : null;
 
   return (
@@ -29,7 +35,8 @@ export function RushBanner() {
             "Checking live deadlines…"
           ) : (
             <>
-              <strong className="font-semibold text-ink">{openCount}</strong> open now
+              <strong className="font-semibold text-ink">{openCount}</strong> shows
+              open now
             </>
           )}
         </span>

@@ -56,7 +56,7 @@ export default function SharedProfilePage() {
             href="/"
             className="text-body text-ink underline underline-offset-4"
           >
-            Go to Theatr
+            Go to Matinee
           </Link>
         </p>
       </main>
@@ -154,7 +154,7 @@ export default function SharedProfilePage() {
             href="/"
             className="font-semibold text-ink underline underline-offset-2"
           >
-            Theatr
+            Matinee
           </Link>{" "}
           — rendered entirely in your browser, no account anywhere.
         </p>

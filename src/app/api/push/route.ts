@@ -43,11 +43,15 @@ export async function POST(request: Request) {
   const endpoint = body.subscription?.endpoint;
   const p256dh = body.subscription?.keys?.p256dh;
   const auth = body.subscription?.keys?.auth;
+  // Length caps: real values are ~200/87/22 chars — reject anything bloated.
   if (
     typeof endpoint !== "string" ||
     !endpoint.startsWith("https://") ||
+    endpoint.length > 1000 ||
     typeof p256dh !== "string" ||
-    typeof auth !== "string"
+    p256dh.length > 256 ||
+    typeof auth !== "string" ||
+    auth.length > 128
   ) {
     return Response.json({ error: "Invalid subscription" }, { status: 400 });
   }

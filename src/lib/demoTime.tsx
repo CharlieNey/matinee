@@ -15,7 +15,7 @@ import {
  * the UI. The push-notification pipeline runs server-side and is unaffected.
  */
 
-const STORAGE_KEY = "theatr-demo-time-v1";
+const STORAGE_KEY = "matinee-demo-time-v1";
 const ET = "America/New_York";
 
 type DemoTime = {

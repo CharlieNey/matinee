@@ -11,7 +11,7 @@ export type Show = {
   market?: "nyc";
   /** False for retained catalog entries that are not in the current slate. */
   currentlyRunning?: boolean;
-  /** Typical box-office price, used for "below face" anchoring. */
+  /** Typical box-office price — the savings anchor for rush/lottery math. */
   faceValue: number;
   poster: {
     bg: string;

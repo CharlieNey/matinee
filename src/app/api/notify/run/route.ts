@@ -1,9 +1,19 @@
+import { timingSafeEqual } from "node:crypto";
 import webpush from "web-push";
 import { duePushEvents } from "@/lib/pushEvents";
 import { pushBackendConfigured, supabaseAdmin } from "@/lib/supabaseAdmin";
 
 // web-push needs Node crypto.
 export const runtime = "nodejs";
+
+/** Constant-time bearer check — string !== leaks a timing oracle. */
+function authorized(header: string | null, secret: string): boolean {
+  const expected = Buffer.from(`Bearer ${secret}`);
+  const received = Buffer.from(header ?? "");
+  return (
+    expected.length === received.length && timingSafeEqual(expected, received)
+  );
+}
 
 type SubscriptionRow = {
   endpoint: string;
@@ -34,7 +44,7 @@ function eventApplies(
  */
 export async function POST(request: Request) {
   const secret = process.env.CRON_SECRET;
-  if (!secret || request.headers.get("authorization") !== `Bearer ${secret}`) {
+  if (!secret || !authorized(request.headers.get("authorization"), secret)) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
   if (!pushBackendConfigured()) {

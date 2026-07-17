@@ -11,8 +11,10 @@ import { etDayKey, Program, programKey } from "./programs";
  * PLAN.md).
  */
 
-const STORAGE_KEY = "theatr-lottery-log-v1";
-const SYNC_EVENT = "theatr-lottery-log";
+const STORAGE_KEY = "matinee-lottery-log-v1";
+/** Pre-rebrand key — read as a fallback so existing logs survive. */
+const LEGACY_STORAGE_KEY = "theatr-lottery-log-v1";
+const SYNC_EVENT = "matinee-lottery-log";
 const MAX_ENTRIES = 400;
 
 export type LotteryEntry = {
@@ -28,7 +30,9 @@ export type LotteryEntry = {
 
 export function readLotteryLog(): LotteryEntry[] {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw =
+      localStorage.getItem(STORAGE_KEY) ??
+      localStorage.getItem(LEGACY_STORAGE_KEY);
     const parsed = raw ? JSON.parse(raw) : [];
     return Array.isArray(parsed) ? parsed : [];
   } catch {

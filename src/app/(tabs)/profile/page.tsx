@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "motion/react";
 import {
@@ -15,13 +15,13 @@ import {
   SquarePen,
   Star,
   ThumbsUp,
-  Ticket,
-  Wallet,
+  Trophy,
 } from "lucide-react";
 import { EmptyState } from "@/components/EmptyState";
 import { InsetShowRow } from "@/components/InsetShowRow";
 import { Poster } from "@/components/Poster";
 import { Sheet } from "@/components/Sheet";
+import { FollowSpot } from "@/components/FollowSpot";
 import { Toggle } from "@/components/Toggle";
 import { useToast } from "@/components/Toast";
 import { TopTenShelf } from "@/components/TopTenShelf";
@@ -31,14 +31,27 @@ import {
   collection,
   profile as profileData,
 } from "@/lib/data";
+import {
+  LotteryEntry,
+  onLotteryLogChange,
+  readLotteryLog,
+} from "@/lib/entries";
+import {
+  allPrograms,
+  etDayKey,
+  programKey,
+  programKindLabel,
+} from "@/lib/programs";
+import { renderStubCard, shareImage } from "@/lib/shareCards";
+import { encodeSharedProfile } from "@/lib/shareProfile";
 import { DiaryEntry, useApp } from "@/lib/store";
-import { allShows, Show } from "@/lib/shows";
+import { allShows, getShow, Show } from "@/lib/shows";
+import { useNow } from "@/lib/useNow";
 
-type Tab = "activity" | "listing" | "collection";
+type Tab = "activity" | "record" | "collection";
 type SheetName =
   | "edit"
   | "settings"
-  | "wallet"
   | "messages"
   | "follows"
   | "interested"
@@ -83,7 +96,7 @@ function SentimentChip({
 }) {
   if (sentiment === "recommend") {
     return (
-      <span className="flex items-center gap-1.5 text-[15px] font-semibold text-gold">
+      <span className="flex items-center gap-1.5 text-[15px] font-semibold text-gold-ink">
         <ThumbsUp className="size-4" strokeWidth={2} fill="currentColor" />
         Recommend it
       </span>
@@ -98,6 +111,31 @@ function SentimentChip({
 
 /** Rich "ticket stub" card for an entry logged through the diary flow. */
 function DiaryCard({ entry }: { entry: DiaryEntry }) {
+  const toast = useToast();
+
+  // Phase 11: the stub as a share image, rendered on-device.
+  const handleShare = async () => {
+    const blob = await renderStubCard({
+      show: entry.show,
+      sentimentLine:
+        entry.sentiment === "recommend"
+          ? "👍 Recommend it"
+          : entry.sentiment === "mixed"
+            ? "Mixed feelings"
+            : "Didn't like it",
+      thoughts: entry.visibility === "public" ? entry.thoughts : null,
+      date: new Date(entry.loggedAt),
+    });
+    const result = await shareImage(
+      blob,
+      `matinee-stub-${entry.show.slug}.png`,
+      entry.show.title,
+    );
+    toast({
+      message: result === "shared" ? "Shared!" : "Image downloaded",
+    });
+  };
+
   return (
     <div className="mt-4 flex flex-col gap-3 rounded-card bg-paper p-3.5">
       <InsetShowRow show={entry.show} />
@@ -137,6 +175,14 @@ function DiaryCard({ entry }: { entry: DiaryEntry }) {
           </span>
         </p>
       )}
+      <button
+        type="button"
+        onClick={handleShare}
+        className="flex items-center gap-2 self-start text-caption font-semibold text-ink-soft transition-colors duration-150 hover:text-ink"
+      >
+        <Forward className="size-4" strokeWidth={2} />
+        Share as image
+      </button>
     </div>
   );
 }
@@ -200,7 +246,7 @@ function ActivityTimeline() {
                 <p className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-body text-ink-soft">
                   {item.entry.action}
                   {item.entry.recommend && (
-                    <span className="flex items-center gap-1.5 text-[15px] font-semibold text-gold">
+                    <span className="flex items-center gap-1.5 text-[15px] font-semibold text-gold-ink">
                       <ThumbsUp
                         className="size-4"
                         strokeWidth={2}
@@ -226,6 +272,131 @@ function ActivityTimeline() {
         );
       })}
     </ol>
+  );
+}
+
+/** Consecutive ET days with at least one entry, ending today or yesterday. */
+function entryStreak(log: LotteryEntry[], now: Date): number {
+  const days = new Set(log.map((e) => e.day));
+  const cursor = new Date(now);
+  if (!days.has(etDayKey(cursor))) cursor.setDate(cursor.getDate() - 1);
+  let streak = 0;
+  while (days.has(etDayKey(cursor))) {
+    streak += 1;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+  return streak;
+}
+
+function StatTile({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-card bg-paper p-4">
+      <p className="text-caption text-ink-soft">{label}</p>
+      <p className="mt-1.5 text-[24px] font-bold leading-none tracking-tight">
+        {value}
+      </p>
+    </div>
+  );
+}
+
+/** The lottery record (Phase 14): the "I entered" log as a stats view —
+ *  entries, wins, streak, saved vs face. Numbers stay quiet ink on paper;
+ *  never a colored chip (DESIGN.md §6). */
+function RecordTab() {
+  const now = useNow();
+  const [log, setLog] = useState<LotteryEntry[]>([]);
+
+  useEffect(() => {
+    const sync = () => setLog(readLotteryLog());
+    sync();
+    return onLotteryLogChange(sync);
+  }, []);
+
+  if (log.length === 0) {
+    return (
+      <div className="pt-10">
+        <EmptyState
+          text="Tap “I entered” on a rush or lottery and your record collects here…"
+          actionLabel="See today's windows"
+          actionHref="/rush"
+        />
+      </div>
+    );
+  }
+
+  const programByKey = new Map(
+    allPrograms().map((program) => [programKey(program), program]),
+  );
+  const wins = log.filter((e) => e.won);
+  const saved = wins.reduce((sum, entry) => {
+    const program = programByKey.get(entry.key);
+    if (!program) return sum;
+    const face = getShow(program.showSlug)?.faceValue ?? 0;
+    return sum + Math.max(0, face - program.price);
+  }, 0);
+  const streak = now ? entryStreak(log, now) : 0;
+
+  const recentWins = [...wins]
+    .sort((a, b) => b.at.localeCompare(a.at))
+    .slice(0, 12);
+
+  return (
+    <div className="flex flex-col gap-7 pb-8 pt-6">
+      <div className="grid grid-cols-2 gap-3">
+        <StatTile label="Entries" value={String(log.length)} />
+        <StatTile
+          label="Wins"
+          value={`${wins.length} · ${Math.round((wins.length / log.length) * 100)}%`}
+        />
+        <StatTile
+          label="Streak"
+          value={`${streak} day${streak === 1 ? "" : "s"}`}
+        />
+        <StatTile label="Saved vs face" value={`$${saved}`} />
+      </div>
+
+      {recentWins.length > 0 && (
+        <section>
+          <p className="text-caption font-medium text-ink-soft">
+            Wins · {wins.length}
+          </p>
+          <div className="mt-2.5 flex flex-col gap-2.5">
+            {recentWins.map((entry) => {
+              const program = programByKey.get(entry.key);
+              const show = program ? getShow(program.showSlug) : undefined;
+              if (!program || !show) return null;
+              const savedHere = Math.max(0, show.faceValue - program.price);
+              return (
+                <Link
+                  key={`${entry.key}-${entry.day}`}
+                  href={`/shows/${show.slug}`}
+                  className="flex items-center gap-3.5 rounded-card bg-paper p-3.5 transition-transform duration-150 active:scale-[0.99]"
+                >
+                  <Poster show={show} className="w-14 rounded-thumb" />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-body font-semibold">
+                      {show.title}
+                    </p>
+                    <p className="mt-0.5 text-caption text-ink-soft">
+                      {programKindLabel(program.kind)} · ${program.price} ·{" "}
+                      {new Date(entry.at).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </p>
+                  </div>
+                  {savedHere > 0 && (
+                    <p className="text-body font-semibold">
+                      saved ${savedHere}
+                    </p>
+                  )}
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+      )}
+    </div>
   );
 }
 
@@ -281,6 +452,33 @@ function CollectionTab({ openSheet }: { openSheet: (s: SheetName) => void }) {
           </p>
         </div>
       </button>
+
+      {/* Cover echoes the Wrapped screen's espresso card so the row reads
+          as a preview, matching its poster-cover siblings. */}
+      <Link
+        href="/wrapped"
+        className="flex items-center gap-5 text-left transition-transform duration-150 active:scale-[0.99]"
+      >
+        <div
+          className="flex aspect-square w-[88px] shrink-0 items-center justify-center rounded-thumb"
+          style={{
+            background:
+              "linear-gradient(180deg, var(--color-espresso-glow) 0%, var(--color-espresso) 70%)",
+          }}
+        >
+          <Star
+            className="size-8 text-white/85"
+            fill="currentColor"
+            strokeWidth={0}
+          />
+        </div>
+        <div>
+          <p className="text-title">Season Wrapped</p>
+          <p className="mt-1 text-body text-ink-soft">
+            A shareable recap of your season
+          </p>
+        </div>
+      </Link>
     </div>
   );
 }
@@ -356,7 +554,7 @@ function PersonRow({
 export default function ProfilePage() {
   const [tab, setTab] = useState<Tab>("activity");
   const [sheet, setSheet] = useState<SheetName>(null);
-  const { profile, updateProfile, walletBalance } = useApp();
+  const { profile, updateProfile, diary } = useApp();
   const toast = useToast();
 
   const [draftName, setDraftName] = useState(profile.name);
@@ -377,12 +575,36 @@ export default function ProfilePage() {
     toast({ message: "Profile updated" });
   };
 
+  // Phase 11: the whole diary travels inside the link — no backend, no
+  // account. Photos and private words are stripped before encoding.
   const shareProfile = async () => {
     try {
-      await navigator.clipboard.writeText(window.location.href);
-      toast({ message: "Profile link copied" });
+      const fragment = await encodeSharedProfile({
+        v: 1,
+        name: profile.name,
+        handle: profile.handle,
+        bio: profile.bio,
+        diary: diary.map((entry) => ({
+          slug: entry.show.slug,
+          loggedAt: entry.loggedAt,
+          sentiment: entry.sentiment,
+          thoughts: entry.visibility === "public" ? entry.thoughts : null,
+          tags: entry.visibility === "public" ? entry.tags : [],
+        })),
+      });
+      const url = `${window.location.origin}/p#${fragment}`;
+      if (typeof navigator.share === "function") {
+        try {
+          await navigator.share({ title: `${profile.name} on Matinee`, url });
+          return;
+        } catch {
+          // Cancelled or unsupported — fall through to clipboard.
+        }
+      }
+      await navigator.clipboard.writeText(url);
+      toast({ message: "Profile link copied — diary included" });
     } catch {
-      toast({ message: "Couldn't copy link" });
+      toast({ message: "Couldn't build the share link" });
     }
   };
 
@@ -390,15 +612,20 @@ export default function ProfilePage() {
     "transition-transform duration-150 active:scale-90";
 
   return (
-    <main className="web:mx-auto web:max-w-[560px]">
-      {/* Dark = identity: espresso header, top-lit like stage lighting */}
+    <main className="web:mx-auto web:grid web:max-w-[1160px] web:grid-cols-[380px_minmax(0,1fr)] web:items-start web:gap-8 web:px-6 web:pt-8">
+      {/* Dark = identity: espresso header with a follow spot settled over
+          the avatar + name; the gradient is the no-WebGL fallback.
+          Web mode: the header becomes a sticky identity card in the left
+          rail (DESIGN.md §10 — the espresso header reads as a card). */}
       <header
-        className="px-4 pb-12 pt-4 text-white"
+        className="relative overflow-hidden px-4 pb-12 pt-4 text-white web:sticky web:top-24 web:rounded-card web:px-6 web:pb-8"
         style={{
           background:
             "linear-gradient(180deg, var(--color-espresso-glow) 0%, var(--color-espresso) 45%)",
         }}
       >
+        <FollowSpot />
+        <div className="relative">
         <div className="flex items-center justify-between">
           <button
             type="button"
@@ -446,7 +673,7 @@ export default function ProfilePage() {
             {profile.name[0]}
           </button>
           <div className="min-w-0">
-            <h1 className="truncate text-[28px] font-extrabold tracking-tight">
+            <h1 className="truncate font-display text-[28px] font-bold tracking-normal">
               {profile.name}
             </h1>
             <p className="mt-0.5 text-body text-white/60">{profile.handle}</p>
@@ -500,33 +727,30 @@ export default function ProfilePage() {
           Joined {profileData.joined}
         </p>
 
-        <div className="mt-6 grid grid-cols-3 gap-3">
-          <HeaderPill
-            icon={<Ticket className="size-5" strokeWidth={1.8} />}
-            label="Orders"
-            href="/orders"
-          />
-          <HeaderPill
-            icon={<Wallet className="size-5" strokeWidth={1.8} />}
-            label="Wallet"
-            onClick={() => setSheet("wallet")}
-          />
+        <div className="mt-6 grid grid-cols-2 gap-3">
           <HeaderPill
             icon={<BellPlus className="size-5" strokeWidth={1.8} />}
-            label="Notify"
+            label="Watches"
             href="/notify"
           />
+          <HeaderPill
+            icon={<Trophy className="size-5" strokeWidth={1.8} />}
+            label="Wrapped"
+            href="/wrapped"
+          />
+        </div>
         </div>
       </header>
 
-      {/* Light = commerce: sheet slides over the espresso header */}
-      <div className="relative -mt-6 rounded-t-sheet bg-cream">
+      {/* Light = commerce: sheet slides over the espresso header.
+          Web mode: no overlap — it's the right column beside the card. */}
+      <div className="relative -mt-6 rounded-t-sheet bg-cream web:mt-0 web:rounded-none">
         <div className="border-b border-line px-4">
           <div className="flex gap-8">
             {(
               [
                 ["activity", "Activity"],
-                ["listing", "Listing"],
+                ["record", "Record"],
                 ["collection", "Collection"],
               ] as const
             ).map(([key, label]) => (
@@ -561,15 +785,7 @@ export default function ProfilePage() {
               transition={{ duration: 0.18, ease: "easeOut" }}
             >
               {tab === "activity" && <ActivityTimeline />}
-              {tab === "listing" && (
-                <div className="pt-10">
-                  <EmptyState
-                    text="Nothing here yet…"
-                    actionLabel="See all tickets on Marketplace"
-                    actionHref="/"
-                  />
-                </div>
-              )}
+              {tab === "record" && <RecordTab />}
               {tab === "collection" && <CollectionTab openSheet={setSheet} />}
             </motion.div>
           </AnimatePresence>
@@ -617,7 +833,7 @@ export default function ProfilePage() {
       >
         <div className="mt-5 flex flex-col gap-2.5">
           {[
-            ["Push notifications", "Notify matches, sales, and messages", true],
+            ["Push notifications", "Rush & lottery deadlines for your watches", true],
             ["Email updates", "Weekly digest of shows you follow", false],
             ["Public profile", "Anyone can see your activity", true],
           ].map(([label, sub, on]) => (
@@ -631,33 +847,6 @@ export default function ProfilePage() {
               </div>
               <Toggle defaultOn={on as boolean} label={label as string} />
             </div>
-          ))}
-        </div>
-      </Sheet>
-
-      {/* Wallet */}
-      <Sheet
-        open={sheet === "wallet"}
-        onClose={() => setSheet(null)}
-        title="Wallet"
-      >
-        <div className="mt-5 rounded-card bg-paper p-6 text-center">
-          <p className="text-caption text-ink-soft">Available balance</p>
-          <p className="mt-1 text-display">${walletBalance.toFixed(2)}</p>
-          <p className="mt-2 text-caption text-ink-soft">
-            Ticket sales land here after the show
-          </p>
-        </div>
-        <div className="mt-4 grid grid-cols-2 gap-3">
-          {["Add funds", "Withdraw"].map((label) => (
-            <button
-              key={label}
-              type="button"
-              onClick={() => toast({ message: "Coming soon" })}
-              className="flex h-12 items-center justify-center rounded-full bg-paper text-body font-semibold text-ink transition-transform duration-150 active:scale-[0.97]"
-            >
-              {label}
-            </button>
           ))}
         </div>
       </Sheet>
@@ -685,7 +874,7 @@ export default function ProfilePage() {
         <p className="mb-2.5 mt-6 text-caption font-medium text-ink-soft">
           Following · 1
         </p>
-        <PersonRow name="Theatr Team" handle="@theatr" color="#d7492b" />
+        <PersonRow name="Matinee Team" handle="@matinee" color="#d7492b" />
         <p className="mb-2.5 mt-6 text-caption font-medium text-ink-soft">
           Followers · 1
         </p>

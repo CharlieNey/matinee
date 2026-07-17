@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { motion } from "motion/react";
 
 /** iOS-style switch. On = espresso track — never vermilion (DESIGN.md §5). */
 export function Toggle({
@@ -34,10 +35,11 @@ export function Toggle({
         on ? "bg-espresso" : "bg-toggle-off"
       }`}
     >
-      <span
-        className={`absolute left-0.5 top-0.5 size-7 rounded-full bg-paper shadow-float transition-transform duration-150 ${
-          on ? "translate-x-5" : ""
-        }`}
+      <motion.span
+        className="absolute left-0.5 top-0.5 size-7 rounded-full bg-paper shadow-float"
+        initial={false}
+        animate={{ x: on ? 20 : 0 }}
+        transition={{ type: "spring", visualDuration: 0.15, bounce: 0.25 }}
       />
     </button>
   );

@@ -8,25 +8,30 @@
 @custom-variant web (&:where([data-layout="web"] *));
 @custom-variant mobile (&:where([data-layout="mobile"] *));
 
-/* Theatr design tokens — see DESIGN.md (source of truth) */
+/* Matinee design tokens — see DESIGN.md (source of truth).
+ * Values are House Velvet (§12) in BOTH layout modes (unified 2026-07-16;
+ * the espresso clone palette is retired). Token names stay semantic roles:
+ * `espresso` = dark identity surface, `vermilion` = the accent — even though
+ * their values are now velvet and crimson. */
 @theme {
-  --color-cream: #f4f3f2;
+  --color-cream: #f5efe3; /* ivory program paper */
   --color-paper: #ffffff;
-  --color-ink: #200604;
-  --color-ink-soft: #8a8380;
-  --color-ink-faint: #b9b4b1;
-  --color-espresso: #220c06;
-  --color-espresso-glow: #43230c;
-  --color-espresso-raised: #4e3d38;
-  --color-vermilion: #d7492b;
-  --color-vermilion-pressed: #bc3c21;
-  --color-blush: #f7eae7;
-  --color-inset: #e9e6e6;
-  --color-gold: #f4aa1b;
+  --color-ink: #241418; /* wine-cast near-black */
+  --color-ink-soft: #8c7a7e;
+  --color-ink-faint: #bbaeab;
+  --color-espresso: #3a0d19; /* velvet */
+  --color-espresso-glow: #5a1a2a; /* velvet, house-lit */
+  --color-espresso-raised: #6b2a3a;
+  --color-vermilion: #a61e33; /* crimson CTA */
+  --color-vermilion-pressed: #8c1729;
+  --color-blush: #f6e7e3;
+  --color-inset: #ece4d4;
+  --color-gold: #c9a227; /* gilt */
+  --color-gold-ink: #8a6d1c; /* gilt for TEXT on light grounds (≥4.5:1) */
   --color-sage: #dee8da;
   --color-sage-ink: #3f5c46;
-  --color-line: #e7e4e3;
-  --color-toggle-off: #d9d4cf;
+  --color-line: #e6decf;
+  --color-toggle-off: #d9d0c0;
 
   --radius-thumb: 12px;
   --radius-card: 20px;
@@ -60,6 +65,17 @@
   --text-label: 12px;
   --text-label--line-height: 1.2;
   --text-label--font-weight: 500;
+
+  --font-display: var(--font-playfair), "Didot", "Bodoni 72", Georgia, serif;
+}
+
+/* Velvet typography (DESIGN.md §12): the big moments go serif (program-book
+   display); the workaday UI stays grotesque. Didot-alikes want no negative
+   tracking. */
+.text-display,
+.text-title {
+  font-family: var(--font-display);
+  letter-spacing: 0;
 }
 
 body {
@@ -69,7 +85,28 @@ body {
 }
 
 /* Motion: iOS-quiet (DESIGN.md §7) — 200-300ms ease-out, no loops */
-@keyframes page-enter {
+
+/*
+ * View transitions. Route navigations crossfade in place (.page-cross wraps
+ * the page shell in the root layout); posters wrapped in a named
+ * <ViewTransition> morph between grid cell and show-page hero.
+ */
+
+/* Page shell: suppress the group's position/size interpolation — the old and
+   new pages sit at different scroll offsets, and letting the group animate
+   between them reads as a giant slide. Snap geometry, crossfade pixels. */
+::view-transition-group(.page-cross),
+::view-transition-image-pair(.page-cross) {
+  animation: none;
+}
+::view-transition-old(.page-cross) {
+  animation: vt-fade 150ms ease-out both reverse;
+}
+::view-transition-new(.page-cross) {
+  animation: vt-fade 200ms ease-out both;
+}
+
+@keyframes vt-fade {
   from {
     opacity: 0;
   }
@@ -78,23 +115,80 @@ body {
   }
 }
 
-.page-enter {
-  animation: page-enter 250ms ease-out both;
+/* Poster morph: iOS-spring-ish curve; mid-flight blur hides the crossfade
+   between the two crops. */
+::view-transition-group(.poster-morph) {
+  animation-duration: 350ms;
+  animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
+}
+::view-transition-image-pair(.poster-morph) {
+  animation-duration: 350ms;
+  animation-name: vt-morph-blur;
+}
+@keyframes vt-morph-blur {
+  30% {
+    filter: blur(2px);
+  }
 }
 
-@keyframes card-enter {
+/* Nav chrome stays anchored while pages transition beneath it. */
+::view-transition-group(site-nav),
+::view-transition-group(tab-bar) {
+  animation: none;
+  z-index: 100;
+}
+::view-transition-old(site-nav),
+::view-transition-old(tab-bar) {
+  display: none;
+}
+::view-transition-new(site-nav),
+::view-transition-new(tab-bar) {
+  animation: none;
+}
+
+/*
+ * Card entrance, resilience-first: the fade runs immediately (no delay, so a
+ * stalled animation timeline can never strand content invisible); only the
+ * transform rise carries the per-item stagger, set via --stagger. Worst case
+ * under frozen animations: content visible, offset 10px.
+ */
+@keyframes card-fade {
   from {
     opacity: 0;
+  }
+}
+
+@keyframes card-rise {
+  from {
     transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
   }
 }
 
 .card-enter {
-  animation: card-enter 300ms ease-out both;
+  animation:
+    card-fade 250ms ease-out,
+    card-rise 300ms ease-out both;
+  animation-delay: 0ms, var(--stagger, 0ms);
+}
+
+/* Marquee pulse: gilt urgency halo on closes-soon rush dots (DESIGN.md §11).
+   A sanctioned loop — it signals a live closing window, not decoration. */
+:root {
+  --pulse-glow: 201 162 39;
+}
+
+@keyframes marquee-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgb(var(--pulse-glow) / 0.45);
+  }
+  70% {
+    box-shadow: 0 0 0 6px rgb(var(--pulse-glow) / 0);
+  }
+}
+
+.marquee-pulse {
+  animation: marquee-pulse 2.4s ease-out infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -103,5 +197,15 @@ body {
   *::after {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
+  }
+
+  /* View-transition pseudos live on the root's snapshot tree — the `*`
+     selector above never reaches them, so they need their own opt-out. */
+  ::view-transition-old(*),
+  ::view-transition-new(*),
+  ::view-transition-group(*),
+  ::view-transition-image-pair(*) {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0s !important;
   }
 }

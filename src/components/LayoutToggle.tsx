@@ -5,7 +5,7 @@ import { Monitor, Smartphone } from "lucide-react";
 
 type Mode = "mobile" | "web";
 
-const STORAGE_KEY = "theatr-layout-v1";
+const STORAGE_KEY = "matinee-layout-v1";
 
 /**
  * Floating Phone/Web switch (desktop viewports only). Flips

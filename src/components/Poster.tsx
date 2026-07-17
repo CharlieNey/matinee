@@ -1,11 +1,21 @@
-import type { CSSProperties } from "react";
+import { ViewTransition, type CSSProperties } from "react";
+import { PosterImage } from "@/components/PosterImage";
 import { Show } from "@/lib/shows";
 import posterImages from "@/lib/posters.json";
 
 const POSTER_SRC: Record<string, string> = posterImages;
 
 /** Crop tuning for landscape key art whose focal point isn't centered. */
-const POSTER_POSITION: Record<string, string> = {};
+const POSTER_POSITION: Record<string, string> = {
+  "little-shop-of-horrors": "35% center",
+  "the-gin-game": "30% center",
+  "the-lion-king": "20% center",
+  "buena-vista-social-club": "22% center",
+  "joe-turners-come-and-gone": "30% center",
+  "broad-strokes": "62% center",
+  "the-potluck": "center 18%",
+  "shifters": "center 35%",
+};
 
 const STYLE_CLASSES: Record<Show["poster"]["style"], string> = {
   brush: "italic font-extrabold tracking-tight",
@@ -26,33 +36,41 @@ function titleSize(title: string): string {
  * Show poster: real key art from /public/posters when available (see
  * src/lib/posters.json), otherwise a typographic tile derived from the
  * show's palette. Square, scales with its container (cqw units).
+ *
+ * `name` opts the poster into a shared-element morph across navigations
+ * (view transitions). Names must be unique per page — callers that can
+ * render the same show twice must dedupe (see DiscoverPage's claimName).
  */
 export function Poster({
   show,
   className = "",
+  name,
 }: {
   show: Show;
   className?: string;
+  name?: string;
 }) {
   const { poster } = show;
   const src = POSTER_SRC[show.slug];
 
+  const withMorph = (tile: React.ReactNode) =>
+    name ? (
+      <ViewTransition name={name} share="poster-morph">
+        {tile}
+      </ViewTransition>
+    ) : (
+      tile
+    );
+
   if (src) {
-    return (
+    return withMorph(
       <div
         aria-hidden
         className={`relative aspect-square shrink-0 overflow-hidden ${className}`}
         style={{ background: poster.bg }}
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={src}
-          alt=""
-          loading="lazy"
-          className="absolute inset-0 size-full object-cover"
-          style={{ objectPosition: POSTER_POSITION[show.slug] }}
-        />
-      </div>
+        <PosterImage src={src} position={POSTER_POSITION[show.slug]} />
+      </div>,
     );
   }
   const lettering = poster.displayTitle ?? show.title;
@@ -68,7 +86,7 @@ export function Poster({
       .join(" ") || undefined,
   };
 
-  return (
+  return withMorph(
     <div
       aria-hidden
       className={`relative aspect-square shrink-0 overflow-hidden ${className}`}

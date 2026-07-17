@@ -9,33 +9,22 @@ import {
   useRef,
   useState,
 } from "react";
-import {
-  Listing,
-  NotifyAlert,
-  notifyAlerts as initialAlerts,
-  notifyMatches,
-  profile as initialProfile,
-} from "./data";
+import { Watch, initialWatches, profile as initialProfile } from "./data";
 import { getShow, Show } from "./shows";
 
-const STORAGE_KEY = "theatr-state-v1";
+const STORAGE_KEY = "matinee-state-v1";
+/** Pre-rebrand key — read once so existing diaries survive the rename. */
+const LEGACY_STORAGE_KEY = "theatr-state-v1";
 
 /** Shows are persisted as slugs and rehydrated, so stale saved data can
- *  never render a broken poster after the catalog changes. */
+ *  never render a broken poster after the catalog changes.
+ *
+ *  Marketplace-era blobs also carry `listings`, `purchases`, and a
+ *  `maxPrice` per alert — all read-tolerated and dropped on the next write
+ *  (Phase 14 retired the marketplace; the field name `alerts` survives for
+ *  back-compat). */
 type PersistedState = {
-  alerts: { id: string; slug: string; maxPrice: number; enabled: boolean }[];
-  listings: {
-    id: string;
-    slug: string;
-    seat: string;
-    price: number;
-    qty: number;
-    when: Listing["when"];
-    postedAgo: string;
-    seller: Listing["seller"];
-    /** Optional so saved state from before the pipeline still loads. */
-    status?: ListingStatus;
-  }[];
+  alerts: { id: string; slug: string; enabled: boolean }[];
   saved: string[];
   profile: { name: string; handle: string; bio: string | null };
   diary?: {
@@ -55,11 +44,6 @@ type PersistedState = {
 
 type ProfileInfo = { name: string; handle: string; bio: string | null };
 
-export type ListingStatus = "listed" | "sold" | "paid";
-
-/** A listing the user posted — carries its seller-pipeline status. */
-export type UserListing = Listing & { status: ListingStatus };
-
 export type DiaryEntry = {
   id: string;
   show: Show;
@@ -76,21 +60,12 @@ export type DiaryEntry = {
 };
 
 type AppState = {
-  /* Notify */
-  alerts: NotifyAlert[];
-  matches: number;
-  addAlert: (show: Show, maxPrice: number) => void;
-  updateAlert: (id: string, maxPrice: number) => void;
-  removeAlert: (id: string) => NotifyAlert | undefined;
-  restoreAlert: (alert: NotifyAlert, index: number) => void;
-
-  /* Selling */
-  userListings: UserListing[];
-  addUserListing: (listing: Omit<Listing, "id" | "seller">) => void;
-  /** Moves a listing listed→sold→paid; no-op once paid. */
-  advanceListing: (id: string) => void;
-  /** Sum of price × qty across paid listings. */
-  walletBalance: number;
+  /* Watches — followed shows; the push pipeline pings on their windows */
+  watches: Watch[];
+  isWatched: (slug: string) => boolean;
+  toggleWatch: (show: Show) => void;
+  removeWatch: (id: string) => Watch | undefined;
+  restoreWatch: (watch: Watch, index: number) => void;
 
   /* Bookmarks */
   isSaved: (slug: string) => boolean;
@@ -111,8 +86,7 @@ const AppContext = createContext<AppState | null>(null);
 let nextId = 1;
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
-  const [alerts, setAlerts] = useState<NotifyAlert[]>(initialAlerts);
-  const [userListings, setUserListings] = useState<UserListing[]>([]);
+  const [watches, setWatches] = useState<Watch[]>(initialWatches);
   // timeline shows start bookmarked, matching the reference screenshots
   const [saved, setSaved] = useState<Set<string>>(
     () =>
@@ -137,22 +111,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const raf = requestAnimationFrame(() => {
       try {
-        const raw = localStorage.getItem(STORAGE_KEY);
+        const raw =
+          localStorage.getItem(STORAGE_KEY) ??
+          localStorage.getItem(LEGACY_STORAGE_KEY);
         if (raw) {
           const data: PersistedState = JSON.parse(raw);
-          setAlerts(
+          setWatches(
             data.alerts.flatMap((a) => {
               const s = getShow(a.slug);
               return s
-                ? [{ id: a.id, show: s, maxPrice: a.maxPrice, enabled: a.enabled }]
-                : [];
-            }),
-          );
-          setUserListings(
-            data.listings.flatMap((l) => {
-              const s = getShow(l.slug);
-              return s
-                ? [{ ...l, show: s, status: l.status ?? "listed" }]
+                ? [{ id: a.id, show: s, enabled: a.enabled ?? true }]
                 : [];
             }),
           );
@@ -177,15 +145,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!hydrated.current) return;
     const state: PersistedState = {
-      alerts: alerts.map((a) => ({
-        id: a.id,
-        slug: a.show.slug,
-        maxPrice: a.maxPrice,
-        enabled: a.enabled,
-      })),
-      listings: userListings.map(({ show, ...rest }) => ({
-        ...rest,
-        slug: show.slug,
+      alerts: watches.map((w) => ({
+        id: w.id,
+        slug: w.show.slug,
+        enabled: w.enabled,
       })),
       saved: [...saved],
       profile,
@@ -196,61 +159,36 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     } catch {
       // storage full/unavailable: state stays session-only
     }
-  }, [alerts, userListings, saved, profile, diary]);
+  }, [watches, saved, profile, diary]);
 
-  const addAlert = useCallback((show: Show, maxPrice: number) => {
-    setAlerts((prev) => [
-      ...prev,
-      { id: `n-new-${nextId++}`, show, maxPrice, enabled: true },
-    ]);
-  }, []);
+  const isWatched = useCallback(
+    (slug: string) => watches.some((w) => w.show.slug === slug),
+    [watches],
+  );
 
-  const updateAlert = useCallback((id: string, maxPrice: number) => {
-    setAlerts((prev) =>
-      prev.map((a) => (a.id === id ? { ...a, maxPrice } : a)),
+  const toggleWatch = useCallback((show: Show) => {
+    setWatches((prev) =>
+      prev.some((w) => w.show.slug === show.slug)
+        ? prev.filter((w) => w.show.slug !== show.slug)
+        : [...prev, { id: `w-${nextId++}`, show, enabled: true }],
     );
   }, []);
 
-  const removeAlert = useCallback(
+  const removeWatch = useCallback(
     (id: string) => {
-      const removed = alerts.find((a) => a.id === id);
-      setAlerts((prev) => prev.filter((a) => a.id !== id));
+      const removed = watches.find((w) => w.id === id);
+      setWatches((prev) => prev.filter((w) => w.id !== id));
       return removed;
     },
-    [alerts],
+    [watches],
   );
 
-  const restoreAlert = useCallback((alert: NotifyAlert, index: number) => {
-    setAlerts((prev) => {
+  const restoreWatch = useCallback((watch: Watch, index: number) => {
+    setWatches((prev) => {
       const next = [...prev];
-      next.splice(Math.min(index, next.length), 0, alert);
+      next.splice(Math.min(index, next.length), 0, watch);
       return next;
     });
-  }, []);
-
-  const addUserListing = useCallback(
-    (listing: Omit<Listing, "id" | "seller">) => {
-      setUserListings((prev) => [
-        {
-          ...listing,
-          id: `u-${nextId++}`,
-          seller: { initial: profile.name[0] ?? "C", color: "#2563ab" },
-          status: "listed" as const,
-        },
-        ...prev,
-      ]);
-    },
-    [profile.name],
-  );
-
-  const advanceListing = useCallback((id: string) => {
-    setUserListings((prev) =>
-      prev.map((l) =>
-        l.id === id && l.status !== "paid"
-          ? { ...l, status: l.status === "listed" ? "sold" : "paid" }
-          : l,
-      ),
-    );
   }, []);
 
   const isSaved = useCallback((slug: string) => saved.has(slug), [saved]);
@@ -277,28 +215,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     [saved],
   );
 
-  const walletBalance = useMemo(
-    () =>
-      userListings.reduce(
-        (sum, l) => (l.status === "paid" ? sum + l.price * l.qty : sum),
-        0,
-      ),
-    [userListings],
-  );
-
   const value = useMemo<AppState>(
     () => ({
-      alerts,
-      // each alert watches ~5 live listings in this prototype
-      matches: Math.max(0, notifyMatches + (alerts.length - 3) * 5),
-      addAlert,
-      updateAlert,
-      removeAlert,
-      restoreAlert,
-      userListings,
-      addUserListing,
-      advanceListing,
-      walletBalance,
+      watches,
+      isWatched,
+      toggleWatch,
+      removeWatch,
+      restoreWatch,
       isSaved,
       toggleSaved,
       savedShows,
@@ -308,15 +231,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       updateProfile,
     }),
     [
-      alerts,
-      addAlert,
-      updateAlert,
-      removeAlert,
-      restoreAlert,
-      userListings,
-      addUserListing,
-      advanceListing,
-      walletBalance,
+      watches,
+      isWatched,
+      toggleWatch,
+      removeWatch,
+      restoreWatch,
       isSaved,
       toggleSaved,
       savedShows,

@@ -1,9 +1,21 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Clock3, Search, X } from "lucide-react";
+import {
+  Clock3,
+  CircleDollarSign,
+  Landmark,
+  Search,
+  Store,
+  Ticket,
+  X,
+} from "lucide-react";
+import { FilterChip } from "@/components/FilterChip";
+import { OptionRow } from "@/components/OptionRow";
 import { PlatformTips } from "@/components/PlatformTips";
-import { ProgramCard } from "@/components/ProgramCard";
+import { RushShowCard } from "@/components/RushShowCard";
+import { Sheet } from "@/components/Sheet";
+import { TktsRushSection } from "@/components/TktsBoard";
 import {
   allPrograms,
   getProgramStatus,
@@ -12,6 +24,7 @@ import {
   ProgramPlatform,
   programPlatformLabel,
   ProgramStatus,
+  ProgramStatusState,
 } from "@/lib/programs";
 import { getShow, Show } from "@/lib/shows";
 import { useNow } from "@/lib/useNow";
@@ -22,6 +35,30 @@ type Entry = {
   status: ProgramStatus;
 };
 
+/** One rush-feed card: a show with every program it currently matches. */
+type ShowGroup = {
+  show: Show;
+  entries: Entry[];
+  sortKey: number;
+};
+
+type Bucket = "open" | "later" | "coming";
+
+const BUCKET_RANK: Record<Bucket, number> = { open: 0, later: 1, coming: 2 };
+
+function bucketOf(state: ProgramStatusState): Bucket {
+  if (state === "open" || state === "closes-soon") return "open";
+  return state === "opens-later-today" ? "later" : "coming";
+}
+
+/** Within-bucket order: soonest deadline first, no-deadline windows last. */
+function entrySortKey(entry: Entry): number {
+  if (bucketOf(entry.status.state) === "open") {
+    return entry.status.countdownMs ?? Number.MAX_SAFE_INTEGER;
+  }
+  return entry.status.nextOpenAt?.getTime() ?? Number.MAX_SAFE_INTEGER;
+}
+
 type KindGroup = "all" | "lottery" | "rush" | "sro" | "student";
 
 const KIND_GROUPS: Record<Exclude<KindGroup, "all">, ProgramKind[]> = {
@@ -31,7 +68,7 @@ const KIND_GROUPS: Record<Exclude<KindGroup, "all">, ProgramKind[]> = {
   student: ["student-rush"],
 };
 
-const KIND_CHIPS: { value: KindGroup; label: string }[] = [
+const KIND_OPTIONS: { value: KindGroup; label: string }[] = [
   { value: "all", label: "All programs" },
   { value: "lottery", label: "Lotteries" },
   { value: "rush", label: "Rush" },
@@ -48,37 +85,22 @@ const PLATFORMS: ProgramPlatform[] = [
   "box-office",
 ];
 
-function Chip({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      aria-pressed={active}
-      onClick={onClick}
-      className={`h-9 shrink-0 rounded-full px-3.5 text-caption font-semibold transition-[background-color,color,transform] duration-150 active:scale-[0.97] ${
-        active ? "bg-espresso text-white" : "bg-paper text-ink-soft"
-      }`}
-    >
-      {children}
-    </button>
-  );
+/** Phase 12: the catalog spans both circuits; tier is the circuit field. */
+type Circuit = "all" | "Broadway" | "Off-Broadway";
+const CIRCUITS: Exclude<Circuit, "all">[] = ["Broadway", "Off-Broadway"];
+
+function matchesKind(program: Program, kind: KindGroup): boolean {
+  return kind === "all" || KIND_GROUPS[kind].includes(program.kind);
 }
 
 function FeedSection({
   title,
-  entries,
+  groups,
   empty,
   now,
 }: {
   title: string;
-  entries: Entry[];
+  groups: ShowGroup[];
   empty: string;
   now: Date;
 }) {
@@ -86,17 +108,21 @@ function FeedSection({
     <section className="mt-8">
       <div className="flex items-baseline justify-between">
         <h2 className="text-heading">{title}</h2>
-        <span className="text-caption text-ink-soft">{entries.length}</span>
+        <span className="text-caption text-ink-soft">{groups.length}</span>
       </div>
-      {entries.length > 0 ? (
-        <div className="mt-3 space-y-3 web:grid web:grid-cols-2 web:gap-3 web:space-y-0">
-          {entries.map((entry, index) => (
+      {groups.length > 0 ? (
+        <div className="mt-3 space-y-3 web:grid web:grid-cols-2 web:items-start web:gap-3 web:space-y-0">
+          {groups.map((group, index) => (
             <div
-              key={`${entry.program.showSlug}-${entry.program.kind}-${entry.program.platform}`}
+              key={group.show.slug}
               className="card-enter"
-              style={{ animationDelay: `${Math.min(index * 35, 210)}ms` }}
+              style={{ "--stagger": `${Math.min(index * 35, 210)}ms` } as React.CSSProperties}
             >
-              <ProgramCard {...entry} now={now} />
+              <RushShowCard
+                show={group.show}
+                entries={group.entries}
+                now={now}
+              />
             </div>
           ))}
         </div>
@@ -114,15 +140,24 @@ export function RushFeed() {
   const [query, setQuery] = useState("");
   const [kind, setKind] = useState<KindGroup>("all");
   const [platform, setPlatform] = useState<ProgramPlatform | "all">("all");
+  const [circuit, setCircuit] = useState<Circuit>("all");
   const [underFifty, setUnderFifty] = useState(false);
+  const [sheet, setSheet] = useState<null | "kind" | "platform" | "circuit">(
+    null,
+  );
 
   const hasFilters =
-    query.trim() !== "" || kind !== "all" || platform !== "all" || underFifty;
+    query.trim() !== "" ||
+    kind !== "all" ||
+    platform !== "all" ||
+    circuit !== "all" ||
+    underFifty;
 
   const clearFilters = () => {
     setQuery("");
     setKind("all");
     setPlatform("all");
+    setCircuit("all");
     setUnderFifty(false);
   };
 
@@ -138,49 +173,110 @@ export function RushFeed() {
       .filter((entry): entry is Entry => entry !== null);
 
     const q = query.trim().toLowerCase();
+    const matchesRest = ({ program, show }: Entry) =>
+      (!underFifty || program.price < 50) &&
+      (q === "" ||
+        show.title.toLowerCase().includes(q) ||
+        programPlatformLabel(program.platform).toLowerCase().includes(q));
+
+    const matchesCircuit = (entry: Entry) =>
+      circuit === "all" || entry.show.tier === circuit;
+
     const matches = entries.filter(
-      ({ program, show }) =>
-        (kind === "all" || KIND_GROUPS[kind].includes(program.kind)) &&
-        (platform === "all" || program.platform === platform) &&
-        (!underFifty || program.price < 50) &&
-        (q === "" ||
-          show.title.toLowerCase().includes(q) ||
-          programPlatformLabel(program.platform).toLowerCase().includes(q)),
+      (entry) =>
+        matchesKind(entry.program, kind) &&
+        (platform === "all" || entry.program.platform === platform) &&
+        matchesCircuit(entry) &&
+        matchesRest(entry),
     );
 
-    const open = matches
-      .filter(({ status }) => ["open", "closes-soon"].includes(status.state))
-      .sort((a, b) => {
-        if (a.status.countdownMs === null) return 1;
-        if (b.status.countdownMs === null) return -1;
-        return a.status.countdownMs - b.status.countdownMs;
+    // Faceted counts (the app's filter idiom): each sheet's numbers reflect
+    // the *other* active filters, so they read as live inventory.
+    const kindPool = entries.filter(
+      (e) =>
+        (platform === "all" || e.program.platform === platform) &&
+        matchesCircuit(e) &&
+        matchesRest(e),
+    );
+    const kindCounts = Object.fromEntries(
+      KIND_OPTIONS.map(({ value }) => [
+        value,
+        value === "all"
+          ? kindPool.length
+          : kindPool.filter((e) => matchesKind(e.program, value)).length,
+      ]),
+    ) as Record<KindGroup, number>;
+
+    const platformPool = entries.filter(
+      (e) => matchesKind(e.program, kind) && matchesCircuit(e) && matchesRest(e),
+    );
+    const platformCounts = Object.fromEntries([
+      ["all", platformPool.length],
+      ...PLATFORMS.map((p) => [
+        p,
+        platformPool.filter((e) => e.program.platform === p).length,
+      ]),
+    ]) as Record<ProgramPlatform | "all", number>;
+
+    const circuitPool = entries.filter(
+      (e) =>
+        matchesKind(e.program, kind) &&
+        (platform === "all" || e.program.platform === platform) &&
+        matchesRest(e),
+    );
+    const circuitCounts = Object.fromEntries([
+      ["all", circuitPool.length],
+      ...CIRCUITS.map((c) => [
+        c,
+        circuitPool.filter((e) => e.show.tier === c).length,
+      ]),
+    ]) as Record<Circuit, number>;
+
+    // One card per show: rows sorted most-actionable first, the card filed
+    // under its best program's bucket so a show never appears twice.
+    const byShow = new Map<string, Entry[]>();
+    for (const entry of matches) {
+      const list = byShow.get(entry.program.showSlug);
+      if (list) list.push(entry);
+      else byShow.set(entry.program.showSlug, [entry]);
+    }
+
+    const sections: Record<Bucket, ShowGroup[]> = {
+      open: [],
+      later: [],
+      coming: [],
+    };
+    for (const list of byShow.values()) {
+      list.sort(
+        (a, b) =>
+          BUCKET_RANK[bucketOf(a.status.state)] -
+            BUCKET_RANK[bucketOf(b.status.state)] ||
+          entrySortKey(a) - entrySortKey(b) ||
+          a.program.price - b.program.price,
+      );
+      const best = list[0];
+      sections[bucketOf(best.status.state)].push({
+        show: best.show,
+        entries: list,
+        sortKey: entrySortKey(best),
       });
-    const later = matches
-      .filter(({ status }) => status.state === "opens-later-today")
-      .sort(
-        (a, b) =>
-          (a.status.nextOpenAt?.getTime() ?? 0) -
-          (b.status.nextOpenAt?.getTime() ?? 0),
-      );
-    const coming = matches
-      .filter(({ status }) =>
-        ["closed-today", "next-open-day"].includes(status.state),
-      )
-      .sort(
-        (a, b) =>
-          (a.status.nextOpenAt?.getTime() ?? Infinity) -
-          (b.status.nextOpenAt?.getTime() ?? Infinity),
-      );
+    }
+    for (const groups of Object.values(sections)) {
+      groups.sort((a, b) => a.sortKey - b.sortKey);
+    }
 
     return {
       total: entries.length,
       matched: matches.length,
       programs: matches.map((entry) => entry.program),
-      open,
-      later,
-      coming,
+      kindCounts,
+      platformCounts,
+      circuitCounts,
+      open: sections.open,
+      later: sections.later,
+      coming: sections.coming,
     };
-  }, [now, query, kind, platform, underFifty]);
+  }, [now, query, kind, platform, circuit, underFifty]);
 
   if (!now || !result) {
     return (
@@ -200,60 +296,65 @@ export function RushFeed() {
 
   return (
     <div>
-      {/* Search */}
-      <div className="mt-5 flex h-12 items-center gap-2.5 rounded-full bg-paper px-4 web:max-w-[420px]">
-        <Search className="size-5 shrink-0 text-ink-soft" strokeWidth={1.8} />
-        <input
-          type="search"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search shows or platforms"
-          aria-label="Search programs by show or platform"
-          className="h-full w-full bg-transparent text-body text-ink outline-none placeholder:text-ink-faint [&::-webkit-search-cancel-button]:hidden"
+      {/* Search + platform folk knowledge (bulb opens the tips sheet) */}
+      <div className="mt-5 flex items-center gap-2.5">
+        <div className="flex h-12 min-w-0 flex-1 items-center gap-2.5 rounded-full bg-paper px-4 web:max-w-[420px]">
+          <Search className="size-5 shrink-0 text-ink-soft" strokeWidth={1.8} />
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search shows or platforms"
+            aria-label="Search programs by show or platform"
+            className="h-full w-full bg-transparent text-body text-ink outline-none placeholder:text-ink-faint [&::-webkit-search-cancel-button]:hidden"
+          />
+          {query !== "" && (
+            <button
+              type="button"
+              aria-label="Clear search"
+              onClick={() => setQuery("")}
+              className="p-1 text-ink-soft transition-transform duration-150 active:scale-90"
+            >
+              <X className="size-4" strokeWidth={2} />
+            </button>
+          )}
+        </div>
+        <PlatformTips programs={result.programs} />
+      </div>
+
+      {/* Filters — the app's filter idiom: a few chips, sheets carry the
+          options with live faceted counts (DESIGN.md §5). */}
+      <div className="-mx-4 mt-3 flex gap-2.5 overflow-x-auto px-4 pb-1 [scrollbar-width:none] web:mx-0 web:px-0">
+        <FilterChip
+          icon={<Ticket className="size-5" strokeWidth={1.8} />}
+          label={
+            kind === "all"
+              ? "Program"
+              : KIND_OPTIONS.find((o) => o.value === kind)!.label
+          }
+          active={kind !== "all"}
+          onClick={() => setSheet("kind")}
         />
-        {query !== "" && (
-          <button
-            type="button"
-            aria-label="Clear search"
-            onClick={() => setQuery("")}
-            className="p-1 text-ink-soft transition-transform duration-150 active:scale-90"
-          >
-            <X className="size-4" strokeWidth={2} />
-          </button>
-        )}
+        <FilterChip
+          icon={<Store className="size-5" strokeWidth={1.8} />}
+          label={platform === "all" ? "Platform" : programPlatformLabel(platform)}
+          active={platform !== "all"}
+          onClick={() => setSheet("platform")}
+        />
+        <FilterChip
+          icon={<Landmark className="size-5" strokeWidth={1.8} />}
+          label={circuit === "all" ? "Circuit" : circuit}
+          active={circuit !== "all"}
+          onClick={() => setSheet("circuit")}
+        />
+        <FilterChip
+          icon={<CircleDollarSign className="size-5" strokeWidth={1.8} />}
+          label="Under $50"
+          chevron={false}
+          active={underFifty}
+          onClick={() => setUnderFifty((v) => !v)}
+        />
       </div>
-
-      {/* Program-kind chips */}
-      <div className="-mx-4 mt-3 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] web:mx-0 web:flex-wrap web:overflow-visible web:px-0">
-        {KIND_CHIPS.map((chip) => (
-          <Chip
-            key={chip.value}
-            active={kind === chip.value}
-            onClick={() => setKind(chip.value)}
-          >
-            {chip.label}
-          </Chip>
-        ))}
-      </div>
-
-      {/* Platform + price chips */}
-      <div className="-mx-4 mt-2 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] web:mx-0 web:flex-wrap web:overflow-visible web:px-0">
-        <Chip active={underFifty} onClick={() => setUnderFifty((v) => !v)}>
-          Under $50
-        </Chip>
-        {PLATFORMS.map((p) => (
-          <Chip
-            key={p}
-            active={platform === p}
-            onClick={() => setPlatform(platform === p ? "all" : p)}
-          >
-            {programPlatformLabel(p)}
-          </Chip>
-        ))}
-      </div>
-
-      {/* Platform folk knowledge, deduped — reacts to the active filters */}
-      <PlatformTips programs={result.programs} />
 
       {hasFilters && (
         <p className="mt-3 text-caption text-ink-soft">
@@ -277,24 +378,108 @@ export function RushFeed() {
         <>
           <FeedSection
             title="Open now"
-            entries={result.open}
+            groups={result.open}
             empty="Nothing is open right now. Check what starts later today."
             now={now}
           />
           <FeedSection
             title="Later today"
-            entries={result.later}
+            groups={result.later}
             empty="No more entry windows open later today."
             now={now}
           />
           <FeedSection
             title="Coming up"
-            entries={result.coming}
+            groups={result.coming}
             empty="No upcoming programs found."
             now={now}
           />
+
+          {/* Walk-up inventory, not an entry window — its own section */}
+          <TktsRushSection />
         </>
       )}
+
+      <Sheet
+        open={sheet === "kind"}
+        onClose={() => setSheet(null)}
+        title="Program"
+      >
+        <div className="mt-4 flex flex-col gap-2.5">
+          {KIND_OPTIONS.map((option) => (
+            <OptionRow
+              key={option.value}
+              label={option.label}
+              count={result.kindCounts[option.value]}
+              selected={kind === option.value}
+              onSelect={() => {
+                setKind(option.value);
+                setSheet(null);
+              }}
+            />
+          ))}
+        </div>
+      </Sheet>
+
+      <Sheet
+        open={sheet === "circuit"}
+        onClose={() => setSheet(null)}
+        title="Circuit"
+      >
+        <div className="mt-4 flex flex-col gap-2.5">
+          <OptionRow
+            label="All circuits"
+            count={result.circuitCounts.all}
+            selected={circuit === "all"}
+            onSelect={() => {
+              setCircuit("all");
+              setSheet(null);
+            }}
+          />
+          {CIRCUITS.map((c) => (
+            <OptionRow
+              key={c}
+              label={c}
+              count={result.circuitCounts[c]}
+              selected={circuit === c}
+              onSelect={() => {
+                setCircuit(c);
+                setSheet(null);
+              }}
+            />
+          ))}
+        </div>
+      </Sheet>
+
+      <Sheet
+        open={sheet === "platform"}
+        onClose={() => setSheet(null)}
+        title="Platform"
+      >
+        <div className="mt-4 flex flex-col gap-2.5">
+          <OptionRow
+            label="All platforms"
+            count={result.platformCounts.all}
+            selected={platform === "all"}
+            onSelect={() => {
+              setPlatform("all");
+              setSheet(null);
+            }}
+          />
+          {PLATFORMS.map((p) => (
+            <OptionRow
+              key={p}
+              label={programPlatformLabel(p)}
+              count={result.platformCounts[p]}
+              selected={platform === p}
+              onSelect={() => {
+                setPlatform(p);
+                setSheet(null);
+              }}
+            />
+          ))}
+        </div>
+      </Sheet>
     </div>
   );
 }

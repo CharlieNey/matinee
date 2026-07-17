@@ -7,11 +7,11 @@ export const dynamic = "force-static";
 export async function GET() {
   return Response.json({
     meta: {
-      what: "All 41 Broadway houses: owner, official ticketer, address, current production",
+      what: "All 41 Broadway houses: owner, official ticketer, address, capacity, current production, cross-reference IDs",
       lastVerified: theatersLastVerified(),
       docs: "/about",
       license:
-        "Facts of theater ownership and ticketing, hand-curated; provided as-is.",
+        "Facts of theater ownership and ticketing, hand-curated; provided as-is. IDs seeded from Wikidata (CC0), hand-audited.",
     },
     theaters: allTheaters().map((theater) => {
       const current = currentShowAt(theater);
@@ -21,6 +21,10 @@ export async function GET() {
         ticketer: theater.ticketer,
         ticketerLabel: TICKETER_LABELS[theater.ticketer],
         address: theater.address,
+        capacityApprox: theater.capacity,
+        wikidataId: theater.wikidataId,
+        ibdbId: theater.ibdbId,
+        playbillId: theater.playbillId ?? null,
         currentShow: current
           ? { slug: current.slug, title: current.title, genre: current.genre }
           : null,

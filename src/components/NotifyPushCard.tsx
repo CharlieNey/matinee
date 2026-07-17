@@ -6,12 +6,12 @@ import { usePush } from "@/lib/usePush";
 import { useApp } from "@/lib/store";
 
 /**
- * Web-push opt-in for rush/lottery deadlines. Follows the shows the user has
- * Notify alerts for; hidden entirely when push isn't available or configured.
+ * Web-push opt-in for rush/lottery deadlines. Follows the shows the user
+ * watches; hidden entirely when push isn't available or configured.
  */
 export function NotifyPushCard() {
-  const { alerts } = useApp();
-  const slugs = alerts.map((a) => a.show.slug);
+  const { watches } = useApp();
+  const slugs = watches.map((w) => w.show.slug);
   const { status, subscribe, unsubscribe } = usePush(slugs);
 
   const [needsInstall, setNeedsInstall] = useState(false);
@@ -27,11 +27,11 @@ export function NotifyPushCard() {
     status === "denied"
       ? "Notifications are blocked for this site — allow them in your browser settings first."
       : needsInstall
-        ? "On iPhone, add Theatr to your Home Screen to receive these."
+        ? "On iPhone, add Matinee to your Home Screen to receive these."
         : status === "on"
           ? slugs.length > 0
-            ? `Watching ${slugs.length} show${slugs.length === 1 ? "" : "s"} from your alerts.`
-            : "Add a Notify alert below and we'll watch its deadlines too."
+            ? `Watching ${slugs.length} show${slugs.length === 1 ? "" : "s"}.`
+            : "Watch a show below and we'll ping you on its deadlines."
           : "We'll ping you when a lottery or rush for a show you watch opens or is about to close.";
 
   return (

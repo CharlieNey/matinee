@@ -68,10 +68,62 @@ export async function encodeSharedProfile(
   return `j.${bytesToBase64Url(encodeUtf8(json))}`;
 }
 
+/** Longest fragment we'll decode; real profiles compress to a few KB. */
+const MAX_FRAGMENT_CHARS = 60_000;
+/** Decompression cap — a link is data, not a zip bomb. */
+const MAX_JSON_BYTES = 1_000_000;
+
+function asString(value: unknown, max: number): string | null {
+  return typeof value === "string" && value.length <= max ? value : null;
+}
+
+/**
+ * The fragment is attacker-controlled input (anyone can craft a /p# link),
+ * so every field is re-validated: right types, bounded lengths, known
+ * sentiments, parseable dates. Bad entries drop; bad envelopes return null.
+ */
+function sanitizeProfile(parsed: unknown): SharedProfile | null {
+  if (typeof parsed !== "object" || parsed === null) return null;
+  const raw = parsed as Record<string, unknown>;
+  if (raw.v !== 1 || !Array.isArray(raw.diary)) return null;
+
+  const diary = raw.diary.slice(0, 200).flatMap((item): SharedDiaryEntry[] => {
+    if (typeof item !== "object" || item === null) return [];
+    const entry = item as Record<string, unknown>;
+    const slug = asString(entry.slug, 100);
+    const loggedAt = asString(entry.loggedAt, 40);
+    if (!slug || !loggedAt || Number.isNaN(Date.parse(loggedAt))) return [];
+    const sentiment =
+      entry.sentiment === "recommend" ||
+      entry.sentiment === "mixed" ||
+      entry.sentiment === "disliked"
+        ? entry.sentiment
+        : "mixed";
+    const tags = Array.isArray(entry.tags)
+      ? entry.tags
+          .filter((tag): tag is string => typeof tag === "string")
+          .map((tag) => tag.slice(0, 40))
+          .slice(0, 12)
+      : [];
+    return [
+      { slug, loggedAt, sentiment, thoughts: asString(entry.thoughts, 2000), tags },
+    ];
+  });
+
+  return {
+    v: 1,
+    name: asString(raw.name, 80) ?? "A theatergoer",
+    handle: asString(raw.handle, 80) ?? "",
+    bio: asString(raw.bio, 400),
+    diary,
+  };
+}
+
 export async function decodeSharedProfile(
   fragment: string,
 ): Promise<SharedProfile | null> {
   try {
+    if (fragment.length > MAX_FRAGMENT_CHARS) return null;
     const [prefix, data] = [fragment.slice(0, 2), fragment.slice(2)];
     let json: string;
     if (prefix === "z.") {
@@ -79,15 +131,14 @@ export async function decodeSharedProfile(
         base64UrlToBytes(data) as Uint8Array<ArrayBuffer>,
         new DecompressionStream("deflate-raw"),
       );
+      if (bytes.length > MAX_JSON_BYTES) return null;
       json = new TextDecoder().decode(bytes);
     } else if (prefix === "j.") {
       json = new TextDecoder().decode(base64UrlToBytes(data));
     } else {
       return null;
     }
-    const parsed = JSON.parse(json) as SharedProfile;
-    if (parsed.v !== 1 || !Array.isArray(parsed.diary)) return null;
-    return parsed;
+    return sanitizeProfile(JSON.parse(json));
   } catch {
     return null;
   }

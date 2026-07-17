@@ -59,7 +59,7 @@ export function WinCardSheet({
     if (!blob) return;
     const result = await shareImage(
       blob,
-      `theatr-win-${show.slug}.png`,
+      `matinee-win-${show.slug}.png`,
       `Won the ${programKindLabel(program.kind).toLowerCase()} for ${show.title}`,
     );
     toast({

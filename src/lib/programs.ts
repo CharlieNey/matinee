@@ -918,6 +918,17 @@ export function programsForShow(showSlug: string): readonly Program[] {
   return PROGRAMS.filter((item) => item.showSlug === showSlug);
 }
 
+/**
+ * Cheapest verified way in (Phase 14): the browse grid's answer line.
+ * Deliberately schedule-agnostic — it says a $40 door exists; whether it's
+ * open right now is /rush's job.
+ */
+export function cheapestProgram(showSlug: string): Program | null {
+  const list = programsForShow(showSlug);
+  if (list.length === 0) return null;
+  return list.reduce((min, item) => (item.price < min.price ? item : min));
+}
+
 export function programKindLabel(kind: ProgramKind): string {
   return KIND_LABELS[kind];
 }

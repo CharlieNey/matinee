@@ -1,17 +1,26 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, Lightbulb } from "lucide-react";
+import { Lightbulb } from "lucide-react";
+import { Sheet } from "@/components/Sheet";
 import { Program, programPlatformLabel } from "@/lib/programs";
 
 /**
  * Platform folk knowledge, deduped across a list of programs (Phase 8).
- * Tips live per-program in the dataset but repeat per platform — this block
- * renders each once, so twenty Telecharge cards don't say the same thing
- * twenty times. Collapsed by default; reacts to whatever list it's given
+ * Tips live per-program in the dataset but repeat per platform — this
+ * renders each once. Surfaces as a small bulb button (sits next to the rush
+ * search field) that opens a sheet; reacts to whatever list it's given
  * (e.g. the rush feed's filtered matches).
  */
-export function PlatformTips({ programs }: { programs: readonly Program[] }) {
+export function PlatformTips({
+  programs,
+  labeled = false,
+}: {
+  programs: readonly Program[];
+  /** Standalone placement (show page): spell the label out — a lone bulb
+   *  next to the search field explains itself, one floating mid-page doesn't. */
+  labeled?: boolean;
+}) {
   const [open, setOpen] = useState(false);
 
   const byTip = new Map<string, string>();
@@ -24,31 +33,45 @@ export function PlatformTips({ programs }: { programs: readonly Program[] }) {
   if (tips.length === 0) return null;
 
   return (
-    <div className="mt-3 rounded-card bg-paper">
+    <>
       <button
         type="button"
-        aria-expanded={open}
-        onClick={() => setOpen((v) => !v)}
-        className="flex h-12 w-full items-center gap-2.5 px-4 text-body font-semibold transition-colors duration-150"
+        aria-label={`Good to know — ${tips.length} platform tip${tips.length === 1 ? "" : "s"}`}
+        onClick={() => setOpen(true)}
+        className={
+          labeled
+            ? "mt-3 flex h-11 shrink-0 items-center gap-2 rounded-full bg-paper px-4 text-caption font-semibold text-ink transition-transform duration-150 active:scale-[0.97]"
+            : "flex size-12 shrink-0 items-center justify-center rounded-full bg-paper text-gold-ink transition-transform duration-150 active:scale-[0.94]"
+        }
       >
-        <Lightbulb className="size-5 text-gold" strokeWidth={1.9} aria-hidden />
-        Good to know
-        <span className="font-normal text-ink-soft">· {tips.length}</span>
-        <ChevronDown
-          className={`ml-auto size-5 text-ink-soft transition-transform duration-200 ${open ? "rotate-180" : ""}`}
-          strokeWidth={2}
+        <Lightbulb
+          className="size-5 text-gold-ink"
+          strokeWidth={1.9}
           aria-hidden
         />
+        {labeled && (
+          <>
+            Good to know
+            <span className="font-medium text-ink-soft">{tips.length}</span>
+          </>
+        )}
       </button>
-      {open && (
-        <ul className="flex flex-col gap-2.5 border-t border-line px-4 pb-4 pt-3">
+
+      <Sheet open={open} onClose={() => setOpen(false)} title="Good to know">
+        <p className="mt-1 text-body text-ink-soft">
+          Platform quirks worth knowing before you enter.
+        </p>
+        <ul className="mt-4 flex flex-col gap-2.5 pb-2">
           {tips.map(([tip, platform]) => (
-            <li key={tip} className="text-caption leading-snug text-ink-soft">
+            <li
+              key={tip}
+              className="rounded-card bg-paper p-4 text-body leading-snug text-ink-soft"
+            >
               <b className="font-semibold text-ink">{platform}</b> — {tip}
             </li>
           ))}
         </ul>
-      )}
-    </div>
+      </Sheet>
+    </>
   );
 }

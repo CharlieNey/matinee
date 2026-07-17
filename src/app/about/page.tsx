@@ -4,7 +4,7 @@ import { allPrograms } from "@/lib/programs";
 import { allTheaters } from "@/lib/theaters";
 
 export const metadata = {
-  title: "About — Theatr",
+  title: "About — Matinee",
   description:
     "How this works: hand-curated Broadway rush & lottery data, and why there's no scraper behind it.",
 };
@@ -43,7 +43,7 @@ export default function AboutPage() {
 
   return (
     <main className="px-4 pb-12 web:mx-auto web:max-w-[640px]">
-      <BackHeader title="About Theatr" />
+      <BackHeader title="About Matinee" />
 
       <div className="mt-4">
         <Section title="The cheap seats exist. The interface doesn't.">
@@ -131,6 +131,17 @@ export default function AboutPage() {
             beside its data. Purchases here always deep-link out to the
             official seller — we are the index, never the checkout.
           </p>
+          <p>
+            <b className="font-semibold text-ink">
+              No marketplace, in the end.
+            </b>{" "}
+            This app began as a study of a peer-to-peer ticket marketplace,
+            and for a while it carried a working replica. We retired it: a
+            demo marketplace can only ever be theater about theater — fake
+            listings, fake sales — while everything else here runs on real,
+            verifiable data. The app the reference marketplace still deserves
+            credit for is named below.
+          </p>
         </Section>
 
         <Section title="Open data">
@@ -143,6 +154,23 @@ export default function AboutPage() {
           <p className="text-caption text-ink-faint">
             All times America/New_York. Verify with the linked platform
             before you plan a night around a row.
+          </p>
+        </Section>
+
+        <Section title="Sources & credits">
+          <p>
+            <b className="font-semibold text-ink">Wikidata.</b> Each house
+            carries cross-reference IDs (Wikidata → IBDB and Playbill) seeded
+            from Wikidata&apos;s CC0 data — then audited by hand, because the
+            seed has real errors: Wikidata lists the Gershwin at 15,408
+            seats. It has about 1,933. That one number is the whole argument
+            for hand-curation.
+          </p>
+          <p>
+            <b className="font-semibold text-ink">TDF.</b> The live TKTS
+            board comes from TDF&apos;s public TKTS Live page, and always
+            renders with TDF&apos;s own &quot;updated&quot; stamp — never our
+            fetch time. When their board is stale, ours says so.
           </p>
         </Section>
 

@@ -14,7 +14,17 @@ self.addEventListener("push", (event) => {
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const url =
+  const raw =
     (event.notification.data && event.notification.data.url) || "/rush";
-  event.waitUntil(clients.openWindow(url));
+  // Defense in depth: payloads are VAPID-signed, but never open off-origin.
+  let url;
+  try {
+    url = new URL(raw, self.location.origin);
+    if (url.origin !== self.location.origin) {
+      url = new URL("/rush", self.location.origin);
+    }
+  } catch {
+    url = new URL("/rush", self.location.origin);
+  }
+  event.waitUntil(clients.openWindow(url.href));
 });
