@@ -4,7 +4,6 @@ import { Bodoni_Moda, Schibsted_Grotesk } from "next/font/google";
 import { LayoutToggle } from "@/components/LayoutToggle";
 import { PaperGrain } from "@/components/PaperGrain";
 import { Providers } from "@/components/Providers";
-import { TimeMachine } from "@/components/TimeMachine";
 import { WebNav } from "@/components/WebNav";
 import "./globals.css";
 
@@ -67,7 +66,6 @@ export default function RootLayout({
             </div>
           </ViewTransition>
           <LayoutToggle />
-          <TimeMachine />
         </Providers>
       </body>
     </html>

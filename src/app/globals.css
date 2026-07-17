@@ -179,20 +179,15 @@ button:not(:disabled),
   }
 }
 
-/* Poster morph: iOS-spring-ish curve; mid-flight blur hides the crossfade
-   between the two crops. */
+/* Poster morph: iOS-spring-ish curve. The group interpolates geometry; the
+   image-pair crossfades the two crops. Kept short and blur-free — animating a
+   mid-flight filter:blur on the scaling snapshot janks hard on WebKit. */
 ::view-transition-group(.poster-morph) {
-  animation-duration: 350ms;
+  animation-duration: 260ms;
   animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
 }
 ::view-transition-image-pair(.poster-morph) {
-  animation-duration: 350ms;
-  animation-name: vt-morph-blur;
-}
-@keyframes vt-morph-blur {
-  30% {
-    filter: blur(2px);
-  }
+  animation-duration: 260ms;
 }
 
 /* Nav chrome stays anchored while pages transition beneath it. */

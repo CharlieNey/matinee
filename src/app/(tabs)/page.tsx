@@ -8,8 +8,10 @@ import {
   ChevronRight,
   CircleDollarSign,
   Map as MapIcon,
+  Search,
   Theater,
   TicketPercent,
+  X,
   Zap,
 } from "lucide-react";
 import { EmptyState } from "@/components/EmptyState";
@@ -118,7 +120,8 @@ export default function DiscoverPage() {
   const { savedShows, attended, follows } = useApp();
   const tkts = useTkts();
 
-  const [circuit, setCircuit] = useState<CircuitFilter>("All shows");
+  const [query, setQuery] = useState("");
+  const [circuit, setCircuit] = useState<CircuitFilter>("Broadway");
   const [rushOnly, setRushOnly] = useState(false);
   const [tktsOnly, setTktsOnly] = useState(false);
   const [cheapest, setCheapest] = useState(false);
@@ -141,6 +144,21 @@ export default function DiscoverPage() {
   }, [tkts]);
 
   const catalog = allShows();
+
+  // Search spans the whole catalog (any circuit), independent of the chips.
+  const q = query.trim().toLowerCase();
+  const searching = q.length > 0;
+  const searchResults = useMemo(
+    () =>
+      q
+        ? catalog.filter((s) =>
+            [s.title, s.venue, s.genre, s.tier].some((v) =>
+              v.toLowerCase().includes(q),
+            ),
+          )
+        : [],
+    [catalog, q],
+  );
 
   const filtered = useMemo(() => {
     let result = catalog;
@@ -205,116 +223,163 @@ export default function DiscoverPage() {
     <main className="px-4 pt-6 web:mx-auto web:max-w-[1160px] web:px-6">
       <h1 className="text-display">Discover</h1>
 
-      <RushBanner />
-
-      <div className="mt-3 rounded-card bg-paper px-4">
-        <QuickLink
-          href="/district"
-          icon={<MapIcon className="size-5 text-ink" strokeWidth={1.8} />}
-          title="The District"
-          sub="Every Broadway house, one live map"
+      <div className="mt-4 flex h-12 items-center gap-2.5 rounded-full bg-paper px-4 focus-within:ring-2 focus-within:ring-espresso/15">
+        <Search className="size-5 shrink-0 text-ink-soft" strokeWidth={1.9} />
+        <input
+          type="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          aria-label="Search shows"
+          placeholder="Search shows, venues, genres"
+          className="min-w-0 flex-1 bg-transparent text-body text-ink outline-none placeholder:text-ink-faint"
         />
-        <QuickLink
-          href="/trip"
-          icon={
-            <CalendarRange className="size-5 text-ink" strokeWidth={1.8} />
-          }
-          title="Trip mode"
-          sub="Day-by-day windows for your visit"
-        />
+        {query && (
+          <button
+            type="button"
+            onClick={() => setQuery("")}
+            aria-label="Clear search"
+            className="-mr-2 grid size-9 shrink-0 place-items-center text-ink-soft"
+          >
+            <X className="size-4" strokeWidth={2} />
+          </button>
+        )}
       </div>
 
-      {savedShows.length > 0 && (
+      {searching ? (
+        searchResults.length > 0 ? (
+          <div className="mt-5 grid grid-cols-2 items-start gap-3 web:md:grid-cols-3 web:lg:grid-cols-4">
+            {searchResults.map((show) => (
+              <ShowCard
+                key={show.slug}
+                show={show}
+                posterName={`poster-${show.slug}`}
+                onTktsToday={tktsToday.has(show.slug)}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="pt-10">
+            <EmptyState
+              text={`No shows match “${query.trim()}”.`}
+              actionLabel="Clear search"
+              onAction={() => setQuery("")}
+            />
+          </div>
+        )
+      ) : (
         <>
+          <RushBanner />
+
+          <div className="mt-3 rounded-card bg-paper px-4">
+            <QuickLink
+              href="/district"
+              icon={<MapIcon className="size-5 text-ink" strokeWidth={1.8} />}
+              title="The District"
+              sub="Every Broadway house, one live map"
+            />
+            <QuickLink
+              href="/trip"
+              icon={
+                <CalendarRange className="size-5 text-ink" strokeWidth={1.8} />
+              }
+              title="Trip mode"
+              sub="Day-by-day windows for your visit"
+            />
+          </div>
+
+          {savedShows.length > 0 && (
+            <>
+              <SectionHead
+                title="Interested"
+                detail={`${savedShows.length} show${savedShows.length === 1 ? "" : "s"}`}
+              />
+              <PosterShelf shows={savedShows} claimName={claimFor(0)} />
+            </>
+          )}
+
+          <SectionHead title="Now playing" detail={`${filtered.length} shows`} />
+          <div className="-mx-4 mt-3 flex gap-2.5 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
+            <FilterChip
+              icon={<Theater className="size-5" strokeWidth={1.8} />}
+              label={circuit}
+              active={circuit !== "All shows"}
+              onClick={() => setSheet("circuit")}
+            />
+            <FilterChip
+              icon={<Zap className="size-5" strokeWidth={1.8} />}
+              label="Rush & lottery"
+              chevron={false}
+              active={rushOnly}
+              onClick={() => setRushOnly((v) => !v)}
+            />
+            {tktsToday.size > 0 && (
+              <FilterChip
+                icon={<TicketPercent className="size-5" strokeWidth={1.8} />}
+                label="On TKTS today"
+                chevron={false}
+                active={tktsOnly}
+                onClick={() => setTktsOnly((v) => !v)}
+              />
+            )}
+            <FilterChip
+              icon={<CircleDollarSign className="size-5" strokeWidth={1.8} />}
+              label="Cheapest"
+              chevron={false}
+              active={cheapest}
+              onClick={() => setCheapest((v) => !v)}
+            />
+          </div>
+
+          {filtered.length === 0 ? (
+            <div className="pt-6">
+              <EmptyState
+                text="Nothing matches your filters…"
+                actionLabel="Clear filters"
+                onAction={() => {
+                  setCircuit("Broadway");
+                  setRushOnly(false);
+                  setTktsOnly(false);
+                }}
+              />
+            </div>
+          ) : (
+            <div className="mt-4 grid grid-cols-2 items-start gap-3 web:md:grid-cols-3 web:lg:grid-cols-4">
+              <AnimatePresence mode="popLayout">
+                {filtered.map((show, i) => (
+                  <motion.div
+                    key={show.slug}
+                    layout
+                    initial={{ y: 10 }}
+                    animate={{ y: 0 }}
+                    exit={{ opacity: 0, scale: 0.96 }}
+                    transition={cardTransition(i)}
+                  >
+                    <ShowCard
+                      show={show}
+                      posterName={claimFor(1)(show.slug)}
+                      onTktsToday={tktsToday.has(show.slug)}
+                    />
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
+          )}
+
           <SectionHead
-            title="Interested"
-            detail={`${savedShows.length} show${savedShows.length === 1 ? "" : "s"}`}
+            title="Attended"
+            detail={`${attended.length} logged`}
           />
-          <PosterShelf shows={savedShows} claimName={claimFor(0)} />
+          <PosterShelf shows={attended} claimName={claimFor(2)} />
+
+          <SectionHead title="For you" />
+          {reason && (
+            <p className="mt-1 text-caption text-ink-soft">
+              Because you {savedShows[0] ? "saved" : "attended"} {reason.title}
+            </p>
+          )}
+          <PosterShelf shows={forYou} claimName={claimFor(3)} />
         </>
       )}
-
-      <SectionHead title="Now playing" detail={`${filtered.length} shows`} />
-      <div className="-mx-4 mt-3 flex gap-2.5 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
-        <FilterChip
-          icon={<Theater className="size-5" strokeWidth={1.8} />}
-          label={circuit}
-          active={circuit !== "All shows"}
-          onClick={() => setSheet("circuit")}
-        />
-        <FilterChip
-          icon={<Zap className="size-5" strokeWidth={1.8} />}
-          label="Rush & lottery"
-          chevron={false}
-          active={rushOnly}
-          onClick={() => setRushOnly((v) => !v)}
-        />
-        {tktsToday.size > 0 && (
-          <FilterChip
-            icon={<TicketPercent className="size-5" strokeWidth={1.8} />}
-            label="On TKTS today"
-            chevron={false}
-            active={tktsOnly}
-            onClick={() => setTktsOnly((v) => !v)}
-          />
-        )}
-        <FilterChip
-          icon={<CircleDollarSign className="size-5" strokeWidth={1.8} />}
-          label="Cheapest"
-          chevron={false}
-          active={cheapest}
-          onClick={() => setCheapest((v) => !v)}
-        />
-      </div>
-
-      {filtered.length === 0 ? (
-        <div className="pt-6">
-          <EmptyState
-            text="Nothing matches your filters…"
-            actionLabel="Clear filters"
-            onAction={() => {
-              setCircuit("All shows");
-              setRushOnly(false);
-              setTktsOnly(false);
-            }}
-          />
-        </div>
-      ) : (
-        <div className="mt-4 grid grid-cols-2 items-start gap-3 web:md:grid-cols-3 web:lg:grid-cols-4">
-          <AnimatePresence mode="popLayout">
-            {filtered.map((show, i) => (
-              <motion.div
-                key={show.slug}
-                layout
-                initial={{ y: 10 }}
-                animate={{ y: 0 }}
-                exit={{ opacity: 0, scale: 0.96 }}
-                transition={cardTransition(i)}
-              >
-                <ShowCard
-                  show={show}
-                  posterName={claimFor(1)(show.slug)}
-                  onTktsToday={tktsToday.has(show.slug)}
-                />
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        </div>
-      )}
-
-      <SectionHead
-        title="Attended"
-        detail={`${attended.length} logged`}
-      />
-      <PosterShelf shows={attended} claimName={claimFor(2)} />
-
-      <SectionHead title="For you" />
-      {reason && (
-        <p className="mt-1 text-caption text-ink-soft">
-          Because you {savedShows[0] ? "saved" : "attended"} {reason.title}
-        </p>
-      )}
-      <PosterShelf shows={forYou} claimName={claimFor(3)} />
 
       <Sheet
         open={sheet === "circuit"}
