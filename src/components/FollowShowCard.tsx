@@ -19,7 +19,7 @@ export function FollowShowCard({ show }: { show: Show }) {
   const enabled = follow?.enabled ?? false;
 
   return (
-    <div className="mt-3 flex items-center gap-3.5 rounded-card bg-paper p-4">
+    <div className="flex items-center gap-3.5 rounded-card bg-paper p-4">
       <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-cream">
         {following ? (
           <BellRing className="size-5 text-ink" strokeWidth={1.8} />

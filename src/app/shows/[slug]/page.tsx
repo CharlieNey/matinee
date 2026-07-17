@@ -121,13 +121,15 @@ export default async function ShowPage({
             </div>
           </div>
         </div>
-        <div className="mt-3 flex web:mt-4">
-          <InterestedButton show={show} />
+        <div className="mt-3 flex flex-col gap-3 web:mt-4">
+          <div className="flex">
+            <InterestedButton show={show} />
+          </div>
+          {officialTickets && (
+            <OfficialTicketsCard show={show} ticketLink={officialTickets} />
+          )}
+          {hasPrograms && <FollowShowCard show={show} />}
         </div>
-        {officialTickets && (
-          <OfficialTicketsCard show={show} ticketLink={officialTickets} />
-        )}
-        {hasPrograms && <FollowShowCard show={show} />}
       </div>
 
       <ShowPrograms show={show} />
