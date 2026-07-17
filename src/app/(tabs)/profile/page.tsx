@@ -9,7 +9,6 @@ import {
   Bookmark,
   Calendar,
   EyeOff,
-  Forward,
   Mail,
   Settings,
   SquarePen,
@@ -23,15 +22,16 @@ import { EmptyState } from "@/components/EmptyState";
 import { EntryHeatmap } from "@/components/EntryHeatmap";
 import { InsetShowRow } from "@/components/InsetShowRow";
 import { Poster } from "@/components/Poster";
+import { ShareButton } from "@/components/ShareButton";
 import { Sheet } from "@/components/Sheet";
 import { FollowSpot } from "@/components/FollowSpot";
 import { Toggle } from "@/components/Toggle";
 import { useToast } from "@/components/Toast";
 import { TopTenShelf } from "@/components/TopTenShelf";
+import { TopTenSheet } from "@/components/TopTenSheet";
 import {
   ActivityEntry,
   activityFeed,
-  collection,
   profile as profileData,
 } from "@/lib/data";
 import {
@@ -48,10 +48,15 @@ import {
 import { renderStubCard, shareImage } from "@/lib/shareCards";
 import { encodeSharedProfile } from "@/lib/shareProfile";
 import { DiaryEntry, useApp } from "@/lib/store";
-import { allShows, getShow, Show } from "@/lib/shows";
+import { getShow, Show } from "@/lib/shows";
 import { useNow } from "@/lib/useNow";
 
-type Tab = "activity" | "record" | "collection";
+const PROFILE_TABS = [
+  ["activity", "Activity"],
+  ["record", "Record"],
+  ["collection", "Collection"],
+] as const;
+type Tab = (typeof PROFILE_TABS)[number][0];
 type SheetName =
   | "edit"
   | "settings"
@@ -59,6 +64,7 @@ type SheetName =
   | "follows"
   | "interested"
   | "attended"
+  | "topten"
   | null;
 
 function HeaderPill({
@@ -212,14 +218,11 @@ function DiaryCard({ entry }: { entry: DiaryEntry }) {
             </span>
           </p>
         )}
-        <button
-          type="button"
-          onClick={handleShare}
-          className="flex items-center gap-2 self-start text-caption font-semibold text-ink-soft transition-colors duration-150 hover:text-ink"
-        >
-          <Forward className="size-4" strokeWidth={2} />
-          Share as image
-        </button>
+        <ShareButton
+          variant="quiet"
+          label="Share as image"
+          onShare={handleShare}
+        />
       </div>
     </div>
   );
@@ -420,85 +423,71 @@ function RecordTab() {
   );
 }
 
+/** Taste, from real state: the editable Top 10 shelf, then the two live
+ *  collections — Interested (the bookmark set) and Attended (diary + the
+ *  pre-app history). Every count is a `.length`; the covers are the
+ *  newest member with the state stamped on the art (DESIGN.md §150). */
 function CollectionTab({ openSheet }: { openSheet: (s: SheetName) => void }) {
+  const { savedShows, attended } = useApp();
+
   return (
     <div className="flex flex-col gap-7 pt-5">
-      <TopTenShelf />
+      <TopTenShelf onEdit={() => openSheet("topten")} />
 
-      <button
-        type="button"
-        onClick={() => openSheet("interested")}
-        className="flex items-center gap-5 text-left transition-transform duration-150 active:scale-[0.99]"
-      >
-        <div className="relative">
-          <Poster
-            show={collection.interested.cover}
-            className="w-[88px] rounded-thumb"
-          />
-          <Bookmark
-            className="absolute left-1/2 top-1/2 size-8 -translate-x-1/2 -translate-y-1/2 text-white/85"
-            fill="currentColor"
-            strokeWidth={0}
-          />
-        </div>
-        <div>
-          <p className="text-title">Interested</p>
-          <p className="mt-1 text-body text-ink-soft">
-            {collection.interested.count} saved
-          </p>
-        </div>
-      </button>
-
-      <button
-        type="button"
-        onClick={() => openSheet("attended")}
-        className="flex items-center gap-5 text-left transition-transform duration-150 active:scale-[0.99]"
-      >
-        <div className="relative">
-          <Poster
-            show={collection.attended.cover}
-            className="w-[88px] rounded-thumb"
-          />
-          <Star
-            className="absolute left-1/2 top-1/2 size-8 -translate-x-1/2 -translate-y-1/2 text-white/85"
-            fill="currentColor"
-            strokeWidth={0}
-          />
-        </div>
-        <div>
-          <p className="text-title">Attended</p>
-          <p className="mt-1 text-body text-ink-soft">
-            {collection.attended.count} logged
-          </p>
-        </div>
-      </button>
-
-      {/* Cover echoes the Wrapped screen's espresso card so the row reads
-          as a preview, matching its poster-cover siblings. */}
-      <Link
-        href="/wrapped"
-        className="flex items-center gap-5 text-left transition-transform duration-150 active:scale-[0.99]"
-      >
-        <div
-          className="flex aspect-square w-[88px] shrink-0 items-center justify-center rounded-thumb"
-          style={{
-            background:
-              "linear-gradient(180deg, var(--color-espresso-glow) 0%, var(--color-espresso) 70%)",
-          }}
+      {savedShows.length > 0 ? (
+        <button
+          type="button"
+          onClick={() => openSheet("interested")}
+          className="flex items-center gap-5 text-left transition-transform duration-150 active:scale-[0.99]"
         >
-          <Star
-            className="size-8 text-white/85"
-            fill="currentColor"
-            strokeWidth={0}
-          />
-        </div>
-        <div>
-          <p className="text-title">Season Wrapped</p>
-          <p className="mt-1 text-body text-ink-soft">
-            A shareable recap of your season
-          </p>
-        </div>
-      </Link>
+          <div className="relative">
+            <Poster show={savedShows[0]} className="w-[88px] rounded-thumb" />
+            <Bookmark
+              className="absolute left-1/2 top-1/2 size-8 -translate-x-1/2 -translate-y-1/2 text-white/85"
+              fill="currentColor"
+              strokeWidth={0}
+            />
+          </div>
+          <div>
+            <p className="text-title">Interested</p>
+            <p className="mt-1 text-body text-ink-soft">
+              {savedShows.length} show{savedShows.length === 1 ? "" : "s"}
+            </p>
+          </div>
+        </button>
+      ) : (
+        <EmptyState
+          text="Tap Interested on any show and it collects here…"
+          actionLabel="Browse shows"
+          actionHref="/"
+          icon={
+            <Bookmark className="size-16 text-ink-faint" strokeWidth={1.4} />
+          }
+        />
+      )}
+
+      {attended.length > 0 && (
+        <button
+          type="button"
+          onClick={() => openSheet("attended")}
+          className="flex items-center gap-5 text-left transition-transform duration-150 active:scale-[0.99]"
+        >
+          <div className="relative">
+            <Poster show={attended[0]} className="w-[88px] rounded-thumb" />
+            <Star
+              className="absolute left-1/2 top-1/2 size-8 -translate-x-1/2 -translate-y-1/2 text-white/85"
+              fill="currentColor"
+              strokeWidth={0}
+            />
+          </div>
+          <div>
+            <p className="text-title">Attended</p>
+            <p className="mt-1 text-body text-ink-soft">
+              {attended.length} logged
+            </p>
+          </div>
+        </button>
+      )}
     </div>
   );
 }
@@ -574,7 +563,7 @@ function PersonRow({
 export default function ProfilePage() {
   const [tab, setTab] = useState<Tab>("activity");
   const [sheet, setSheet] = useState<SheetName>(null);
-  const { profile, updateProfile, diary } = useApp();
+  const { profile, updateProfile, diary, savedShows, attended } = useApp();
   const toast = useToast();
   const now = useNow();
 
@@ -682,14 +671,11 @@ export default function ProfilePage() {
             >
               <Settings className="size-6" strokeWidth={1.8} />
             </button>
-            <button
-              type="button"
-              aria-label="Share profile"
-              className={iconBtn}
-              onClick={shareProfile}
-            >
-              <Forward className="size-6" strokeWidth={1.8} />
-            </button>
+            <ShareButton
+              variant="icon"
+              label="Share profile"
+              onShare={shareProfile}
+            />
           </div>
         </div>
 
@@ -706,7 +692,15 @@ export default function ProfilePage() {
             <h1 className="truncate font-display text-[28px] font-bold tracking-normal">
               {profile.name}
             </h1>
-            <p className="mt-0.5 text-body text-white/60">{profile.handle}</p>
+            <div className="mt-1 flex flex-wrap items-center gap-2">
+              <p className="text-body text-white/60">{profile.handle}</p>
+              <span
+                className="rounded-full border border-white/20 px-2 py-0.5 text-label font-semibold text-white/70"
+                title="Sample activity for this portfolio prototype"
+              >
+                Demo profile
+              </span>
+            </div>
             <button
               type="button"
               onClick={() => setSheet("follows")}
@@ -781,7 +775,7 @@ export default function ProfilePage() {
         <div className="mt-6 grid grid-cols-2 gap-3">
           <HeaderPill
             icon={<BellPlus className="size-5" strokeWidth={1.8} />}
-            label="Watches"
+            label="Following"
             href="/notify"
           />
           <HeaderPill
@@ -799,18 +793,45 @@ export default function ProfilePage() {
           rail — it's the right column beside the card. */}
       <div className="relative -mt-6 rounded-t-sheet border-t border-gold bg-cream web:mt-0 web:rounded-none web:border-t-0">
         <div className="border-b border-line px-4">
-          <div className="flex gap-8">
-            {(
-              [
-                ["activity", "Activity"],
-                ["record", "Record"],
-                ["collection", "Collection"],
-              ] as const
-            ).map(([key, label]) => (
+          <div
+            className="flex gap-8"
+            role="tablist"
+            aria-label="Profile sections"
+          >
+            {PROFILE_TABS.map(([key, label], index) => (
               <button
                 key={key}
                 type="button"
+                role="tab"
+                id={`profile-tab-${key}`}
+                aria-controls={`profile-panel-${key}`}
+                aria-selected={tab === key}
+                tabIndex={tab === key ? 0 : -1}
                 onClick={() => setTab(key)}
+                onKeyDown={(event) => {
+                  if (
+                    event.key !== "ArrowLeft" &&
+                    event.key !== "ArrowRight" &&
+                    event.key !== "Home" &&
+                    event.key !== "End"
+                  )
+                    return;
+                  event.preventDefault();
+                  const nextIndex =
+                    event.key === "Home"
+                      ? 0
+                      : event.key === "End"
+                        ? PROFILE_TABS.length - 1
+                        : (index +
+                            (event.key === "ArrowRight" ? 1 : -1) +
+                            PROFILE_TABS.length) %
+                          PROFILE_TABS.length;
+                  const next = PROFILE_TABS[nextIndex][0];
+                  setTab(next);
+                  requestAnimationFrame(() =>
+                    document.getElementById(`profile-tab-${next}`)?.focus(),
+                  );
+                }}
                 className={`relative pb-3 pt-5 text-body font-semibold transition-colors duration-200 ${
                   tab === key ? "text-ink" : "text-ink-soft"
                 }`}
@@ -832,6 +853,9 @@ export default function ProfilePage() {
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={tab}
+              role="tabpanel"
+              id={`profile-panel-${tab}`}
+              aria-labelledby={`profile-tab-${tab}`}
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -4 }}
@@ -886,7 +910,7 @@ export default function ProfilePage() {
       >
         <div className="mt-5 flex flex-col gap-2.5">
           {[
-            ["Push notifications", "Rush & lottery deadlines for your watches", true],
+            ["Push notifications", "Rush & lottery deadlines for shows you follow", true],
             ["Email updates", "Weekly digest of shows you follow", false],
             ["Public profile", "Anyone can see your activity", true],
           ].map(([label, sub, on]) => (
@@ -935,16 +959,17 @@ export default function ProfilePage() {
         open={sheet === "interested"}
         onClose={() => setSheet(null)}
         title="Interested"
-        subtitle={`${collection.interested.count} saved`}
-        shows={allShows().slice(0, 10)}
+        subtitle={`${savedShows.length} show${savedShows.length === 1 ? "" : "s"}`}
+        shows={savedShows}
       />
       <PosterGridSheet
         open={sheet === "attended"}
         onClose={() => setSheet(null)}
         title="Attended"
-        subtitle={`${collection.attended.count} logged`}
-        shows={allShows()}
+        subtitle={`${attended.length} logged`}
+        shows={attended}
       />
+      <TopTenSheet open={sheet === "topten"} onClose={() => setSheet(null)} />
     </main>
   );
 }

@@ -875,6 +875,15 @@ export function allPrograms(): readonly Program[] {
   return PROGRAMS;
 }
 
+/** Freshest lastVerified across the catalog — trust lines derive from this. */
+export function programsLastVerified(): string {
+  let latest = LAST_VERIFIED;
+  for (const item of PROGRAMS) {
+    if (item.lastVerified > latest) latest = item.lastVerified;
+  }
+  return latest;
+}
+
 /** Stable identity for a program — (show, kind, platform) is unique. */
 export function programKey(item: Program): string {
   return `${item.showSlug}/${item.kind}/${item.platform}`;

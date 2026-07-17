@@ -4,7 +4,7 @@ import { allPrograms } from "@/lib/programs";
 import { allTheaters } from "@/lib/theaters";
 
 export const metadata = {
-  title: "About — Matinee",
+  title: "About",
   description:
     "How this works: hand-curated Broadway rush & lottery data, and why there's no scraper behind it.",
 };

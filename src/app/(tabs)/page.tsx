@@ -19,7 +19,6 @@ import { Poster } from "@/components/Poster";
 import { RushBanner } from "@/components/RushBanner";
 import { Sheet } from "@/components/Sheet";
 import { ShowCard } from "@/components/ShowCard";
-import { collection } from "@/lib/data";
 import { cheapestProgram } from "@/lib/programs";
 import { useApp } from "@/lib/store";
 import { allShows, Show } from "@/lib/shows";
@@ -116,7 +115,7 @@ function SectionHead({ title, detail }: { title: string; detail?: string }) {
  * seed listings, now answered from the curated programs dataset.
  */
 export default function DiscoverPage() {
-  const { savedShows, diary, watches } = useApp();
+  const { savedShows, attended, follows } = useApp();
   const tkts = useTkts();
 
   const [circuit, setCircuit] = useState<CircuitFilter>("All shows");
@@ -170,26 +169,14 @@ export default function DiscoverPage() {
     );
   }, [catalog, rushOnly, tktsOnly, tktsToday]);
 
-  const attended = useMemo(() => {
-    const seen = new Set<string>();
-    const list: Show[] = [];
-    for (const s of [...diary.map((d) => d.show), ...collection.attendedRecent]) {
-      if (!seen.has(s.slug)) {
-        seen.add(s.slug);
-        list.push(s);
-      }
-    }
-    return list;
-  }, [diary]);
-
   const forYou = useMemo(() => {
     const taken = new Set([
       ...savedShows.map((s) => s.slug),
       ...attended.map((s) => s.slug),
-      ...watches.map((w) => w.show.slug),
+      ...follows.map((f) => f.show.slug),
     ]);
     return catalog.filter((s) => !taken.has(s.slug)).slice(0, 6);
-  }, [catalog, savedShows, attended, watches]);
+  }, [catalog, savedShows, attended, follows]);
 
   const reason = savedShows[0] ?? attended[0];
 
@@ -241,7 +228,7 @@ export default function DiscoverPage() {
         <>
           <SectionHead
             title="Interested"
-            detail={`${savedShows.length} saved`}
+            detail={`${savedShows.length} show${savedShows.length === 1 ? "" : "s"}`}
           />
           <PosterShelf shows={savedShows} claimName={claimFor(0)} />
         </>
@@ -299,8 +286,8 @@ export default function DiscoverPage() {
               <motion.div
                 key={show.slug}
                 layout
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
+                initial={{ y: 10 }}
+                animate={{ y: 0 }}
                 exit={{ opacity: 0, scale: 0.96 }}
                 transition={cardTransition(i)}
               >
@@ -317,7 +304,7 @@ export default function DiscoverPage() {
 
       <SectionHead
         title="Attended"
-        detail={`${collection.attended.count + diary.length} logged`}
+        detail={`${attended.length} logged`}
       />
       <PosterShelf shows={attended} claimName={claimFor(2)} />
 

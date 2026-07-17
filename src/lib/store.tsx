@@ -9,7 +9,13 @@ import {
   useRef,
   useState,
 } from "react";
-import { Watch, initialWatches, profile as initialProfile } from "./data";
+import {
+  Follow,
+  attendedShows,
+  initialTopTen,
+  initialFollows,
+  profile as initialProfile,
+} from "./data";
 import { getShow, Show } from "./shows";
 
 const STORAGE_KEY = "matinee-state-v1";
@@ -26,6 +32,8 @@ const LEGACY_STORAGE_KEY = "theatr-state-v1";
 type PersistedState = {
   alerts: { id: string; slug: string; enabled: boolean }[];
   saved: string[];
+  /** "My Top 10" slugs, in shelf order. Optional: pre-editor blobs. */
+  topTen?: string[];
   profile: { name: string; handle: string; bio: string | null };
   diary?: {
     id: string;
@@ -60,14 +68,14 @@ export type DiaryEntry = {
 };
 
 type AppState = {
-  /* Watches — followed shows; the push pipeline pings on their windows */
-  watches: Watch[];
-  isWatched: (slug: string) => boolean;
-  toggleWatch: (show: Show) => void;
-  removeWatch: (id: string) => Watch | undefined;
-  restoreWatch: (watch: Watch, index: number) => void;
+  /* Follows — followed shows; the push pipeline pings on their windows */
+  follows: Follow[];
+  toggleFollow: (show: Show) => void;
+  setFollowEnabled: (id: string, enabled: boolean) => void;
+  removeFollow: (id: string) => Follow | undefined;
+  restoreFollow: (follow: Follow, index: number) => void;
 
-  /* Bookmarks */
+  /* Interested — the bookmark state, "Interested" everywhere in the UI */
   isSaved: (slug: string) => boolean;
   toggleSaved: (slug: string) => void;
   savedShows: Show[];
@@ -75,6 +83,13 @@ type AppState = {
   /* Diary */
   diary: DiaryEntry[];
   addDiaryEntry: (entry: Omit<DiaryEntry, "id">) => void;
+
+  /* Attended — diary + pre-app history, deduped (see attendedShows) */
+  attended: Show[];
+
+  /* My Top 10 — user-curated shelf, in order */
+  topTenShows: Show[];
+  setTopTen: (slugs: string[]) => void;
 
   /* Profile */
   profile: ProfileInfo;
@@ -86,7 +101,7 @@ const AppContext = createContext<AppState | null>(null);
 let nextId = 1;
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
-  const [watches, setWatches] = useState<Watch[]>(initialWatches);
+  const [follows, setFollows] = useState<Follow[]>(initialFollows);
   // timeline shows start bookmarked, matching the reference screenshots
   const [saved, setSaved] = useState<Set<string>>(
     () =>
@@ -105,6 +120,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     bio: initialProfile.bio,
   });
   const [diary, setDiary] = useState<DiaryEntry[]>([]);
+  const [topTen, setTopTenState] = useState<string[]>(initialTopTen);
   const hydrated = useRef(false);
 
   // Restore persisted state after mount (deferred so SSR markup matches).
@@ -116,15 +132,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           localStorage.getItem(LEGACY_STORAGE_KEY);
         if (raw) {
           const data: PersistedState = JSON.parse(raw);
-          setWatches(
+          const seenFollows = new Set<string>();
+          setFollows(
             data.alerts.flatMap((a) => {
+              if (seenFollows.has(a.slug)) return [];
               const s = getShow(a.slug);
-              return s
-                ? [{ id: a.id, show: s, enabled: a.enabled ?? true }]
-                : [];
+              if (!s) return [];
+              seenFollows.add(a.slug);
+              return [{ id: a.id, show: s, enabled: a.enabled ?? true }];
             }),
           );
           setSaved(new Set(data.saved));
+          if (data.topTen) setTopTenState([...new Set(data.topTen)].slice(0, 10));
           setProfile(data.profile);
           setDiary(
             (data.diary ?? []).flatMap((d) => {
@@ -145,12 +164,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!hydrated.current) return;
     const state: PersistedState = {
-      alerts: watches.map((w) => ({
-        id: w.id,
-        slug: w.show.slug,
-        enabled: w.enabled,
+      alerts: follows.map((f) => ({
+        id: f.id,
+        slug: f.show.slug,
+        enabled: f.enabled,
       })),
       saved: [...saved],
+      topTen,
       profile,
       diary: diary.map(({ show, ...rest }) => ({ ...rest, slug: show.slug })),
     };
@@ -159,34 +179,37 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     } catch {
       // storage full/unavailable: state stays session-only
     }
-  }, [watches, saved, profile, diary]);
+  }, [follows, saved, topTen, profile, diary]);
 
-  const isWatched = useCallback(
-    (slug: string) => watches.some((w) => w.show.slug === slug),
-    [watches],
-  );
-
-  const toggleWatch = useCallback((show: Show) => {
-    setWatches((prev) =>
-      prev.some((w) => w.show.slug === show.slug)
-        ? prev.filter((w) => w.show.slug !== show.slug)
-        : [...prev, { id: `w-${nextId++}`, show, enabled: true }],
+  const toggleFollow = useCallback((show: Show) => {
+    setFollows((prev) =>
+      prev.some((f) => f.show.slug === show.slug)
+        ? prev.filter((f) => f.show.slug !== show.slug)
+        : [...prev, { id: `f-${nextId++}`, show, enabled: true }],
     );
   }, []);
 
-  const removeWatch = useCallback(
+  const setFollowEnabled = useCallback((id: string, enabled: boolean) => {
+    setFollows((prev) =>
+      prev.map((follow) =>
+        follow.id === id ? { ...follow, enabled } : follow,
+      ),
+    );
+  }, []);
+
+  const removeFollow = useCallback(
     (id: string) => {
-      const removed = watches.find((w) => w.id === id);
-      setWatches((prev) => prev.filter((w) => w.id !== id));
+      const removed = follows.find((f) => f.id === id);
+      setFollows((prev) => prev.filter((f) => f.id !== id));
       return removed;
     },
-    [watches],
+    [follows],
   );
 
-  const restoreWatch = useCallback((watch: Watch, index: number) => {
-    setWatches((prev) => {
+  const restoreFollow = useCallback((follow: Follow, index: number) => {
+    setFollows((prev) => {
       const next = [...prev];
-      next.splice(Math.min(index, next.length), 0, watch);
+      next.splice(Math.min(index, next.length), 0, follow);
       return next;
     });
   }, []);
@@ -215,32 +238,52 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     [saved],
   );
 
+  const attended = useMemo(
+    () => attendedShows(diary.map((entry) => entry.show)),
+    [diary],
+  );
+
+  const setTopTen = useCallback((slugs: string[]) => {
+    setTopTenState([...new Set(slugs)].slice(0, 10));
+  }, []);
+
+  const topTenShows = useMemo(
+    () => topTen.flatMap((slug) => getShow(slug) ?? []),
+    [topTen],
+  );
+
   const value = useMemo<AppState>(
     () => ({
-      watches,
-      isWatched,
-      toggleWatch,
-      removeWatch,
-      restoreWatch,
+      follows,
+      toggleFollow,
+      setFollowEnabled,
+      removeFollow,
+      restoreFollow,
       isSaved,
       toggleSaved,
       savedShows,
       diary,
       addDiaryEntry,
+      attended,
+      topTenShows,
+      setTopTen,
       profile,
       updateProfile,
     }),
     [
-      watches,
-      isWatched,
-      toggleWatch,
-      removeWatch,
-      restoreWatch,
+      follows,
+      toggleFollow,
+      setFollowEnabled,
+      removeFollow,
+      restoreFollow,
       isSaved,
       toggleSaved,
       savedShows,
       diary,
       addDiaryEntry,
+      attended,
+      topTenShows,
+      setTopTen,
       profile,
       updateProfile,
     ],

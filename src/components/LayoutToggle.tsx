@@ -1,11 +1,30 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { Monitor, Smartphone } from "lucide-react";
 
 type Mode = "mobile" | "web";
 
 const STORAGE_KEY = "matinee-layout-v1";
+
+/* html[data-layout] is the source of truth — stamped before first paint by
+ * the inline script in layout.tsx — so the component reads it as an external
+ * store rather than mirroring it into post-mount state. */
+function subscribe(onChange: () => void) {
+  const observer = new MutationObserver(onChange);
+  observer.observe(document.documentElement, {
+    attributeFilter: ["data-layout"],
+  });
+  return () => observer.disconnect();
+}
+
+function readMode(): Mode {
+  return document.documentElement.getAttribute("data-layout") === "web"
+    ? "web"
+    : "mobile";
+}
+
+const readServerMode = () => null;
 
 /**
  * Floating Phone/Web switch (desktop viewports only). Flips
@@ -13,12 +32,11 @@ const STORAGE_KEY = "matinee-layout-v1";
  * variants, so the swap is instant and pure CSS.
  */
 export function LayoutToggle() {
-  const [mode, setMode] = useState<Mode | null>(null);
-
-  useEffect(() => {
-    const current = document.documentElement.getAttribute("data-layout");
-    setMode(current === "web" ? "web" : "mobile");
-  }, []);
+  const mode = useSyncExternalStore<Mode | null>(
+    subscribe,
+    readMode,
+    readServerMode,
+  );
 
   const apply = (next: Mode) => {
     document.documentElement.setAttribute("data-layout", next);
@@ -27,7 +45,6 @@ export function LayoutToggle() {
     } catch {
       // Private browsing — the choice just won't stick.
     }
-    setMode(next);
   };
 
   const segment = (target: Mode, label: string, Icon: typeof Monitor) => (

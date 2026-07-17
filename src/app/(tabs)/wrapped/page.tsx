@@ -2,7 +2,7 @@ import { BackHeader } from "@/components/BackHeader";
 import { WrappedScreen } from "@/components/WrappedScreen";
 
 export const metadata = {
-  title: "Season Wrapped — Matinee",
+  title: "Season Wrapped",
   description: "Your year at the theater, as a shareable recap.",
 };
 

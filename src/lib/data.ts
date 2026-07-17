@@ -1,13 +1,13 @@
 import { Show, show } from "./shows";
 
-/** A followed show (Phase 14) — the push cron watches its program windows. */
-export type Watch = {
+/** A followed show (Phase 14) — the push cron tracks its program windows. */
+export type Follow = {
   id: string;
   show: Show;
   enabled: boolean;
 };
 
-export const initialWatches: Watch[] = [
+export const initialFollows: Follow[] = [
   { id: "n1", show: show("the-lost-boys"), enabled: true },
   { id: "n2", show: show("oh-mary"), enabled: true },
   { id: "n3", show: show("the-book-of-mormon"), enabled: true },
@@ -68,23 +68,38 @@ export const profile = {
   joined: "December 2025",
 };
 
-export const collection = {
-  topTen: [
-    show("death-of-a-salesman"),
-    show("maybe-happy-ending"),
-    show("ragtime"),
-    show("little-shop-of-horrors"),
-    show("hadestown"),
-    show("operation-mincemeat"),
-  ],
-  interested: { count: 10, cover: show("the-play-that-goes-wrong") },
-  attended: { count: 20, cover: show("drunk-shakespeare") },
-  attendedRecent: [
-    show("operation-mincemeat"),
-    show("drunk-shakespeare"),
-    show("spelling-bee"),
-    show("the-gin-game"),
-    show("ragtime"),
-    show("death-of-a-salesman"),
-  ],
-};
+/** Seed order for "My Top 10" — editable from the Collection tab and
+ *  persisted per user in the store; this is only the starting shelf. */
+export const initialTopTen: string[] = [
+  "death-of-a-salesman",
+  "maybe-happy-ending",
+  "ragtime",
+  "little-shop-of-horrors",
+  "hadestown",
+  "operation-mincemeat",
+];
+
+/** Demo history — shows attended before the diary existed. */
+export const attendedSeed: Show[] = [
+  show("operation-mincemeat"),
+  show("drunk-shakespeare"),
+  show("spelling-bee"),
+  show("the-gin-game"),
+  show("ragtime"),
+  show("death-of-a-salesman"),
+];
+
+/** THE attended list: diary entries first, then the seed history, deduped.
+ *  Discover, the Collection tab, and Wrapped all count from here — no
+ *  surface carries its own attended number. */
+export function attendedShows(diaryShows: Show[]): Show[] {
+  const seen = new Set<string>();
+  const list: Show[] = [];
+  for (const s of [...diaryShows, ...attendedSeed]) {
+    if (!seen.has(s.slug)) {
+      seen.add(s.slug);
+      list.push(s);
+    }
+  }
+  return list;
+}

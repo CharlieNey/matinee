@@ -1,11 +1,7 @@
-"use client";
-
-import { useEffect, useRef, useState } from "react";
-
 /**
- * Poster key art with a fade-in on load, so lazy art blooms out of the
- * poster's own bg color instead of popping (DESIGN.md §6: poster-first).
- * `.complete` check covers cached images whose load event beat hydration.
+ * Lazy poster key art. It intentionally does not opacity-fade: WebKit pauses
+ * transitions in background panes, which can otherwise leave loaded artwork
+ * invisible until the tab receives focus.
  */
 export function PosterImage({
   src,
@@ -14,24 +10,14 @@ export function PosterImage({
   src: string;
   position?: string;
 }) {
-  const ref = useRef<HTMLImageElement>(null);
-  const [loaded, setLoaded] = useState(false);
-
-  useEffect(() => {
-    if (ref.current?.complete) setLoaded(true);
-  }, []);
-
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      ref={ref}
       src={src}
       alt=""
       loading="lazy"
-      onLoad={() => setLoaded(true)}
-      className={`absolute inset-0 size-full object-cover transition-opacity duration-300 ease-out ${
-        loaded ? "opacity-100" : "opacity-0"
-      }`}
+      decoding="async"
+      className="absolute inset-0 size-full object-cover"
       style={{ objectPosition: position }}
     />
   );

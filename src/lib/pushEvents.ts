@@ -2,7 +2,6 @@ import {
   allPrograms,
   etDayKey,
   getProgramStatus,
-  Program,
   programKey,
   programKindLabel,
   programOccurrencesNear,

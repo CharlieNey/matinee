@@ -1,13 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Forward } from "lucide-react";
 import { MeshGradient } from "@paper-design/shaders-react";
 import { useReducedMotion } from "motion/react";
 import { Poster } from "@/components/Poster";
+import { ShareButton } from "@/components/ShareButton";
 import { useToast } from "@/components/Toast";
 import { useWebGL } from "@/lib/useWebGL";
-import { collection } from "@/lib/data";
 import { onLotteryLogChange, readLotteryLog } from "@/lib/entries";
 import { allPrograms, programKey } from "@/lib/programs";
 import { renderWrappedCard, shareImage } from "@/lib/shareCards";
@@ -74,7 +73,7 @@ function ownerOf(show: Show): string | null {
 
 export function WrappedScreen() {
   const now = useNow();
-  const { diary } = useApp();
+  const { diary, attended } = useApp();
   const toast = useToast();
   const webgl = useWebGL();
   const reduced = useReducedMotion();
@@ -103,7 +102,8 @@ export function WrappedScreen() {
       return sum + Math.max(0, face - program.price);
     }, 0);
 
-    const showsSeen = diary.length + collection.attended.count;
+    // The one attended list (store) — diary + pre-app history, deduped.
+    const showsSeen = attended.length;
 
     const ownerCounts = new Map<string, number>();
     for (const entry of diary) {
@@ -148,13 +148,20 @@ export function WrappedScreen() {
         : []),
     ];
 
+    // Repeat visits belong in diary chronology, but this poster shelf is a
+    // set of productions. Dedupe here so repeat logs cannot produce duplicate
+    // React keys (or duplicate covers) on Wrapped.
+    const diaryShows = [
+      ...new Map(diary.map((entry) => [entry.show.slug, entry.show])).values(),
+    ];
+
     return {
       stats,
       months,
       monthCounts,
-      shows: diary.map((entry) => entry.show),
+      shows: diaryShows,
     };
-  }, [diary, log, now]);
+  }, [attended, diary, log, now]);
 
   if (!now) return null;
   const season = seasonLabel(now);
@@ -334,14 +341,7 @@ export function WrappedScreen() {
         </>
       )}
 
-      <button
-        type="button"
-        onClick={handleShare}
-        className="mt-6 flex h-14 w-full items-center justify-center gap-2.5 rounded-full bg-vermilion text-body font-semibold text-white transition-[background-color,transform] duration-150 active:scale-[0.98] active:bg-vermilion-pressed"
-      >
-        <Forward className="size-5" strokeWidth={2} />
-        Share as image
-      </button>
+      <ShareButton label="Share as image" onShare={handleShare} className="mt-6" />
       <p className="mt-3 text-center text-label text-ink-faint">
         Rendered on your device — nothing leaves it until you share.
       </p>

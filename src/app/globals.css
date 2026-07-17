@@ -39,7 +39,7 @@
 
   --shadow-float: 0 1px 3px rgb(43 29 22 / 0.06);
 
-  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-schibsted), ui-sans-serif, system-ui, sans-serif;
 
   --text-display: 34px;
   --text-display--line-height: 1.1;
@@ -66,7 +66,7 @@
   --text-label--line-height: 1.2;
   --text-label--font-weight: 500;
 
-  --font-display: var(--font-playfair), "Didot", "Bodoni 72", Georgia, serif;
+  --font-display: var(--font-bodoni), "Didot", "Bodoni 72", Georgia, serif;
 }
 
 /* Velvet typography (DESIGN.md §12): the big moments go serif (program-book
@@ -211,10 +211,10 @@ button:not(:disabled),
 }
 
 /*
- * Card entrance, resilience-first: the fade runs immediately (no delay, so a
- * stalled animation timeline can never strand content invisible); only the
- * transform rise carries the per-item stagger, set via --stagger. Worst case
- * under frozen animations: content visible, offset 10px.
+ * Card entrance, resilience-first: only position animates. WebKit pauses
+ * animation timelines for background panes; opacity animation would strand
+ * a whole shelf invisible until focus returned. Worst case under a frozen
+ * timeline: content is visible, offset by 10px.
  */
 @keyframes card-fade {
   from {
@@ -229,10 +229,8 @@ button:not(:disabled),
 }
 
 .card-enter {
-  animation:
-    card-fade 250ms ease-out,
-    card-rise 300ms ease-out both;
-  animation-delay: 0ms, var(--stagger, 0ms);
+  animation: card-rise 300ms ease-out both;
+  animation-delay: var(--stagger, 0ms);
 }
 
 /* Marquee pulse: gilt urgency halo on closes-soon rush dots (DESIGN.md §11).

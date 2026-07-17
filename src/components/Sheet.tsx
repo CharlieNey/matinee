@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useId, useRef } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion, useDragControls } from "motion/react";
 import { X } from "lucide-react";
@@ -27,19 +27,70 @@ export function Sheet({
 }) {
   const dragControls = useDragControls();
   const web = useLayoutMode() === "web";
+  const titleId = useId();
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const closeRef = useRef(onClose);
+
+  useEffect(() => {
+    closeRef.current = onClose;
+  }, [onClose]);
 
   useEffect(() => {
     if (!open) return;
+    const previousFocus =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+    const previousOverflow = document.body.style.overflow;
+    const focusableSelector = [
+      "button:not(:disabled)",
+      "a[href]",
+      "input:not(:disabled)",
+      "textarea:not(:disabled)",
+      "select:not(:disabled)",
+      '[tabindex]:not([tabindex="-1"])',
+    ].join(",");
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") {
+        e.preventDefault();
+        closeRef.current();
+        return;
+      }
+      if (e.key !== "Tab") return;
+      const dialog = dialogRef.current;
+      if (!dialog) return;
+      const focusable = [
+        ...dialog.querySelectorAll<HTMLElement>(focusableSelector),
+      ].filter((element) => !element.hasAttribute("hidden"));
+      if (focusable.length === 0) {
+        e.preventDefault();
+        dialog.focus();
+        return;
+      }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
     };
     document.addEventListener("keydown", onKey);
     document.body.style.overflow = "hidden";
+    const frame = requestAnimationFrame(() => {
+      const dialog = dialogRef.current;
+      const initial = dialog?.querySelector<HTMLElement>("[data-sheet-close]");
+      (initial ?? dialog)?.focus();
+    });
     return () => {
+      cancelAnimationFrame(frame);
       document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
+      document.body.style.overflow = previousOverflow;
+      if (previousFocus?.isConnected) previousFocus.focus();
     };
-  }, [open, onClose]);
+  }, [open]);
 
   // Portal to <body>: callers render sheets inside styled containers (e.g.
   // WebNav's backdrop-blur header), which would otherwise become the
@@ -61,9 +112,12 @@ export function Sheet({
           {web ? (
             <div className="pointer-events-none fixed inset-0 z-[61] flex items-center justify-center p-6">
               <motion.div
+                ref={dialogRef}
                 role="dialog"
                 aria-modal="true"
-                aria-label={title}
+                aria-labelledby={title ? titleId : undefined}
+                aria-label={title ? undefined : "Dialog"}
+                tabIndex={-1}
                 className="pointer-events-auto relative w-full max-w-[560px] overflow-hidden rounded-sheet border border-line bg-cream shadow-float"
                 initial={{ opacity: 0, scale: 0.97, y: 12 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -73,22 +127,30 @@ export function Sheet({
                 <button
                   type="button"
                   aria-label="Close"
+                  data-sheet-close
                   onClick={onClose}
                   className="absolute right-3.5 top-3.5 z-10 grid size-9 place-items-center rounded-full text-ink-soft transition-colors duration-150 hover:bg-inset hover:text-ink"
                 >
                   <X className="size-5" strokeWidth={2} />
                 </button>
                 <div className="max-h-[min(85dvh,760px)] overflow-y-auto px-6 pb-6 pt-5">
-                  {title && <h2 className="pr-10 text-heading">{title}</h2>}
+                  {title && (
+                    <h2 id={titleId} className="pr-10 text-heading">
+                      {title}
+                    </h2>
+                  )}
                   {children}
                 </div>
               </motion.div>
             </div>
           ) : (
             <motion.div
+              ref={dialogRef}
               role="dialog"
               aria-modal="true"
-              aria-label={title}
+              aria-labelledby={title ? titleId : undefined}
+              aria-label={title ? undefined : "Dialog"}
+              tabIndex={-1}
               className="fixed inset-x-0 bottom-0 z-[61] mx-auto w-full max-w-[430px] rounded-t-sheet bg-cream"
               drag="y"
               dragListener={false}
@@ -110,7 +172,24 @@ export function Sheet({
                 <div className="mx-auto h-1 w-9 rounded-full bg-ink-faint/60" />
               </div>
               <div className="max-h-[82dvh] overflow-y-auto px-4 pb-[max(env(safe-area-inset-bottom),20px)] pt-2">
-                {title && <h2 className="text-heading">{title}</h2>}
+                <div className="flex min-h-9 items-center justify-between gap-4">
+                  {title ? (
+                    <h2 id={titleId} className="text-heading">
+                      {title}
+                    </h2>
+                  ) : (
+                    <span />
+                  )}
+                  <button
+                    type="button"
+                    aria-label="Close"
+                    data-sheet-close
+                    onClick={onClose}
+                    className="-mr-1 grid size-9 shrink-0 place-items-center rounded-full text-ink-soft transition-colors duration-150 active:bg-inset active:text-ink"
+                  >
+                    <X className="size-5" strokeWidth={2} />
+                  </button>
+                </div>
                 {children}
               </div>
             </motion.div>

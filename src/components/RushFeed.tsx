@@ -93,6 +93,37 @@ function matchesKind(program: Program, kind: KindGroup): boolean {
   return kind === "all" || KIND_GROUPS[kind].includes(program.kind);
 }
 
+/** Estimated card height — header block + one line per program row. */
+function cardWeight(group: ShowGroup): number {
+  return 96 + 50 * group.entries.length;
+}
+
+/**
+ * Order-preserving split into two web columns, balanced by estimated height.
+ * Cards vary in height (1–4 program rows), so a shared grid leaves ragged
+ * holes under short cards — each row as tall as its tallest card. Stacking
+ * two independent columns keeps every vertical gap at exactly gap-3, and an
+ * expanding row only pushes down its own column. Reading order is down the
+ * left column then the right, which matches DOM (and mobile) order.
+ */
+function splitColumns(groups: ShowGroup[]): ShowGroup[][] {
+  const total = groups.reduce((sum, group) => sum + cardWeight(group), 0);
+  let best = groups.length;
+  let bestDiff = Infinity;
+  let prefix = 0;
+  for (let k = 1; k <= groups.length; k++) {
+    prefix += cardWeight(groups[k - 1]);
+    const diff = Math.abs(total - 2 * prefix);
+    if (diff < bestDiff) {
+      bestDiff = diff;
+      best = k;
+    }
+  }
+  return [groups.slice(0, best), groups.slice(best)].filter(
+    (column) => column.length > 0,
+  );
+}
+
 function FeedSection({
   title,
   groups,
@@ -111,20 +142,36 @@ function FeedSection({
         <span className="text-caption text-ink-soft">{groups.length}</span>
       </div>
       {groups.length > 0 ? (
-        <div className="mt-3 space-y-3 web:grid web:grid-cols-2 web:items-start web:gap-3 web:space-y-0">
-          {groups.map((group, index) => (
-            <div
-              key={group.show.slug}
-              className="card-enter"
-              style={{ "--stagger": `${Math.min(index * 35, 210)}ms` } as React.CSSProperties}
-            >
-              <RushShowCard
-                show={group.show}
-                entries={group.entries}
-                now={now}
-              />
-            </div>
-          ))}
+        <div className="mt-3 flex flex-col gap-3 web:grid web:grid-cols-2 web:items-start">
+          {splitColumns(groups).map((column, columnIndex, columns) => {
+            const offset = columnIndex === 0 ? 0 : columns[0].length;
+            return (
+              // Mobile: `contents` dissolves the wrapper so cards stack as
+              // one list. Web: each wrapper is an independent column.
+              <div
+                key={columnIndex}
+                className="contents web:flex web:flex-col web:gap-3"
+              >
+                {column.map((group, index) => (
+                  <div
+                    key={group.show.slug}
+                    className="card-enter"
+                    style={
+                      {
+                        "--stagger": `${Math.min((offset + index) * 35, 210)}ms`,
+                      } as React.CSSProperties
+                    }
+                  >
+                    <RushShowCard
+                      show={group.show}
+                      entries={group.entries}
+                      now={now}
+                    />
+                  </div>
+                ))}
+              </div>
+            );
+          })}
         </div>
       ) : (
         <p className="mt-3 rounded-card bg-paper px-4 py-5 text-body text-ink-soft">
@@ -285,9 +332,16 @@ export function RushFeed() {
           <Clock3 className="size-5" strokeWidth={1.8} />
           Checking today&apos;s entry windows…
         </div>
-        <div className="mt-4 space-y-3" aria-hidden>
-          {[0, 1, 2].map((item) => (
-            <div key={item} className="h-[190px] animate-pulse rounded-card bg-paper" />
+        <div
+          className="mt-4 space-y-3 web:grid web:grid-cols-2 web:items-start web:gap-3 web:space-y-0"
+          aria-hidden
+        >
+          {[190, 150, 150, 190].map((height, item) => (
+            <div
+              key={item}
+              className="animate-pulse rounded-card bg-paper"
+              style={{ height }}
+            />
           ))}
         </div>
       </div>

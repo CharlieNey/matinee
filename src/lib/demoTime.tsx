@@ -4,8 +4,7 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
-  useState,
+  useSyncExternalStore,
 } from "react";
 
 /**
@@ -54,19 +53,45 @@ function etClock(date: Date): { minuteOfDay: number; seconds: number } {
   };
 }
 
-export function DemoTimeProvider({ children }: { children: React.ReactNode }) {
-  const [offsetMs, setOffsetMs] = useState<number | null>(null);
+/* The offset lives in a tiny module store — memory is the source of truth,
+ * sessionStorage the per-tab mirror — so the provider can read it with
+ * useSyncExternalStore instead of mirroring storage into post-mount state
+ * (and scrubbing still works when storage is unavailable). */
+let currentOffset: number | null | undefined;
+const listeners = new Set<() => void>();
 
-  useEffect(() => {
+function readOffset(): number | null {
+  if (currentOffset === undefined) {
     try {
       const saved = sessionStorage.getItem(STORAGE_KEY);
-      if (saved !== null && !Number.isNaN(Number(saved))) {
-        setOffsetMs(Number(saved));
-      }
+      currentOffset =
+        saved !== null && !Number.isNaN(Number(saved)) ? Number(saved) : null;
     } catch {
       // Storage unavailable — stay live.
+      currentOffset = null;
     }
-  }, []);
+  }
+  return currentOffset;
+}
+
+function writeOffset(next: number | null) {
+  currentOffset = next;
+  try {
+    if (next === null) sessionStorage.removeItem(STORAGE_KEY);
+    else sessionStorage.setItem(STORAGE_KEY, String(next));
+  } catch {}
+  listeners.forEach((notify) => notify());
+}
+
+function subscribe(onChange: () => void) {
+  listeners.add(onChange);
+  return () => listeners.delete(onChange);
+}
+
+const readServerOffset = () => null;
+
+export function DemoTimeProvider({ children }: { children: React.ReactNode }) {
+  const offsetMs = useSyncExternalStore(subscribe, readOffset, readServerOffset);
 
   const scrubTo = useCallback((dayOffset: number, minuteOfDay: number) => {
     const real = new Date();
@@ -74,18 +99,11 @@ export function DemoTimeProvider({ children }: { children: React.ReactNode }) {
     const deltaMinutes =
       dayOffset * 24 * 60 + minuteOfDay - current.minuteOfDay;
     // Land exactly on the chosen minute: also cancel the current seconds.
-    const next = deltaMinutes * 60_000 - current.seconds * 1_000;
-    setOffsetMs(next);
-    try {
-      sessionStorage.setItem(STORAGE_KEY, String(next));
-    } catch {}
+    writeOffset(deltaMinutes * 60_000 - current.seconds * 1_000);
   }, []);
 
   const backToLive = useCallback(() => {
-    setOffsetMs(null);
-    try {
-      sessionStorage.removeItem(STORAGE_KEY);
-    } catch {}
+    writeOffset(null);
   }, []);
 
   return (

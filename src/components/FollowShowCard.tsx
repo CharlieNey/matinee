@@ -8,18 +8,20 @@ import { Show } from "@/lib/shows";
 
 /**
  * The show page's engagement action (Phase 14) — the buy CTA's replacement.
- * Adds the show to Watches; the push pipeline pings when one of its rush or
- * lottery windows opens or is about to close.
+ * Follows the show; the push pipeline pings when one of its rush or lottery
+ * windows opens or is about to close.
  */
-export function WatchShowCard({ show }: { show: Show }) {
-  const { isWatched, toggleWatch } = useApp();
+export function FollowShowCard({ show }: { show: Show }) {
+  const { follows, toggleFollow, setFollowEnabled } = useApp();
   const toast = useToast();
-  const watched = isWatched(show.slug);
+  const follow = follows.find((item) => item.show.slug === show.slug);
+  const following = follow !== undefined;
+  const enabled = follow?.enabled ?? false;
 
   return (
     <div className="mt-3 flex items-center gap-3.5 rounded-card bg-paper p-4">
       <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-cream">
-        {watched ? (
+        {following ? (
           <BellRing className="size-5 text-ink" strokeWidth={1.8} />
         ) : (
           <BellPlus className="size-5 text-ink" strokeWidth={1.8} />
@@ -27,19 +29,25 @@ export function WatchShowCard({ show }: { show: Show }) {
       </span>
       <div className="min-w-0 flex-1">
         <p className="text-body font-semibold">
-          {watched ? "Watching this show" : "Watch this show"}
+          {following
+            ? enabled
+              ? "Following this show"
+              : "Alerts paused"
+            : "Follow this show"}
         </p>
         <p className="mt-0.5 text-caption text-ink-soft">
-          {watched ? (
+          {following && enabled ? (
             <>
               Rush &amp; lottery alerts are on ·{" "}
               <Link
                 href="/notify"
                 className="underline underline-offset-2 transition-opacity active:opacity-60"
               >
-                Manage watches
+                Manage follows
               </Link>
             </>
+          ) : following ? (
+            "This show stays saved here until you resume alerts"
           ) : (
             "Get a push when a rush or lottery window opens"
           )}
@@ -48,16 +56,22 @@ export function WatchShowCard({ show }: { show: Show }) {
       <button
         type="button"
         onClick={() => {
-          toggleWatch(show);
+          if (follow && !enabled) setFollowEnabled(follow.id, true);
+          else toggleFollow(show);
           toast({
-            message: watched ? "Watch removed" : `Watching ${show.title}`,
+            message:
+              follow && !enabled
+                ? `${show.title} alerts resumed`
+                : following
+                  ? `Unfollowed ${show.title}`
+                  : `Following ${show.title}`,
           });
         }}
         className={`h-10 shrink-0 rounded-full px-4 text-caption font-semibold transition-[background-color,color,transform] duration-200 active:scale-[0.96] ${
-          watched ? "bg-inset text-ink" : "bg-espresso text-white"
+          following && enabled ? "bg-inset text-ink" : "bg-espresso text-white"
         }`}
       >
-        {watched ? "Watching" : "Watch"}
+        {following ? (enabled ? "Following" : "Resume") : "Follow"}
       </button>
     </div>
   );

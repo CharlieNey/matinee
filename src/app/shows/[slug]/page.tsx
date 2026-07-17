@@ -1,13 +1,19 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BackHeader } from "@/components/BackHeader";
 import { HeroBackdrop } from "@/components/HeroBackdrop";
+import { InterestedButton } from "@/components/InterestedButton";
 import { OfficialTicketsCard } from "@/components/OfficialTicketsCard";
 import { Poster } from "@/components/Poster";
 import { ShowPrograms } from "@/components/ShowPrograms";
-import { WatchShowCard } from "@/components/WatchShowCard";
+import { FollowShowCard } from "@/components/FollowShowCard";
 import { officialTicketsForShow } from "@/lib/officialTickets";
-import { programsForShow } from "@/lib/programs";
+import {
+  cheapestProgram,
+  programKindLabel,
+  programsForShow,
+} from "@/lib/programs";
 import { allShows, getShow } from "@/lib/shows";
 import { allTheaters, TICKETER_LABELS } from "@/lib/theaters";
 
@@ -26,9 +32,36 @@ export function generateStaticParams() {
   return allShows().map((show) => ({ slug: show.slug }));
 }
 
+/** Shared show links carry the show's name and its cheapest way in. */
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const show = getShow(slug);
+  if (!show) return {};
+  const cheapest = cheapestProgram(slug);
+  const description = cheapest
+    ? `${programKindLabel(cheapest.kind)} from $${cheapest.price} — every verified way to see ${show.title} for less, and where the official box office is.`
+    : `Where the official box office is for ${show.title}, and every verified way to pay less.`;
+  // openGraph is shallow-merged and fully overwritten per segment, so
+  // re-attach the shared card here — otherwise og:image (and the
+  // twitter:image that falls back to it) drop off show links.
+  return {
+    title: show.title,
+    description,
+    openGraph: {
+      title: show.title,
+      description,
+      images: ["/opengraph-image"],
+    },
+  };
+}
+
 /**
  * The show page as an answer sheet (Phase 14): where the official box office
- * is, every verified way to see it cheap, and a watch CTA — never a checkout.
+ * is, every verified way to see it cheap, and a follow CTA — never a checkout.
  */
 export default async function ShowPage({
   params,
@@ -88,10 +121,13 @@ export default async function ShowPage({
             </div>
           </div>
         </div>
+        <div className="mt-3 flex web:mt-4">
+          <InterestedButton show={show} />
+        </div>
         {officialTickets && (
           <OfficialTicketsCard show={show} ticketLink={officialTickets} />
         )}
-        {hasPrograms && <WatchShowCard show={show} />}
+        {hasPrograms && <FollowShowCard show={show} />}
       </div>
 
       <ShowPrograms show={show} />

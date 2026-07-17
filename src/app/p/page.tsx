@@ -26,11 +26,10 @@ export default function SharedProfilePage() {
 
   useEffect(() => {
     const fragment = window.location.hash.slice(1);
-    if (!fragment) {
-      setState({ kind: "invalid" });
-      return;
-    }
-    decodeSharedProfile(fragment).then((profile) =>
+    const decoded = fragment
+      ? decodeSharedProfile(fragment)
+      : Promise.resolve(null);
+    decoded.then((profile) =>
       setState(profile ? { kind: "ok", profile } : { kind: "invalid" }),
     );
   }, []);

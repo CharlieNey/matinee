@@ -1,6 +1,6 @@
 import { ViewTransition } from "react";
 import type { Metadata } from "next";
-import { Geist, Playfair_Display } from "next/font/google";
+import { Bodoni_Moda, Schibsted_Grotesk } from "next/font/google";
 import { LayoutToggle } from "@/components/LayoutToggle";
 import { PaperGrain } from "@/components/PaperGrain";
 import { Providers } from "@/components/Providers";
@@ -8,20 +8,29 @@ import { TimeMachine } from "@/components/TimeMachine";
 import { WebNav } from "@/components/WebNav";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const schibsted = Schibsted_Grotesk({
+  variable: "--font-schibsted",
   subsets: ["latin"],
 });
 
 /* House Velvet display face (web mode only — see globals.css §12 rules). */
-const playfair = Playfair_Display({
-  variable: "--font-playfair",
+const bodoni = Bodoni_Moda({
+  variable: "--font-bodoni",
   subsets: ["latin"],
+  axes: ["opsz"],
 });
 
 export const metadata: Metadata = {
-  title: "Matinee",
+  metadataBase: new URL("https://matinee.nyc"),
+  title: { default: "Matinee", template: "%s — Matinee" },
   description: "The live board for Broadway rush, lotteries, and cheap seats",
+  openGraph: {
+    siteName: "Matinee",
+    type: "website",
+    title: "Matinee",
+    description: "The live board for Broadway rush, lotteries, and cheap seats",
+  },
+  twitter: { card: "summary_large_image" },
 };
 
 /**
@@ -40,7 +49,7 @@ export default function RootLayout({
     // html before React hydrates, which React would otherwise flag.
     <html
       lang="en"
-      className={`${geistSans.variable} ${playfair.variable} h-full antialiased`}
+      className={`${schibsted.variable} ${bodoni.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <body className="min-h-full">

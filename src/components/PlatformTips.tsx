@@ -58,9 +58,6 @@ export function PlatformTips({
       </button>
 
       <Sheet open={open} onClose={() => setOpen(false)} title="Good to know">
-        <p className="mt-1 text-body text-ink-soft">
-          Platform quirks worth knowing before you enter.
-        </p>
         <ul className="mt-4 flex flex-col gap-2.5 pb-2">
           {tips.map(([tip, platform]) => (
             <li

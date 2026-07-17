@@ -142,6 +142,41 @@ function cardBase(ctx: CanvasRenderingContext2D) {
   ctx.fill();
 }
 
+/* Ticket silhouette (DESIGN.md §13) at share-image scale — the in-app
+   `.ticket-tear` geometry ×~2.8 for the 1080px canvas. Exactly two states:
+   torn (notches + punch-hole perforation) = attended, the diary stub;
+   untorn (side notches only) = a ticket in hand, the lottery win. */
+const TEAR_Y = 1128;
+const NOTCH_R = 18;
+const HOLE_R = 5;
+const HOLE_STEP = 26;
+
+function ticketBase(ctx: CanvasRenderingContext2D, torn: boolean) {
+  ctx.fillStyle = PAPER;
+  roundRectPath(ctx, 48, 48, W - 96, H - 96, 56);
+  ctx.fill();
+  ctx.save();
+  // Punch the silhouette out of the paper, then lay the cream in behind —
+  // the notches and holes are real cutouts, same as the CSS mask in-app.
+  ctx.globalCompositeOperation = "destination-out";
+  ctx.beginPath();
+  ctx.arc(48, TEAR_Y, NOTCH_R, 0, Math.PI * 2);
+  ctx.moveTo(W - 48 + NOTCH_R, TEAR_Y);
+  ctx.arc(W - 48, TEAR_Y, NOTCH_R, 0, Math.PI * 2);
+  if (torn) {
+    const inset = 48 + NOTCH_R + HOLE_STEP;
+    for (let x = inset; x <= W - inset; x += HOLE_STEP) {
+      ctx.moveTo(x + HOLE_R, TEAR_Y);
+      ctx.arc(x, TEAR_Y, HOLE_R, 0, Math.PI * 2);
+    }
+  }
+  ctx.fill();
+  ctx.globalCompositeOperation = "destination-over";
+  ctx.fillStyle = CREAM;
+  ctx.fillRect(0, 0, W, H);
+  ctx.restore();
+}
+
 async function renderToBlob(
   draw: (ctx: CanvasRenderingContext2D) => Promise<void>,
 ): Promise<Blob> {
@@ -174,7 +209,9 @@ export function renderWinCard(options: {
 }): Promise<Blob> {
   const { show, kindLabel, price, date } = options;
   return renderToBlob(async (ctx) => {
-    cardBase(ctx);
+    // Untorn ticket: notches mark where the tear will go — you hold this
+    // one, you haven't used it yet.
+    ticketBase(ctx, false);
     await drawPoster(ctx, show, W / 2 - 250, 128, 500);
 
     ctx.textAlign = "center";
@@ -193,9 +230,9 @@ export function renderWinCard(options: {
     ctx.fillText(`face value $${show.faceValue}`, W / 2, 1068);
 
     ctx.font = font(400, 34);
-    ctx.fillText(shareDate.format(date), W / 2, 1140);
+    ctx.fillText(shareDate.format(date), W / 2, 1190);
 
-    drawBrand(ctx, 1240);
+    drawBrand(ctx, 1254);
   });
 }
 
@@ -207,7 +244,9 @@ export function renderStubCard(options: {
 }): Promise<Blob> {
   const { show, sentimentLine, thoughts, date } = options;
   return renderToBlob(async (ctx) => {
-    cardBase(ctx);
+    // Torn ticket, same silhouette as the in-app diary entry: the body
+    // above the perforation, the stub (date + brand) below it.
+    ticketBase(ctx, true);
     await drawPoster(ctx, show, W / 2 - 250, 128, 500);
 
     ctx.textAlign = "center";
@@ -228,9 +267,9 @@ export function renderStubCard(options: {
 
     ctx.fillStyle = INK_SOFT;
     ctx.font = font(400, 34);
-    ctx.fillText(shareDate.format(date), W / 2, 1140);
+    ctx.fillText(shareDate.format(date), W / 2, 1190);
 
-    drawBrand(ctx, 1240);
+    drawBrand(ctx, 1254);
   });
 }
 

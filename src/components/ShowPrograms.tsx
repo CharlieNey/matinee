@@ -37,9 +37,6 @@ export function ShowPrograms({ show }: { show: Show }) {
           {programs.length} program{programs.length === 1 ? "" : "s"}
         </span>
       </div>
-      <p className="mt-2 text-caption text-ink-soft">
-        Official rush and lottery options, updated with live entry windows.
-      </p>
       <div className="mt-4 rounded-card bg-paper px-4 py-1.5">
         <ProgramRows
           show={show}

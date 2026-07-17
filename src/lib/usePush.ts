@@ -43,32 +43,32 @@ export function usePush(slugs: string[]) {
   const slugsKey = slugs.join(",");
 
   useEffect(() => {
-    if (
-      !VAPID_PUBLIC_KEY ||
-      typeof window === "undefined" ||
-      !("serviceWorker" in navigator) ||
-      !("PushManager" in window)
-    ) {
-      setStatus("unavailable");
-      return;
-    }
-
     let cancelled = false;
-    (async () => {
+    const init = async (): Promise<PushStatus | null> => {
+      if (
+        !VAPID_PUBLIC_KEY ||
+        !("serviceWorker" in navigator) ||
+        !("PushManager" in window)
+      ) {
+        return "unavailable";
+      }
       try {
         const registration = await navigator.serviceWorker.register("/sw.js", {
           scope: "/",
           updateViaCache: "none",
         });
         const sub = await registration.pushManager.getSubscription();
-        if (cancelled) return;
+        if (cancelled) return null;
         subscriptionRef.current = sub;
-        if (sub) setStatus("on");
-        else setStatus(Notification.permission === "denied" ? "denied" : "off");
+        if (sub) return "on";
+        return Notification.permission === "denied" ? "denied" : "off";
       } catch {
-        if (!cancelled) setStatus("unavailable");
+        return "unavailable";
       }
-    })();
+    };
+    init().then((next) => {
+      if (!cancelled && next) setStatus(next);
+    });
     return () => {
       cancelled = true;
     };

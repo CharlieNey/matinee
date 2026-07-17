@@ -142,6 +142,15 @@ Back arrow left, **Publish** as bare vermilion text top-right (no pill — text-
 ### Diary ticket (timeline entry — reshaped 2026-07-17)
 Diary-logged attendance renders as a **ticket**, not a card-in-a-card: white `r-card` with everything typeset flat on the paper (no nested `inset` row, no bookmark — controls don't belong on a keepsake). **Body** (above the tear): poster thumb 56px + title 17/600 + `Tier · Genre · Venue` caption (the row links to the show), italic quoted public thoughts, photo (3:4, `r-thumb`, max ~220px), read-only `# tag` chips (outlined, caption, `ink-soft`). **Tear line** (§13 perforation): a real cut, not paint — the `.ticket-tear` strip is CSS-masked so the 12px edge notches and 3px punch holes are genuine holes in the paper (whatever is behind shows through); body and stub carry the paper above and below it. Always present; the shape is the card's identity. **Stub** (below the tear — what a ticket keeps): armchair + seat caption, the private-note row when present (EyeOff + "Only you · …" in `ink-faint`), and the "Share as image" action. Sentiment on the "Marked as attended" line: gold ThumbsUp "Recommend it"; **ThumbsDown "Didn't like it" mirrors it in `ink-soft`** (same anatomy, gold stays praise-only); "Mixed feelings" is a quiet `inset` pill. Never vermilion.
 
+### Interested control (standardized 2026-07-17)
+One component (`InterestedButton`), one vocabulary: the state is **"Interested"** everywhere — button label, section heads, collection row, Trip toggle, the feed's "Marked interested". The word "saved" is reserved for money ("saved $18 vs face"). Anatomy: Bookmark glyph, filled when active. Two placements: **pill** (show page — idle `espresso` fill/white text inviting the action, active quiet `inset`/`ink`, the follow button's grammar; never vermilion) and **icon** (card action corner, `ink-soft`, fill = state). Counts read "N shows" (Interested) / "N logged" (Attended).
+
+### Share action (standardized 2026-07-17)
+One component (`ShareButton`): Forward glyph + a verb-first "Share …" label, always. **primary** = the full-width vermilion CTA (Wrapped, win card); **quiet** = caption text action on keepsakes (diary stub); **icon** = top utility row, label becomes the aria-label.
+
+### Collection tab (live data, 2026-07-17)
+No seed façade: **My Top 10** is user-curated (pencil corner action → sheet with drag-to-rank grips, X to drop, add from attended ∪ interested; persisted as slugs), **Interested** is the real bookmark set, **Attended** is diary + pre-app history deduped (`attendedShows` — Discover, Collection, and Wrapped all count from this one list). Covers are the newest member with the state stamped on the art (§6.2). The Wrapped row is gone — the header pill owns that entry point.
+
 ---
 
 ## 6. Patterns & principles
@@ -163,6 +172,11 @@ Nothing in the screenshots suggests exuberant motion; keep it iOS-quiet:
 - Toggle thumb 150ms; press states scale 0.98.
 - Count-ups, where used, run once on first render (400ms), never loop.
 - Respect `prefers-reduced-motion`: swap movement for opacity fades.
+- **The win burst** — the one sanctioned loud moment: a lottery win fires a
+  one-shot confetti popper over the win sheet (~2s, two poppers from the
+  bottom corners, paper strips in vermilion/gold/cream). Runs once per open,
+  never loops, skipped entirely under `prefers-reduced-motion`. Celebration
+  is reserved for a won lottery; nothing else earns confetti.
 
 ### Navigation (view transitions)
 
@@ -327,7 +341,7 @@ decoration. All primitives live in `globals.css`.
 | **Dot leader** (`.dot-leader`) | 2px dotted `ink-faint` fill between label and value in an `items-baseline` flex row | Fact rows only — the show page's "The house" block (theater / operated by / box office / seats / address). Never navigation, never lists of tappable rows. |
 | **Double rule** (`.rule-double`) | Two 1px `line` hairlines, 2px apart, standalone element | Major editorial section breaks (show-page sections, About page), replacing the single `border-t`. Inset within the text measure, not full-bleed. |
 | **Gilt rail** | 1px solid `gold` top edge on the light sheet where it meets the velvet header | Profile, mobile mode only — the box-seat rail. **The one gilt line in the app**; it does not extend the §12 gilt roles (praise/light/urgency) anywhere else. |
-| **Perforation** (`.ticket-tear`) | 14px paper strip, CSS-masked: 12px semicircular edge notches + 3px punch holes every 9px — real cutouts, the background shows through | Diary ticket only — the tear line between body and stub (§5 diary ticket). **The app's single skeuomorphic flourish**; do not add perforations, staples, or folds anywhere else. |
+| **Ticket silhouette** (`.ticket-tear` in-app; `ticketBase()` twin in `shareCards.ts`) | 14px paper strip, CSS-masked: 12px semicircular edge notches + 3px punch holes every 9px — real cutouts, the background shows through. Share PNGs draw the same geometry ×~2.8 into the canvas | Exactly two states, nowhere else: **torn** (notches + perforation) = attended — the diary ticket (§5) and its share PNG; **untorn** (side notches only, no perforation) = a ticket in hand, not yet used — the lottery win share card. **The app's single skeuomorphic flourish**; no perforations, staples, folds, or third states anywhere else. |
 
 Rules:
 - These are *print* conventions: they belong on paper surfaces (cream/white).
