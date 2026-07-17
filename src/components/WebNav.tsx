@@ -8,13 +8,11 @@ import { Sheet } from "./Sheet";
 import { ShowPicker } from "./ShowPicker";
 import { allShows } from "@/lib/shows";
 
-/* Top-level only — keep it at five: seven links overflowed the bar at
-   ~1024px, kicking it into sideways-scroll mode (clipped labels + Chrome's
-   scroll-region focus ring). Trip took the slot the Marketplace freed. */
+/* Top-level only. District was pulled from the bar to de-emphasize it — it
+   now lives as a quick-link on Discover — leaving four primary destinations. */
 const LINKS = [
   { href: "/", label: "Discover" },
   { href: "/rush", label: "Rush & Lottery" },
-  { href: "/district", label: "District" },
   { href: "/trip", label: "Trip" },
   { href: "/profile", label: "Profile" },
 ];

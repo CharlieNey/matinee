@@ -96,9 +96,13 @@ One-time setup:
    generate-vapid-keys` for the key pair). Set the same variables in Vercel.
 3. Add `APP_URL` (deployed origin) and `CRON_SECRET` as GitHub Actions
    secrets so the workflow can call the evaluator.
-4. Smoke test: toggle on at `/notify`, then
+4. Smoke test: toggle on at `/notify`, use **Send a test push** to verify the
+   full VAPID → Supabase → service-worker path on that device, then
    `curl -X POST -H "Authorization: Bearer $CRON_SECRET" <origin>/api/notify/run`
    — the JSON summary reports events, sends, dedupes, and pruned endpoints.
+
+The desktop, installed-iPhone, and 10-second backup-recording steps are in
+[`docs/notification-demo.md`](docs/notification-demo.md).
 
 ## Poster art
 

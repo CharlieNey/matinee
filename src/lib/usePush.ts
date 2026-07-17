@@ -8,7 +8,16 @@ export type PushStatus =
   | "loading"
   | "off"
   | "denied"
-  | "on";
+  | "on"
+  | "error";
+
+export type PushUnavailableReason =
+  | "not-configured"
+  | "unsupported"
+  | "registration-failed"
+  | "backend-unavailable"
+  | "subscribe-failed"
+  | null;
 
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
 
@@ -25,11 +34,14 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
 
 async function saveSubscription(sub: PushSubscription, slugs: string[]) {
   const entries = readLotteryLog().map(({ key, day }) => ({ key, day }));
-  await fetch("/api/push", {
+  const response = await fetch("/api/push", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ subscription: sub.toJSON(), slugs, entries }),
   });
+  if (!response.ok) {
+    throw new Error(`Push subscription sync failed (${response.status})`);
+  }
 }
 
 /**
@@ -39,18 +51,21 @@ async function saveSubscription(sub: PushSubscription, slugs: string[]) {
  */
 export function usePush(slugs: string[]) {
   const [status, setStatus] = useState<PushStatus>("loading");
+  const [reason, setReason] = useState<PushUnavailableReason>(null);
   const subscriptionRef = useRef<PushSubscription | null>(null);
   const slugsKey = slugs.join(",");
 
   useEffect(() => {
     let cancelled = false;
-    const init = async (): Promise<PushStatus | null> => {
-      if (
-        !VAPID_PUBLIC_KEY ||
-        !("serviceWorker" in navigator) ||
-        !("PushManager" in window)
-      ) {
-        return "unavailable";
+    const init = async (): Promise<{
+      status: PushStatus;
+      reason: PushUnavailableReason;
+    } | null> => {
+      if (!VAPID_PUBLIC_KEY) {
+        return { status: "unavailable", reason: "not-configured" };
+      }
+      if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+        return { status: "unavailable", reason: "unsupported" };
       }
       try {
         const registration = await navigator.serviceWorker.register("/sw.js", {
@@ -60,14 +75,20 @@ export function usePush(slugs: string[]) {
         const sub = await registration.pushManager.getSubscription();
         if (cancelled) return null;
         subscriptionRef.current = sub;
-        if (sub) return "on";
-        return Notification.permission === "denied" ? "denied" : "off";
+        if (sub) return { status: "on", reason: null };
+        return {
+          status: Notification.permission === "denied" ? "denied" : "off",
+          reason: null,
+        };
       } catch {
-        return "unavailable";
+        return { status: "unavailable", reason: "registration-failed" };
       }
     };
     init().then((next) => {
-      if (!cancelled && next) setStatus(next);
+      if (!cancelled && next) {
+        setStatus(next.status);
+        setReason(next.reason);
+      }
     });
     return () => {
       cancelled = true;
@@ -78,7 +99,12 @@ export function usePush(slugs: string[]) {
   useEffect(() => {
     const sub = subscriptionRef.current;
     if (status !== "on" || !sub) return;
-    saveSubscription(sub, slugsKey ? slugsKey.split(",") : []).catch(() => {});
+    saveSubscription(sub, slugsKey ? slugsKey.split(",") : [])
+      .then(() => setReason(null))
+      .catch(() => {
+        setStatus("error");
+        setReason("backend-unavailable");
+      });
   }, [status, slugsKey]);
 
   // Re-sync when the "I entered" log changes, so claim watches can arm.
@@ -96,17 +122,31 @@ export function usePush(slugs: string[]) {
   const subscribe = useCallback(async () => {
     if (!VAPID_PUBLIC_KEY) return;
     setStatus("loading");
+    setReason(null);
     try {
       const registration = await navigator.serviceWorker.ready;
-      const sub = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
-      });
+      const sub =
+        (await registration.pushManager.getSubscription()) ??
+        (await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+        }));
       subscriptionRef.current = sub;
       await saveSubscription(sub, slugsKey ? slugsKey.split(",") : []);
       setStatus("on");
+      setReason(null);
     } catch {
-      setStatus(Notification.permission === "denied" ? "denied" : "off");
+      if (Notification.permission === "denied") {
+        setStatus("denied");
+        setReason(null);
+      } else {
+        setStatus("error");
+        setReason(
+          subscriptionRef.current
+            ? "backend-unavailable"
+            : "subscribe-failed",
+        );
+      }
     }
   }, [slugsKey]);
 
@@ -127,5 +167,16 @@ export function usePush(slugs: string[]) {
     }
   }, []);
 
-  return { status, subscribe, unsubscribe };
+  const sendTest = useCallback(async () => {
+    const subscription = subscriptionRef.current;
+    if (!subscription) throw new Error("No push subscription");
+    const response = await fetch("/api/push", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ endpoint: subscription.endpoint }),
+    });
+    if (!response.ok) throw new Error(`Test push failed (${response.status})`);
+  }, []);
+
+  return { status, reason, subscribe, unsubscribe, sendTest };
 }

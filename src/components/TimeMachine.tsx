@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Clock3, X } from "lucide-react";
 import { useDemoTime } from "@/lib/demoTime";
@@ -69,9 +69,29 @@ function dayLabel(dayOffset: number, from: Date): string {
 export function TimeMachine() {
   const { offsetMs, scrubTo, backToLive } = useDemoTime();
   const now = useNow(10_000);
+  const panelId = useId();
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);
   const [dayOffset, setDayOffset] = useState(0);
   const [minuteOfDay, setMinuteOfDay] = useState(0);
+
+  useEffect(() => {
+    if (!open) return;
+    const trigger = triggerRef.current;
+    const frame = requestAnimationFrame(() => closeRef.current?.focus());
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      setOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => {
+      cancelAnimationFrame(frame);
+      document.removeEventListener("keydown", onKey);
+      trigger?.focus();
+    };
+  }, [open]);
 
   if (!now) return null;
   const simulated = offsetMs !== null;
@@ -96,6 +116,9 @@ export function TimeMachine() {
       <AnimatePresence>
         {open && (
           <motion.div
+            id={panelId}
+            role="dialog"
+            aria-label="Time machine"
             initial={{ opacity: 0, y: 10, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.98 }}
@@ -105,6 +128,7 @@ export function TimeMachine() {
             <div className="flex items-center justify-between">
               <h2 className="text-body font-semibold">Time machine</h2>
               <button
+                ref={closeRef}
                 type="button"
                 aria-label="Close time machine"
                 onClick={() => setOpen(false)}
@@ -168,8 +192,11 @@ export function TimeMachine() {
       </AnimatePresence>
 
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => (open ? setOpen(false) : openCard())}
+        aria-expanded={open}
+        aria-controls={panelId}
         aria-label={
           simulated ? "Simulated time — open time machine" : "Open time machine"
         }

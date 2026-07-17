@@ -11,8 +11,8 @@ import {
 } from "react";
 import {
   Follow,
-  attendedShows,
-  initialTopTen,
+  attendedSeed,
+  initialRanking,
   initialFollows,
   profile as initialProfile,
 } from "./data";
@@ -32,8 +32,15 @@ const LEGACY_STORAGE_KEY = "theatr-state-v1";
 type PersistedState = {
   alerts: { id: string; slug: string; enabled: boolean }[];
   saved: string[];
-  /** "My Top 10" slugs, in shelf order. Optional: pre-editor blobs. */
+  /** Personal ranking slugs, best-first. Optional; `topTen` is the pre-rename
+   *  key, read once for back-compat. */
+  ranking?: string[];
   topTen?: string[];
+  /** Shows marked attended directly (search-and-add on the Collection page),
+   *  separate from diary entries. `attendedHidden` removes shows from the
+   *  attended list regardless of source (added extra, seed, or diary). */
+  attendedExtra?: string[];
+  attendedHidden?: string[];
   profile: { name: string; handle: string; bio: string | null };
   diary?: {
     id: string;
@@ -84,12 +91,15 @@ type AppState = {
   diary: DiaryEntry[];
   addDiaryEntry: (entry: Omit<DiaryEntry, "id">) => void;
 
-  /* Attended — diary + pre-app history, deduped (see attendedShows) */
+  /* Attended — diary + directly-marked shows + pre-app history, deduped,
+     minus anything removed on the Collection page */
   attended: Show[];
+  addAttended: (slug: string) => void;
+  removeAttended: (slug: string) => void;
 
-  /* My Top 10 — user-curated shelf, in order */
-  topTenShows: Show[];
-  setTopTen: (slugs: string[]) => void;
+  /* Personal ranking — attended shows, best-first (Collection matchups) */
+  rankedShows: Show[];
+  setRanking: (slugs: string[]) => void;
 
   /* Profile */
   profile: ProfileInfo;
@@ -120,7 +130,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     bio: initialProfile.bio,
   });
   const [diary, setDiary] = useState<DiaryEntry[]>([]);
-  const [topTen, setTopTenState] = useState<string[]>(initialTopTen);
+  const [ranking, setRankingState] = useState<string[]>(initialRanking);
+  // Shows added to / removed from Attended via the Collection page, kept apart
+  // from the diary so the rich log flow stays the source of truth for entries.
+  const [attendedExtra, setAttendedExtra] = useState<Set<string>>(
+    () => new Set(),
+  );
+  const [attendedHidden, setAttendedHidden] = useState<Set<string>>(
+    () => new Set(),
+  );
   const hydrated = useRef(false);
 
   // Restore persisted state after mount (deferred so SSR markup matches).
@@ -143,7 +161,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             }),
           );
           setSaved(new Set(data.saved));
-          if (data.topTen) setTopTenState([...new Set(data.topTen)].slice(0, 10));
+          const persistedRanking = data.ranking ?? data.topTen;
+          if (persistedRanking)
+            setRankingState([...new Set(persistedRanking)]);
+          if (data.attendedExtra)
+            setAttendedExtra(new Set(data.attendedExtra));
+          if (data.attendedHidden)
+            setAttendedHidden(new Set(data.attendedHidden));
           setProfile(data.profile);
           setDiary(
             (data.diary ?? []).flatMap((d) => {
@@ -170,7 +194,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         enabled: f.enabled,
       })),
       saved: [...saved],
-      topTen,
+      ranking,
+      attendedExtra: [...attendedExtra],
+      attendedHidden: [...attendedHidden],
       profile,
       diary: diary.map(({ show, ...rest }) => ({ ...rest, slug: show.slug })),
     };
@@ -179,7 +205,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     } catch {
       // storage full/unavailable: state stays session-only
     }
-  }, [follows, saved, topTen, profile, diary]);
+  }, [follows, saved, ranking, attendedExtra, attendedHidden, profile, diary]);
 
   const toggleFollow = useCallback((show: Show) => {
     setFollows((prev) =>
@@ -238,18 +264,61 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     [saved],
   );
 
-  const attended = useMemo(
-    () => attendedShows(diary.map((entry) => entry.show)),
-    [diary],
-  );
-
-  const setTopTen = useCallback((slugs: string[]) => {
-    setTopTenState([...new Set(slugs)].slice(0, 10));
+  const addAttended = useCallback((slug: string) => {
+    setAttendedExtra((prev) => {
+      if (prev.has(slug)) return prev;
+      return new Set(prev).add(slug);
+    });
+    setAttendedHidden((prev) => {
+      if (!prev.has(slug)) return prev;
+      const next = new Set(prev);
+      next.delete(slug);
+      return next;
+    });
   }, []);
 
-  const topTenShows = useMemo(
-    () => topTen.flatMap((slug) => getShow(slug) ?? []),
-    [topTen],
+  // Remove works for any source: extra picks drop out, seed/diary shows are
+  // hidden. Re-adding through search clears the hide.
+  const removeAttended = useCallback((slug: string) => {
+    setAttendedExtra((prev) => {
+      if (!prev.has(slug)) return prev;
+      const next = new Set(prev);
+      next.delete(slug);
+      return next;
+    });
+    setAttendedHidden((prev) => {
+      if (prev.has(slug)) return prev;
+      return new Set(prev).add(slug);
+    });
+  }, []);
+
+  // Diary first (newest logs), then directly-marked shows (newest add first),
+  // then the seed history — deduped, with anything removed filtered out.
+  const attended = useMemo(() => {
+    const extraShows = [...attendedExtra]
+      .reverse()
+      .flatMap((slug) => getShow(slug) ?? []);
+    const seen = new Set<string>();
+    const list: Show[] = [];
+    for (const s of [
+      ...diary.map((entry) => entry.show),
+      ...extraShows,
+      ...attendedSeed,
+    ]) {
+      if (attendedHidden.has(s.slug) || seen.has(s.slug)) continue;
+      seen.add(s.slug);
+      list.push(s);
+    }
+    return list;
+  }, [diary, attendedExtra, attendedHidden]);
+
+  const setRanking = useCallback((slugs: string[]) => {
+    setRankingState([...new Set(slugs)]);
+  }, []);
+
+  const rankedShows = useMemo(
+    () => ranking.flatMap((slug) => getShow(slug) ?? []),
+    [ranking],
   );
 
   const value = useMemo<AppState>(
@@ -265,8 +334,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       diary,
       addDiaryEntry,
       attended,
-      topTenShows,
-      setTopTen,
+      addAttended,
+      removeAttended,
+      rankedShows,
+      setRanking,
       profile,
       updateProfile,
     }),
@@ -282,8 +353,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       diary,
       addDiaryEntry,
       attended,
-      topTenShows,
-      setTopTen,
+      addAttended,
+      removeAttended,
+      rankedShows,
+      setRanking,
       profile,
       updateProfile,
     ],

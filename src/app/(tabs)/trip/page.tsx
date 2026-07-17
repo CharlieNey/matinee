@@ -4,7 +4,7 @@ import { TripPlanner } from "@/components/TripPlanner";
 export const metadata = {
   title: "Trip mode",
   description:
-    "In town for a few days? A day-by-day plan of every rush and lottery window during your visit.",
+    "A short, personalized rush and lottery plan for your Broadway trip, with every window available when you need it.",
 };
 
 export default function TripPage() {

@@ -60,23 +60,23 @@ export const activityFeed: ActivityEntry[] = [
 export const profile = {
   name: "Charlie Ney",
   handle: "@Charlie_yfcn",
-  following: 1,
-  followers: 1,
-  likes: 0,
-  points: 39,
   bio: null as string | null,
   joined: "December 2025",
 };
 
-/** Seed order for "My Top 10" — editable from the Collection tab and
- *  persisted per user in the store; this is only the starting shelf. */
-export const initialTopTen: string[] = [
+/** Seed order for the personal ranking — your attended shows, best first.
+ *  Built/refined by the matchup flow in the Collection tab and persisted per
+ *  user as slugs; this is only the starting order. Every slug here is one of
+ *  the attended seed shows (you rank what you've seen). */
+/** Seeded ranking — a *subset* of the attended seed on purpose: the two
+ *  attended shows left off (Spelling Bee, The Gin Game) surface in the Rank
+ *  sheet's "add a show" search, so the search → place-with-matchups flow works
+ *  the moment you open it. */
+export const initialRanking: string[] = [
   "death-of-a-salesman",
-  "maybe-happy-ending",
   "ragtime",
-  "little-shop-of-horrors",
-  "hadestown",
   "operation-mincemeat",
+  "drunk-shakespeare",
 ];
 
 /** Demo history — shows attended before the diary existed. */

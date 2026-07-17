@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { etDayKey, Program, programKey } from "./programs";
+import { allPrograms, etDayKey, Program, programKey } from "./programs";
 
 /**
  * The lottery log (Phase 8 substrate): which programs the user tapped
@@ -55,6 +55,59 @@ function writeLotteryLog(entries: LotteryEntry[]) {
 export function onLotteryLogChange(listener: () => void): () => void {
   window.addEventListener(SYNC_EVENT, listener);
   return () => window.removeEventListener(SYNC_EVENT, listener);
+}
+
+const SEED_MARKER = "matinee-lottery-seeded-v1";
+
+/**
+ * Demo seed (once ever): a short entry streak ending today, so a fresh
+ * profile shows a live-looking record — the streak chip, a filled heatmap,
+ * and a win. Real users are never touched: if a log already exists we only
+ * set the marker and leave it alone. `now` should be the demo clock so the
+ * seeded days line up with the streak calc.
+ */
+export function seedLotteryLogIfEmpty(now: Date): void {
+  try {
+    if (localStorage.getItem(SEED_MARKER)) return;
+    localStorage.setItem(SEED_MARKER, "1");
+    if (
+      localStorage.getItem(STORAGE_KEY) ||
+      localStorage.getItem(LEGACY_STORAGE_KEY)
+    ) {
+      return; // returning user with real entries — never overwrite
+    }
+
+    // One lottery/rush program each from a few distinct shows.
+    const seen = new Set<string>();
+    const pool = allPrograms().filter((program) => {
+      const lotteryish =
+        program.kind === "digital-lottery" ||
+        program.kind === "in-person-lottery" ||
+        program.kind === "rush" ||
+        program.kind === "digital-rush";
+      if (!lotteryish || seen.has(program.showSlug)) return false;
+      seen.add(program.showSlug);
+      return true;
+    });
+    if (pool.length === 0) return;
+
+    // Four consecutive ET days ending today; yesterday's entry is a win.
+    const day = 24 * 60 * 60 * 1000;
+    const entries: LotteryEntry[] = [];
+    for (let i = 0; i < 4; i++) {
+      const program = pool[i % pool.length];
+      const at = new Date(now.getTime() - i * day);
+      entries.push({
+        key: programKey(program),
+        day: etDayKey(at),
+        at: at.toISOString(),
+        won: i === 1,
+      });
+    }
+    writeLotteryLog(entries);
+  } catch {
+    // Storage unavailable — no seed, no streak. Harmless.
+  }
 }
 
 /** Entered/won state for one program on the current (possibly demo) day. */

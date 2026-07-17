@@ -270,6 +270,7 @@ export function LogScreen({ show }: { show: Show }) {
           <textarea
             value={thoughts}
             onChange={(e) => setThoughts(e.target.value)}
+            aria-label="Public thoughts"
             placeholder="Write something..."
             rows={5}
             className="w-full resize-none bg-transparent text-body text-ink outline-none placeholder:text-ink-faint"
@@ -351,6 +352,7 @@ export function LogScreen({ show }: { show: Show }) {
                 <input
                   type="file"
                   accept="image/*"
+                  aria-label="Upload a photo from the show"
                   className="hidden"
                   onChange={(e) => {
                     const file = e.target.files?.[0];
@@ -392,6 +394,7 @@ export function LogScreen({ show }: { show: Show }) {
         <textarea
           value={note}
           onChange={(e) => setNote(e.target.value)}
+          aria-label="Private note"
           placeholder="Something to remember..."
           rows={3}
           className="w-full resize-none bg-transparent text-body text-ink outline-none placeholder:text-ink-faint"

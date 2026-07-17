@@ -61,14 +61,12 @@ function BoltGlyph() {
 
 type Tab = { href: string; label: string; Icon: () => React.JSX.Element };
 
-/* Four flat tabs, 2+2 around the dead-center Log FAB — what, where, when,
-   you. The Marketplace slot went to District when the marketplace was
-   retired (Phase 14, 2026-07-17). */
-const TABS_LEFT: Tab[] = [
+/* Four flat, evenly spaced tabs — Discover, Log, Rush, Profile. Log opens the
+   diary sheet instead of navigating; it sits flush (no raised FAB) and is
+   styled like the other tabs. District was pulled from the bar to
+   de-emphasize it — it lives as a quick-link on Discover now. */
+const TABS: Tab[] = [
   { href: "/", label: "Discover", Icon: CompassGlyph },
-  { href: "/district", label: "District", Icon: PinGlyph },
-];
-const TABS_RIGHT: Tab[] = [
   { href: "/rush", label: "Rush", Icon: BoltGlyph },
   { href: "/profile", label: "Profile", Icon: ProfileGlyph },
 ];
@@ -89,6 +87,22 @@ function TabLink({ tab, active }: { tab: Tab; active: boolean }) {
   );
 }
 
+/* Log is an action, not a destination — a flush tab that opens the diary
+   sheet, styled to match the other tabs' resting state. */
+function LogTab({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label="Log a show"
+      className="flex min-h-12 min-w-0 flex-1 flex-col items-center justify-center gap-1 text-ink-faint transition-[color,transform] duration-200 active:scale-95"
+    >
+      <NotebookPen className="size-7" strokeWidth={1.9} aria-hidden />
+      <span className="truncate text-label">Log</span>
+    </button>
+  );
+}
+
 export function TabBar() {
   const pathname = usePathname();
   const router = useRouter();
@@ -101,45 +115,10 @@ export function TabBar() {
     >
       <div className="relative border-t border-line bg-paper pb-[max(env(safe-area-inset-bottom),8px)] pt-2 shadow-float">
         <div className="flex">
-          <div className="flex min-w-0 flex-1">
-            {TABS_LEFT.map((tab) => (
-              <TabLink key={tab.href} tab={tab} active={pathname === tab.href} />
-            ))}
-          </div>
-          <div className="relative w-16 shrink-0">
-            {/* The bar's paper swells around the FAB (profile-overview.png):
-                a 42px collar arc easing into the flat edge through 10px
-                concave fillets — one silhouette, so the curve meets the bar
-                tangentially instead of a circle overlapping it. Painted above
-                the bar, swallowing the top hairline across its base. */}
-            <svg
-              aria-hidden
-              viewBox="0 0 160 64"
-              className="pointer-events-none absolute -top-[58px] left-1/2 h-16 w-40 -translate-x-1/2"
-              style={{ filter: "drop-shadow(0 1px 3px rgb(43 29 22 / 0.06))" }}
-            >
-              <path
-                d="M28 58 A10 10 0 0 0 38 47.6 A42 42 0 1 1 122 47.6 A10 10 0 0 0 132 58 L132 60 L28 60 Z"
-                fill="var(--color-paper)"
-              />
-            </svg>
-            {/* The FAB is the diary's front door — logging a show is the
-                app's recurring personal action. */}
-            <button
-              type="button"
-              aria-label="Log a show"
-              onClick={() => setLogOpen(true)}
-              className="absolute -top-11 left-1/2 flex size-16 -translate-x-1/2 flex-col items-center justify-center gap-0.5 rounded-full bg-vermilion text-white shadow-float transition-transform duration-150 active:scale-[0.94]"
-            >
-              <NotebookPen className="size-6" strokeWidth={2} aria-hidden />
-              <span className="text-label font-semibold">Log</span>
-            </button>
-          </div>
-          <div className="flex min-w-0 flex-1">
-            {TABS_RIGHT.map((tab) => (
-              <TabLink key={tab.href} tab={tab} active={pathname === tab.href} />
-            ))}
-          </div>
+          <TabLink tab={TABS[0]} active={pathname === TABS[0].href} />
+          <LogTab onClick={() => setLogOpen(true)} />
+          <TabLink tab={TABS[1]} active={pathname === TABS[1].href} />
+          <TabLink tab={TABS[2]} active={pathname === TABS[2].href} />
         </div>
       </div>
 

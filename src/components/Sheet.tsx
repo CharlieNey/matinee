@@ -42,6 +42,11 @@ export function Sheet({
         ? document.activeElement
         : null;
     const previousOverflow = document.body.style.overflow;
+    const mutedSiblings: {
+      element: HTMLElement;
+      inert: boolean;
+      ariaHidden: string | null;
+    }[] = [];
     const focusableSelector = [
       "button:not(:disabled)",
       "a[href]",
@@ -81,6 +86,24 @@ export function Sheet({
     document.body.style.overflow = "hidden";
     const frame = requestAnimationFrame(() => {
       const dialog = dialogRef.current;
+      if (dialog) {
+        for (const child of document.body.children) {
+          if (
+            !(child instanceof HTMLElement) ||
+            child.contains(dialog) ||
+            child.hasAttribute("data-sheet-backdrop") ||
+            child.matches("script, style, link")
+          )
+            continue;
+          mutedSiblings.push({
+            element: child,
+            inert: child.inert,
+            ariaHidden: child.getAttribute("aria-hidden"),
+          });
+          child.inert = true;
+          child.setAttribute("aria-hidden", "true");
+        }
+      }
       const initial = dialog?.querySelector<HTMLElement>("[data-sheet-close]");
       (initial ?? dialog)?.focus();
     });
@@ -88,6 +111,11 @@ export function Sheet({
       cancelAnimationFrame(frame);
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = previousOverflow;
+      for (const { element, inert, ariaHidden } of mutedSiblings) {
+        element.inert = inert;
+        if (ariaHidden === null) element.removeAttribute("aria-hidden");
+        else element.setAttribute("aria-hidden", ariaHidden);
+      }
       if (previousFocus?.isConnected) previousFocus.focus();
     };
   }, [open]);
@@ -102,6 +130,8 @@ export function Sheet({
       {open && (
         <>
           <motion.div
+            data-sheet-backdrop
+            aria-hidden="true"
             className="fixed inset-0 z-[60] bg-espresso/40"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}

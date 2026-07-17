@@ -6,29 +6,28 @@ import { AnimatePresence, motion } from "motion/react";
 import {
   Armchair,
   BellPlus,
-  Bookmark,
   Calendar,
   EyeOff,
-  Mail,
+  Plus,
   Settings,
   SquarePen,
-  Star,
+  Swords,
   ThumbsDown,
   ThumbsUp,
   Trophy,
   Zap,
 } from "lucide-react";
+import { AttendedTicket } from "@/components/AttendedTicket";
+import { CollectionEditorSheet } from "@/components/CollectionEditorSheet";
 import { EmptyState } from "@/components/EmptyState";
 import { EntryHeatmap } from "@/components/EntryHeatmap";
 import { InsetShowRow } from "@/components/InsetShowRow";
 import { Poster } from "@/components/Poster";
+import { RankSheet } from "@/components/RankSheet";
 import { ShareButton } from "@/components/ShareButton";
 import { Sheet } from "@/components/Sheet";
 import { FollowSpot } from "@/components/FollowSpot";
-import { Toggle } from "@/components/Toggle";
 import { useToast } from "@/components/Toast";
-import { TopTenShelf } from "@/components/TopTenShelf";
-import { TopTenSheet } from "@/components/TopTenSheet";
 import {
   ActivityEntry,
   activityFeed,
@@ -38,6 +37,7 @@ import {
   LotteryEntry,
   onLotteryLogChange,
   readLotteryLog,
+  seedLotteryLogIfEmpty,
 } from "@/lib/entries";
 import {
   allPrograms,
@@ -48,7 +48,7 @@ import {
 import { renderStubCard, shareImage } from "@/lib/shareCards";
 import { encodeSharedProfile } from "@/lib/shareProfile";
 import { DiaryEntry, useApp } from "@/lib/store";
-import { getShow, Show } from "@/lib/shows";
+import { allShows, getShow, Show } from "@/lib/shows";
 import { useNow } from "@/lib/useNow";
 
 const PROFILE_TABS = [
@@ -60,11 +60,9 @@ type Tab = (typeof PROFILE_TABS)[number][0];
 type SheetName =
   | "edit"
   | "settings"
-  | "messages"
-  | "follows"
   | "interested"
   | "attended"
-  | "topten"
+  | "rank"
   | null;
 
 function HeaderPill({
@@ -302,11 +300,19 @@ function ActivityTimeline() {
                     “{item.entry.thoughts}”
                   </p>
                 )}
-                <div className="mt-4 flex flex-col gap-2.5">
-                  {item.entry.shows.map((show) => (
-                    <InsetShowRow key={show.slug} show={show} />
-                  ))}
-                </div>
+                {item.entry.action === "Marked as attended" ? (
+                  // Attended → a torn ticket, matching the diary keepsake
+                  // (DESIGN.md §344: torn = attended). Interested stays flat.
+                  item.entry.shows.map((show) => (
+                    <AttendedTicket key={show.slug} show={show} />
+                  ))
+                ) : (
+                  <div className="mt-4 flex flex-col gap-2.5">
+                    {item.entry.shows.map((show) => (
+                      <InsetShowRow key={show.slug} show={show} />
+                    ))}
+                  </div>
+                )}
               </>
             )}
           </li>
@@ -314,19 +320,6 @@ function ActivityTimeline() {
       })}
     </ol>
   );
-}
-
-/** Consecutive ET days with at least one entry, ending today or yesterday. */
-function entryStreak(log: LotteryEntry[], now: Date): number {
-  const days = new Set(log.map((e) => e.day));
-  const cursor = new Date(now);
-  if (!days.has(etDayKey(cursor))) cursor.setDate(cursor.getDate() - 1);
-  let streak = 0;
-  while (days.has(etDayKey(cursor))) {
-    streak += 1;
-    cursor.setDate(cursor.getDate() - 1);
-  }
-  return streak;
 }
 
 /** The lottery record (Phase 14): the "I entered" log as a stats view —
@@ -423,157 +416,182 @@ function RecordTab() {
   );
 }
 
-/** Taste, from real state: the editable Top 10 shelf, then the two live
- *  collections — Interested (the bookmark set) and Attended (diary + the
- *  pre-app history). Every count is a `.length`; the covers are the
- *  newest member with the state stamped on the art (DESIGN.md §150). */
-function CollectionTab({ openSheet }: { openSheet: (s: SheetName) => void }) {
-  const { savedShows, attended } = useApp();
-
-  return (
-    <div className="flex flex-col gap-7 pt-5">
-      <TopTenShelf onEdit={() => openSheet("topten")} />
-
-      {savedShows.length > 0 ? (
-        <button
-          type="button"
-          onClick={() => openSheet("interested")}
-          className="flex items-center gap-5 text-left transition-transform duration-150 active:scale-[0.99]"
-        >
-          <div className="relative">
-            <Poster show={savedShows[0]} className="w-[88px] rounded-thumb" />
-            <Bookmark
-              className="absolute left-1/2 top-1/2 size-8 -translate-x-1/2 -translate-y-1/2 text-white/85"
-              fill="currentColor"
-              strokeWidth={0}
-            />
-          </div>
-          <div>
-            <p className="text-title">Interested</p>
-            <p className="mt-1 text-body text-ink-soft">
-              {savedShows.length} show{savedShows.length === 1 ? "" : "s"}
-            </p>
-          </div>
-        </button>
-      ) : (
-        <EmptyState
-          text="Tap Interested on any show and it collects here…"
-          actionLabel="Browse shows"
-          actionHref="/"
-          icon={
-            <Bookmark className="size-16 text-ink-faint" strokeWidth={1.4} />
-          }
-        />
-      )}
-
-      {attended.length > 0 && (
-        <button
-          type="button"
-          onClick={() => openSheet("attended")}
-          className="flex items-center gap-5 text-left transition-transform duration-150 active:scale-[0.99]"
-        >
-          <div className="relative">
-            <Poster show={attended[0]} className="w-[88px] rounded-thumb" />
-            <Star
-              className="absolute left-1/2 top-1/2 size-8 -translate-x-1/2 -translate-y-1/2 text-white/85"
-              fill="currentColor"
-              strokeWidth={0}
-            />
-          </div>
-          <div>
-            <p className="text-title">Attended</p>
-            <p className="mt-1 text-body text-ink-soft">
-              {attended.length} logged
-            </p>
-          </div>
-        </button>
-      )}
-    </div>
-  );
-}
-
-function PosterGridSheet({
-  open,
-  onClose,
-  title,
-  subtitle,
+/** A titled poster wall — the header opens the search-and-add editor, the wall
+ *  shows the most recent members four-across (posters link straight to the
+ *  show). Keeps the Collection dense instead of teasing one cover over empty
+ *  space. */
+function Gallery({
+  label,
   shows,
+  onOpen,
+  emptyText,
 }: {
-  open: boolean;
-  onClose: () => void;
-  title: string;
-  subtitle: string;
+  label: string;
   shows: Show[];
+  onOpen: () => void;
+  emptyText: string;
 }) {
   return (
-    <Sheet open={open} onClose={onClose} title={title}>
-      <p className="mt-1 text-body text-ink-soft">{subtitle}</p>
-      <div className="mt-5 grid grid-cols-3 gap-2.5">
-        {shows.map((show) => (
-          <Link
-            key={show.slug}
-            href={`/shows/${show.slug}`}
-            onClick={onClose}
-            className="transition-transform duration-150 active:scale-[0.96]"
-            aria-label={`${show.title} tickets`}
-          >
-            <Poster show={show} className="w-full rounded-thumb" />
-          </Link>
-        ))}
+    <section>
+      <div className="flex items-baseline justify-between gap-4">
+        <p className="eyebrow">
+          {label}
+          {shows.length > 0 ? ` · ${shows.length}` : ""}
+        </p>
+        <button
+          type="button"
+          onClick={onOpen}
+          className="flex items-center gap-1.5 text-caption font-semibold text-ink-soft transition-colors duration-150 active:text-ink"
+        >
+          <Plus className="size-4" strokeWidth={2} />
+          Add
+        </button>
       </div>
-    </Sheet>
+      {shows.length > 0 ? (
+        <div className="mt-3 grid grid-cols-4 gap-2">
+          {shows.slice(0, 8).map((show) => (
+            <Link
+              key={show.slug}
+              href={`/shows/${show.slug}`}
+              aria-label={`${show.title} tickets`}
+              className="transition-transform duration-150 active:scale-[0.96]"
+            >
+              <Poster show={show} className="w-full rounded-thumb" />
+            </Link>
+          ))}
+        </div>
+      ) : (
+        <p className="mt-2 text-body text-ink-faint">{emptyText}</p>
+      )}
+    </section>
   );
 }
 
-function PersonRow({
-  name,
-  handle,
-  color,
-}: {
-  name: string;
-  handle: string;
-  color: string;
-}) {
-  const [following, setFollowing] = useState(true);
+/** Taste, from real state, filling the screen (DESIGN.md §151): the personal
+ *  ranking as the hero — attended shows in your order, built by the matchup
+ *  flow — then two dense walls, Seen (attended) and Interested (the bookmark
+ *  set). No empty room reserved for other lists; these three are the tab. */
+function CollectionTab({ openSheet }: { openSheet: (s: SheetName) => void }) {
+  const { savedShows, attended, rankedShows } = useApp();
+
   return (
-    <div className="flex items-center gap-3.5 rounded-card bg-paper p-3.5">
-      <span
-        className="flex size-11 items-center justify-center rounded-full text-body font-semibold text-white"
-        style={{ background: color }}
-      >
-        {name[0]}
-      </span>
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-body font-semibold">{name}</p>
-        <p className="text-caption text-ink-soft">{handle}</p>
-      </div>
-      <button
-        type="button"
-        onClick={() => setFollowing((v) => !v)}
-        className={`h-10 rounded-full px-4 text-caption font-semibold transition-[background-color,color,transform] duration-200 active:scale-[0.96] ${
-          following ? "bg-inset text-ink" : "bg-espresso text-white"
-        }`}
-      >
-        {following ? "Following" : "Follow"}
-      </button>
+    <div className="flex flex-col gap-8 pb-6 pt-5">
+      {/* 1 — Ranking: the taste statement, ordered #1…#N. */}
+      <section>
+        <div className="flex items-baseline justify-between gap-4">
+          <p className="eyebrow">Your ranking</p>
+          <button
+            type="button"
+            onClick={() => openSheet("rank")}
+            className="flex items-center gap-1.5 text-caption font-semibold text-ink-soft transition-colors duration-150 active:text-ink"
+          >
+            <Swords className="size-4" strokeWidth={2} />
+            Rank
+          </button>
+        </div>
+        {rankedShows.length > 0 ? (
+          <ol className="mt-3 flex flex-col gap-2">
+            {rankedShows.map((show, i) => (
+              <li key={show.slug}>
+                <Link
+                  href={`/shows/${show.slug}`}
+                  className="flex items-center gap-3.5 rounded-card bg-paper p-3 transition-transform duration-150 active:scale-[0.99]"
+                >
+                  <span className="w-6 shrink-0 text-center text-body font-bold tabular-nums">
+                    {i + 1}
+                  </span>
+                  <Poster show={show} className="w-12 shrink-0 rounded-thumb" />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-body font-semibold">
+                      {show.title}
+                    </p>
+                    <p className="mt-0.5 truncate text-caption text-ink-soft">
+                      {show.tier} · {show.genre}
+                    </p>
+                  </div>
+                </Link>
+              </li>
+            ))}
+          </ol>
+        ) : (
+          <EmptyState
+            text="Rank the shows you've seen — a few quick “which did you like more?” matchups build the list."
+            actionLabel="Start ranking"
+            onAction={() => openSheet("rank")}
+            icon={<Swords className="size-16 text-ink-faint" strokeWidth={1.4} />}
+          />
+        )}
+      </section>
+
+      {/* 2 — Attended: everywhere you've been. */}
+      <Gallery
+        label="Attended"
+        shows={attended}
+        onOpen={() => openSheet("attended")}
+        emptyText="Log a show you've been to and it collects here…"
+      />
+
+      {/* 3 — Interested: what's next. */}
+      <Gallery
+        label="Interested"
+        shows={savedShows}
+        onOpen={() => openSheet("interested")}
+        emptyText="Tap Interested on any show and it collects here…"
+      />
     </div>
   );
+}
+
+/** Consecutive ET days with at least one entry, ending today or yesterday. */
+function entryStreak(log: LotteryEntry[], now: Date): number {
+  const days = new Set(log.map((e) => e.day));
+  const cursor = new Date(now);
+  if (!days.has(etDayKey(cursor))) cursor.setDate(cursor.getDate() - 1);
+  let streak = 0;
+  while (days.has(etDayKey(cursor))) {
+    streak += 1;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+  return streak;
 }
 
 export default function ProfilePage() {
   const [tab, setTab] = useState<Tab>("activity");
   const [sheet, setSheet] = useState<SheetName>(null);
-  const { profile, updateProfile, diary, savedShows, attended } = useApp();
+  const {
+    profile,
+    updateProfile,
+    diary,
+    savedShows,
+    attended,
+    follows,
+    toggleSaved,
+    addAttended,
+    removeAttended,
+  } = useApp();
   const toast = useToast();
   const now = useNow();
 
-  // Entry streak — surfaces on the identity card next to the points chip.
+  // The identity card is a live theater record, never social-proof theater.
   const [log, setLog] = useState<LotteryEntry[]>([]);
   useEffect(() => {
+    // Fresh visitors start with a seeded entry streak so the record reads
+    // as lived-in (once ever; real logs are never overwritten).
+    seedLotteryLogIfEmpty(new Date());
     const sync = () => setLog(readLotteryLog());
     sync();
     return onLotteryLogChange(sync);
   }, []);
+  const programByKey = new Map(
+    allPrograms().map((program) => [programKey(program), program]),
+  );
+  const wins = log.filter((entry) => entry.won);
+  const moneySaved = wins.reduce((sum, entry) => {
+    const program = programByKey.get(entry.key);
+    if (!program) return sum;
+    const face = getShow(program.showSlug)?.faceValue ?? 0;
+    return sum + Math.max(0, face - program.price);
+  }, 0);
   const streak = now ? entryStreak(log, now) : 0;
 
   const [draftName, setDraftName] = useState(profile.name);
@@ -630,6 +648,13 @@ export default function ProfilePage() {
   const iconBtn =
     "transition-transform duration-150 active:scale-90";
 
+  // Search pools for the Collection editors: the catalog minus what's already
+  // in each list.
+  const savedSlugs = new Set(savedShows.map((s) => s.slug));
+  const attendedSlugs = new Set(attended.map((s) => s.slug));
+  const interestedCandidates = allShows().filter((s) => !savedSlugs.has(s.slug));
+  const attendedCandidates = allShows().filter((s) => !attendedSlugs.has(s.slug));
+
   return (
     <main className="web:mx-auto web:grid web:max-w-[1160px] web:grid-cols-[380px_minmax(0,1fr)] web:items-start web:gap-8 web:px-6 web:pt-8">
       {/* Dark = identity: espresso header with a follow spot settled over
@@ -645,15 +670,7 @@ export default function ProfilePage() {
       >
         <FollowSpot />
         <div className="relative">
-        <div className="flex items-center justify-between">
-          <button
-            type="button"
-            aria-label="Messages"
-            className={iconBtn}
-            onClick={() => setSheet("messages")}
-          >
-            <Mail className="size-6" strokeWidth={1.8} />
-          </button>
+        <div className="flex items-center justify-end">
           <div className="flex items-center gap-4">
             <button
               type="button"
@@ -661,7 +678,7 @@ export default function ProfilePage() {
               className="flex h-10 items-center gap-2 rounded-full bg-espresso-raised px-4 text-body font-medium transition-transform duration-150 active:scale-[0.97]"
             >
               <SquarePen className="size-[18px]" strokeWidth={1.8} />
-              Edit Profile
+              Edit profile
             </button>
             <button
               type="button"
@@ -692,54 +709,54 @@ export default function ProfilePage() {
             <h1 className="truncate font-display text-[28px] font-bold tracking-normal">
               {profile.name}
             </h1>
-            <div className="mt-1 flex flex-wrap items-center gap-2">
-              <p className="text-body text-white/60">{profile.handle}</p>
-              <span
-                className="rounded-full border border-white/20 px-2 py-0.5 text-label font-semibold text-white/70"
-                title="Sample activity for this portfolio prototype"
-              >
-                Demo profile
-              </span>
-            </div>
-            <button
-              type="button"
-              onClick={() => setSheet("follows")}
-              className="mt-2 flex gap-4 text-body transition-opacity active:opacity-70"
-            >
-              <span>
-                <b className="font-semibold">{profileData.following}</b>{" "}
-                Following
-              </span>
-              <span>
-                <b className="font-semibold">{profileData.followers}</b>{" "}
-                Follower{profileData.followers === 1 ? "" : "s"}
-              </span>
-              <span>
-                <b className="font-semibold">{profileData.likes}</b> Like
-                {profileData.likes === 1 ? "" : "s"}
-              </span>
-            </button>
+            <p className="mt-1 text-body text-white/60">Your theater record</p>
           </div>
         </div>
 
-        <div className="mt-4 flex flex-wrap gap-2">
+        <div className="mt-5 grid grid-cols-6 overflow-hidden rounded-card border border-white/10 bg-white/10">
           <button
             type="button"
-            onClick={() =>
-              toast({
-                message: `${profileData.points} points — earned by attending shows`,
-              })
-            }
-            className="inline-flex h-9 items-center gap-1.5 rounded-full bg-white/10 px-3 text-body font-semibold transition-transform duration-150 active:scale-[0.96]"
+            onClick={() => setSheet("attended")}
+            className="col-span-2 flex min-h-16 flex-col items-center justify-center border-b border-r border-white/10 px-2 py-2 text-center transition-colors active:bg-white/10"
           >
-            <Star
-              className="size-5 text-white"
-              fill="currentColor"
-              strokeWidth={0}
-            />
-            {profileData.points}
+            <b className="text-heading font-semibold tabular-nums">{attended.length}</b>
+            <span className="mt-0.5 text-label leading-tight text-white/60">Shows logged</span>
           </button>
-          {streak > 1 && (
+          <button
+            type="button"
+            onClick={() => setTab("record")}
+            className="col-span-2 flex min-h-16 flex-col items-center justify-center border-b border-r border-white/10 px-2 py-2 text-center transition-colors active:bg-white/10"
+          >
+            <b className="text-heading font-semibold tabular-nums">{log.length}</b>
+            <span className="mt-0.5 text-label leading-tight text-white/60">Entries</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setTab("record")}
+            className="col-span-2 flex min-h-16 flex-col items-center justify-center border-b border-white/10 px-2 py-2 text-center transition-colors active:bg-white/10"
+          >
+            <b className="text-heading font-semibold tabular-nums">{wins.length}</b>
+            <span className="mt-0.5 text-label leading-tight text-white/60">Wins</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setTab("record")}
+            className="col-span-3 flex min-h-16 flex-col items-center justify-center border-r border-white/10 px-2 py-2 text-center transition-colors active:bg-white/10"
+          >
+            <b className="text-heading font-semibold tabular-nums">${moneySaved}</b>
+            <span className="mt-0.5 text-label leading-tight text-white/60">Money saved</span>
+          </button>
+          <Link
+            href="/notify"
+            className="col-span-3 flex min-h-16 flex-col items-center justify-center px-2 py-2 text-center transition-colors active:bg-white/10"
+          >
+            <b className="text-heading font-semibold tabular-nums">{follows.length}</b>
+            <span className="mt-0.5 text-label leading-tight text-white/60">Following</span>
+          </Link>
+        </div>
+
+        {streak > 1 && (
+          <div className="mt-4">
             <button
               type="button"
               onClick={() =>
@@ -756,8 +773,8 @@ export default function ProfilePage() {
               />
               {streak}-day streak
             </button>
-          )}
-        </div>
+          </div>
+        )}
 
         <button
           type="button"
@@ -873,7 +890,7 @@ export default function ProfilePage() {
       <Sheet
         open={sheet === "edit"}
         onClose={() => setSheet(null)}
-        title="Edit Profile"
+        title="Edit profile"
       >
         <label className="mb-2 mt-6 block text-caption font-medium text-ink-soft">
           Name
@@ -908,68 +925,59 @@ export default function ProfilePage() {
         onClose={() => setSheet(null)}
         title="Settings"
       >
-        <div className="mt-5 flex flex-col gap-2.5">
-          {[
-            ["Push notifications", "Rush & lottery deadlines for shows you follow", true],
-            ["Email updates", "Weekly digest of shows you follow", false],
-            ["Public profile", "Anyone can see your activity", true],
-          ].map(([label, sub, on]) => (
-            <div
-              key={label as string}
-              className="flex items-center gap-4 rounded-card bg-paper p-4"
-            >
-              <div className="min-w-0 flex-1">
-                <p className="text-body font-semibold">{label}</p>
-                <p className="mt-0.5 text-caption text-ink-soft">{sub}</p>
-              </div>
-              <Toggle defaultOn={on as boolean} label={label as string} />
+        <div className="mt-5 overflow-hidden rounded-card bg-paper px-4">
+          <Link
+            href="/notify"
+            onClick={() => setSheet(null)}
+            className="flex items-center gap-3 border-b border-line py-4 transition-opacity active:opacity-70"
+          >
+            <BellPlus className="size-5 shrink-0" strokeWidth={1.8} />
+            <span className="min-w-0">
+              <span className="block text-body font-semibold">
+                Deadline notifications
+              </span>
+              <span className="mt-0.5 block text-caption text-ink-soft">
+                Manage alerts for shows you follow
+              </span>
+            </span>
+          </Link>
+          <div className="flex items-start gap-3 py-4">
+            <EyeOff className="mt-0.5 size-5 shrink-0" strokeWidth={1.8} />
+            <div className="min-w-0">
+              <p className="text-body font-semibold">Private by default</p>
+              <p className="mt-0.5 text-caption text-ink-soft">
+                Your diary stays in this browser. A profile is visible only
+                through a link you choose to share.
+              </p>
             </div>
-          ))}
+          </div>
         </div>
       </Sheet>
 
-      {/* Messages */}
-      <Sheet
-        open={sheet === "messages"}
-        onClose={() => setSheet(null)}
-        title="Messages"
-      >
-        <EmptyState
-          text="No messages yet…"
-          icon={
-            <Mail className="size-16 text-ink-faint" strokeWidth={1.4} />
-          }
-        />
-      </Sheet>
-
-      {/* Follows */}
-      <Sheet
-        open={sheet === "follows"}
-        onClose={() => setSheet(null)}
-        title="Follows"
-      >
-        <p className="eyebrow mb-2.5 mt-6">Following · 1</p>
-        <PersonRow name="Matinee Team" handle="@matinee" color="#d7492b" />
-        <p className="eyebrow mb-2.5 mt-6">Followers · 1</p>
-        <PersonRow name="Jamie Lin" handle="@jamie.lin" color="#2e7d5b" />
-      </Sheet>
-
-      {/* Collection drill-ins */}
-      <PosterGridSheet
+      {/* Collection drill-ins — search-and-add editors */}
+      <CollectionEditorSheet
         open={sheet === "interested"}
         onClose={() => setSheet(null)}
         title="Interested"
-        subtitle={`${savedShows.length} show${savedShows.length === 1 ? "" : "s"}`}
-        shows={savedShows}
+        members={savedShows}
+        candidates={interestedCandidates}
+        onAdd={(show) => toggleSaved(show.slug)}
+        onRemove={(show) => toggleSaved(show.slug)}
+        searchPlaceholder="Search shows to add"
+        emptyText="Search a show to add it, or tap Interested anywhere in the app."
       />
-      <PosterGridSheet
+      <CollectionEditorSheet
         open={sheet === "attended"}
         onClose={() => setSheet(null)}
         title="Attended"
-        subtitle={`${attended.length} logged`}
-        shows={attended}
+        members={attended}
+        candidates={attendedCandidates}
+        onAdd={(show) => addAttended(show.slug)}
+        onRemove={(show) => removeAttended(show.slug)}
+        searchPlaceholder="Search shows you've seen"
+        emptyText="Search a show you've seen to add it here."
       />
-      <TopTenSheet open={sheet === "topten"} onClose={() => setSheet(null)} />
+      <RankSheet open={sheet === "rank"} onClose={() => setSheet(null)} />
     </main>
   );
 }
