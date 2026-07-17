@@ -14,10 +14,13 @@ import {
   Settings,
   SquarePen,
   Star,
+  ThumbsDown,
   ThumbsUp,
   Trophy,
+  Zap,
 } from "lucide-react";
 import { EmptyState } from "@/components/EmptyState";
+import { EntryHeatmap } from "@/components/EntryHeatmap";
 import { InsetShowRow } from "@/components/InsetShowRow";
 import { Poster } from "@/components/Poster";
 import { Sheet } from "@/components/Sheet";
@@ -88,7 +91,8 @@ function HeaderPill({
 }
 
 /** Sentiment suffix on the "Marked as attended" line. Recommend keeps its
- *  gold chip; mixed/disliked stay quiet — never vermilion. */
+ *  gold chip; disliked mirrors it with a quiet-ink thumbs-down (gold stays
+ *  praise-only); mixed stays the quiet pill — never vermilion. */
 function SentimentChip({
   sentiment,
 }: {
@@ -102,9 +106,17 @@ function SentimentChip({
       </span>
     );
   }
+  if (sentiment === "disliked") {
+    return (
+      <span className="flex items-center gap-1.5 text-[15px] font-semibold text-ink-soft">
+        <ThumbsDown className="size-4" strokeWidth={2} fill="currentColor" />
+        Didn&apos;t like it
+      </span>
+    );
+  }
   return (
     <span className="rounded-full bg-inset px-2.5 py-1 text-caption font-medium text-ink-soft">
-      {sentiment === "mixed" ? "Mixed feelings" : "Didn't like it"}
+      Mixed feelings
     </span>
   );
 }
@@ -137,52 +149,78 @@ function DiaryCard({ entry }: { entry: DiaryEntry }) {
   };
 
   return (
-    <div className="mt-4 flex flex-col gap-3 rounded-card bg-paper p-3.5">
-      <InsetShowRow show={entry.show} />
-      {entry.visibility === "public" && entry.thoughts && (
-        <p className="text-body italic text-ink-soft">“{entry.thoughts}”</p>
-      )}
-      {entry.photo && (
-        // data: URL from the log flow — next/image can't optimize it
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={entry.photo}
-          alt={`Your photo from ${entry.show.title}`}
-          className="aspect-[3/4] w-full max-w-[220px] rounded-thumb object-cover"
-        />
-      )}
-      {entry.tags.length > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {entry.tags.map((tag) => (
-            <span
-              key={tag}
-              className="rounded-lg border border-line px-2.5 py-1 text-caption text-ink-soft"
-            >
-              # {tag}
-            </span>
-          ))}
-        </div>
-      )}
-      <p className="flex items-center gap-2 text-caption text-ink-soft">
-        <Armchair className="size-4 shrink-0" strokeWidth={1.8} />
-        {entry.seat}
-      </p>
-      {entry.note && (
-        <p className="flex items-start gap-2 border-t border-line pt-3 text-caption text-ink-faint">
-          <EyeOff className="mt-0.5 size-4 shrink-0" strokeWidth={1.8} />
-          <span>
-            <span className="font-medium">Only you</span> · {entry.note}
-          </span>
+    // The diary entry as a ticket (DESIGN.md §13): everything typeset flat
+    // on the ticket paper — no nested inset card, no controls — body above
+    // the tear line, stub below. The app's single skeuomorphic flourish.
+    // Body and stub each carry the paper; the tear strip between them is
+    // masked, so the notches and perforation are genuine cutouts.
+    <div className="mt-4">
+      <div className="flex flex-col gap-3 rounded-t-card bg-paper p-4 pb-2.5">
+        <Link
+          href={`/shows/${entry.show.slug}`}
+          className="flex items-center gap-3.5 transition-opacity duration-150 active:opacity-70"
+        >
+          <Poster show={entry.show} className="w-14 shrink-0 rounded-thumb" />
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-body font-semibold">
+              {entry.show.title}
+            </p>
+            <p className="mt-0.5 truncate text-caption text-ink-soft">
+              {entry.show.tier} · {entry.show.genre} · {entry.show.venue}
+            </p>
+          </div>
+        </Link>
+        {entry.visibility === "public" && entry.thoughts && (
+          <p className="text-body italic text-ink-soft">“{entry.thoughts}”</p>
+        )}
+        {entry.photo && (
+          // data: URL from the log flow — next/image can't optimize it
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={entry.photo}
+            alt={`Your photo from ${entry.show.title}`}
+            className="aspect-[3/4] w-full max-w-[220px] rounded-thumb object-cover"
+          />
+        )}
+        {entry.tags.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {entry.tags.map((tag) => (
+              <span
+                key={tag}
+                className="rounded-lg border border-line px-2.5 py-1 text-caption text-ink-soft"
+              >
+                # {tag}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+      {/* Tear line — real perforation: edge notches and punch holes are
+          masked out of the paper, not painted on top. */}
+      <div className="ticket-tear" aria-hidden />
+      {/* The stub — what a ticket keeps: your seat, your private words. */}
+      <div className="flex flex-col gap-3 rounded-b-card bg-paper p-4 pt-2.5">
+        <p className="flex items-center gap-2 text-caption text-ink-soft">
+          <Armchair className="size-4 shrink-0" strokeWidth={1.8} />
+          {entry.seat}
         </p>
-      )}
-      <button
-        type="button"
-        onClick={handleShare}
-        className="flex items-center gap-2 self-start text-caption font-semibold text-ink-soft transition-colors duration-150 hover:text-ink"
-      >
-        <Forward className="size-4" strokeWidth={2} />
-        Share as image
-      </button>
+        {entry.note && (
+          <p className="flex items-start gap-2 text-caption text-ink-faint">
+            <EyeOff className="mt-0.5 size-4 shrink-0" strokeWidth={1.8} />
+            <span>
+              <span className="font-medium">Only you</span> · {entry.note}
+            </span>
+          </p>
+        )}
+        <button
+          type="button"
+          onClick={handleShare}
+          className="flex items-center gap-2 self-start text-caption font-semibold text-ink-soft transition-colors duration-150 hover:text-ink"
+        >
+          <Forward className="size-4" strokeWidth={2} />
+          Share as image
+        </button>
+      </div>
     </div>
   );
 }
@@ -288,17 +326,6 @@ function entryStreak(log: LotteryEntry[], now: Date): number {
   return streak;
 }
 
-function StatTile({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-card bg-paper p-4">
-      <p className="text-caption text-ink-soft">{label}</p>
-      <p className="mt-1.5 text-[24px] font-bold leading-none tracking-tight">
-        {value}
-      </p>
-    </div>
-  );
-}
-
 /** The lottery record (Phase 14): the "I entered" log as a stats view —
  *  entries, wins, streak, saved vs face. Numbers stay quiet ink on paper;
  *  never a colored chip (DESIGN.md §6). */
@@ -334,32 +361,25 @@ function RecordTab() {
     const face = getShow(program.showSlug)?.faceValue ?? 0;
     return sum + Math.max(0, face - program.price);
   }, 0);
-  const streak = now ? entryStreak(log, now) : 0;
-
   const recentWins = [...wins]
     .sort((a, b) => b.at.localeCompare(a.at))
     .slice(0, 12);
 
   return (
     <div className="flex flex-col gap-7 pb-8 pt-6">
-      <div className="grid grid-cols-2 gap-3">
-        <StatTile label="Entries" value={String(log.length)} />
-        <StatTile
-          label="Wins"
-          value={`${wins.length} · ${Math.round((wins.length / log.length) * 100)}%`}
-        />
-        <StatTile
-          label="Streak"
-          value={`${streak} day${streak === 1 ? "" : "s"}`}
-        />
-        <StatTile label="Saved vs face" value={`$${saved}`} />
-      </div>
+      {now && <EntryHeatmap log={log} now={now} />}
 
       {recentWins.length > 0 && (
         <section>
-          <p className="text-caption font-medium text-ink-soft">
-            Wins · {wins.length}
-          </p>
+          <div className="flex items-baseline justify-between gap-4">
+            <p className="eyebrow">Wins · {wins.length}</p>
+            {saved > 0 && (
+              <p className="text-caption text-ink-soft">
+                saved <b className="font-semibold text-ink">${saved}</b> vs
+                face
+              </p>
+            )}
+          </div>
           <div className="mt-2.5 flex flex-col gap-2.5">
             {recentWins.map((entry) => {
               const program = programByKey.get(entry.key);
@@ -556,6 +576,16 @@ export default function ProfilePage() {
   const [sheet, setSheet] = useState<SheetName>(null);
   const { profile, updateProfile, diary } = useApp();
   const toast = useToast();
+  const now = useNow();
+
+  // Entry streak — surfaces on the identity card next to the points chip.
+  const [log, setLog] = useState<LotteryEntry[]>([]);
+  useEffect(() => {
+    const sync = () => setLog(readLotteryLog());
+    sync();
+    return onLotteryLogChange(sync);
+  }, []);
+  const streak = now ? entryStreak(log, now) : 0;
 
   const [draftName, setDraftName] = useState(profile.name);
   const [draftBio, setDraftBio] = useState(profile.bio ?? "");
@@ -668,7 +698,7 @@ export default function ProfilePage() {
             type="button"
             onClick={openEdit}
             aria-label="Edit profile photo"
-            className="flex size-[88px] shrink-0 items-center justify-center rounded-full bg-[#2563ab] text-[40px] font-semibold transition-transform duration-150 active:scale-[0.97]"
+            className="flex size-[88px] shrink-0 items-center justify-center rounded-full bg-espresso-raised text-[40px] font-semibold transition-transform duration-150 active:scale-[0.97]"
           >
             {profile.name[0]}
           </button>
@@ -688,31 +718,52 @@ export default function ProfilePage() {
               </span>
               <span>
                 <b className="font-semibold">{profileData.followers}</b>{" "}
-                Follower
+                Follower{profileData.followers === 1 ? "" : "s"}
               </span>
               <span>
                 <b className="font-semibold">{profileData.likes}</b> Like
+                {profileData.likes === 1 ? "" : "s"}
               </span>
             </button>
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={() =>
-            toast({
-              message: `${profileData.points} points — earned by attending shows`,
-            })
-          }
-          className="mt-4 inline-flex h-9 items-center gap-1.5 rounded-full bg-white/10 px-3 text-body font-semibold transition-transform duration-150 active:scale-[0.96]"
-        >
-          <Star
-            className="size-5 text-white"
-            fill="currentColor"
-            strokeWidth={0}
-          />
-          {profileData.points}
-        </button>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() =>
+              toast({
+                message: `${profileData.points} points — earned by attending shows`,
+              })
+            }
+            className="inline-flex h-9 items-center gap-1.5 rounded-full bg-white/10 px-3 text-body font-semibold transition-transform duration-150 active:scale-[0.96]"
+          >
+            <Star
+              className="size-5 text-white"
+              fill="currentColor"
+              strokeWidth={0}
+            />
+            {profileData.points}
+          </button>
+          {streak > 1 && (
+            <button
+              type="button"
+              onClick={() =>
+                toast({
+                  message: `${streak} days in a row with a rush or lottery entry`,
+                })
+              }
+              className="inline-flex h-9 items-center gap-1.5 rounded-full bg-white/10 px-3 text-body font-semibold transition-transform duration-150 active:scale-[0.96]"
+            >
+              <Zap
+                className="size-5 text-white"
+                fill="currentColor"
+                strokeWidth={0}
+              />
+              {streak}-day streak
+            </button>
+          )}
+        </div>
 
         <button
           type="button"
@@ -742,9 +793,11 @@ export default function ProfilePage() {
         </div>
       </header>
 
-      {/* Light = commerce: sheet slides over the espresso header.
-          Web mode: no overlap — it's the right column beside the card. */}
-      <div className="relative -mt-6 rounded-t-sheet bg-cream web:mt-0 web:rounded-none">
+      {/* Light = commerce: sheet slides over the espresso header. The 1px
+          gold top edge is the box-seat rail — the one gilt line in the app,
+          where velvet meets ivory (DESIGN.md §13). Web mode: no overlap, no
+          rail — it's the right column beside the card. */}
+      <div className="relative -mt-6 rounded-t-sheet border-t border-gold bg-cream web:mt-0 web:rounded-none web:border-t-0">
         <div className="border-b border-line px-4">
           <div className="flex gap-8">
             {(
@@ -871,13 +924,9 @@ export default function ProfilePage() {
         onClose={() => setSheet(null)}
         title="Follows"
       >
-        <p className="mb-2.5 mt-6 text-caption font-medium text-ink-soft">
-          Following · 1
-        </p>
+        <p className="eyebrow mb-2.5 mt-6">Following · 1</p>
         <PersonRow name="Matinee Team" handle="@matinee" color="#d7492b" />
-        <p className="mb-2.5 mt-6 text-caption font-medium text-ink-soft">
-          Followers · 1
-        </p>
+        <p className="eyebrow mb-2.5 mt-6">Followers · 1</p>
         <PersonRow name="Jamie Lin" handle="@jamie.lin" color="#2e7d5b" />
       </Sheet>
 

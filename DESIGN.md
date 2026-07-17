@@ -64,7 +64,14 @@ iOS app uses SF Pro. Web equivalent: **Inter** (or Geist, already in the scaffol
 Rules:
 - Numbers get emphasis, words around them don't: **$49** each · **16** matches · **1** Following.
 - Inactive siblings of an active element drop to `ink-soft` at the *same* size/weight-1 (see Buy/Sell, Activity/Listing/Collection) — selection is shown by color + underline, not size change.
-- Sentence case everywhere. No ALL-CAPS labels anywhere in the app.
+- Sentence case everywhere. No ALL-CAPS labels anywhere in the app — with
+  **one exception** (added 2026-07-17): the `.eyebrow` section introducer
+  (§13), the printed program's tracked small-caps section head. Eyebrows are
+  for content-section heads on browse/editorial surfaces only; buttons,
+  tabs, badges, and page titles stay sentence case. This deliberately
+  amends the rule inherited from the reference iOS app — the caps ban was
+  stock-app DNA, and the program-page convention is the identity we
+  actually want.
 
 ---
 
@@ -110,7 +117,7 @@ White, `r-card`, 16–20px padding. Anatomy: poster thumb left (72px, `r-thumb`)
 iOS-style, 52×32px. On: `espresso` track, white thumb. Off: `#D9D4CF` track. Never vermilion — the accent is reserved for actions, not state.
 
 ### Catalog card (Discover browse grid)
-The big card the Marketplace grid pioneered, now answering with curated data (`ShowCard`, Phase 14): 2-col grid (web: 3 ≥768px, 4 ≥1024px), 12px gap. Square poster top with `r-card` upper corners (web hover: art zooms 1.03 inside its static frame); body on white: title 20/700 truncated, tier · genre 14 `ink-soft`, then the **answer row** — program kind 14 `ink-soft` + **$40** 24/700 (fallbacks: "face value **$119**", bold "Free") with a quiet right-aligned caption ("On TKTS today" / "+2 more ways"). The answer row is schedule-agnostic: whether a window is open lives on /rush and the show page, never here.
+The big card the Marketplace grid pioneered, now answering with curated data (`ShowCard`, Phase 14): 2-col grid (web: 3 ≥768px, 4 ≥1024px), 12px gap. Square poster top with `r-card` upper corners (web hover: art zooms 1.03 inside its static frame); body on white: title 20/700 truncated, tier · genre 14 `ink-soft`, then the **answer row** — program kind 14 `ink-soft` + **$40** 24/700 (fallbacks: "face value **$119**", bold "Free") with a quiet right-aligned caption ("On TKTS today" / "+2 more ways"). Numbers stay grotesque — a serif-numerals experiment was tried and rejected (2026-07-17): Playfair digits read decorative where the answer row needs to read instant. The answer row is schedule-agnostic: whether a window is open lives on /rush and the show page, never here.
 
 > Retired with the marketplace (Phase 14, 2026-07-17): the listing card, the perforated ticket stub ("Below face" chip, sold scrims), the seller status pipeline, and the Orders accordion. Their specs live in this file's git history.
 
@@ -132,8 +139,8 @@ Centered, upper-third: outline glyph 64px `ink-faint` → "Nothing here yet…" 
 ### Log screen (diary entry — from live app, July 2026)
 Back arrow left, **Publish** as bare vermilion text top-right (no pill — text-button is the exception for editor screens). Stacked white cards with hairline-divided rows: what-you-saw (44px poster thumb + title 20/700 + venue 17 `ink-soft`; calendar + date row; seat row). "Share Your Thoughts" card: 3-option sentiment row (gold thumbs-up+star = Recommend it, gray-circle faces for Mixed feelings / Didn't like it; active = full-color icon + 17/600 `ink` label, inactive = muted icon + `ink-soft`), free-text area, outlined `# Tag` chips (rounded-lg 8px — squarer than control pills; selected = espresso fill), 130px Upload Photo bordered box, sage "Public" visibility pill (rounded-lg, eye icon). Separate "Private Note" card. Sentiment/tags/visibility state lives in color, never layout.
 
-### Diary card (timeline "ticket stub")
-Diary-logged attendance renders richer than static feed entries: white `r-card` wrapping the inset show row, italic quoted public thoughts, photo (3:4, `r-thumb`, max ~220px), read-only `# tag` chips (outlined, caption, `ink-soft`), armchair + seat caption, and — when present — a hairline-divided private-note row: EyeOff icon + "Only you · …" in `ink-faint`. Sentiment: gold "Recommend it" chip; "Mixed feelings" / "Didn't like it" are quiet `inset` chips, never vermilion.
+### Diary ticket (timeline entry — reshaped 2026-07-17)
+Diary-logged attendance renders as a **ticket**, not a card-in-a-card: white `r-card` with everything typeset flat on the paper (no nested `inset` row, no bookmark — controls don't belong on a keepsake). **Body** (above the tear): poster thumb 56px + title 17/600 + `Tier · Genre · Venue` caption (the row links to the show), italic quoted public thoughts, photo (3:4, `r-thumb`, max ~220px), read-only `# tag` chips (outlined, caption, `ink-soft`). **Tear line** (§13 perforation): a real cut, not paint — the `.ticket-tear` strip is CSS-masked so the 12px edge notches and 3px punch holes are genuine holes in the paper (whatever is behind shows through); body and stub carry the paper above and below it. Always present; the shape is the card's identity. **Stub** (below the tear — what a ticket keeps): armchair + seat caption, the private-note row when present (EyeOff + "Only you · …" in `ink-faint`), and the "Share as image" action. Sentiment on the "Marked as attended" line: gold ThumbsUp "Recommend it"; **ThumbsDown "Didn't like it" mirrors it in `ink-soft`** (same anatomy, gold stays praise-only); "Mixed feelings" is a quiet `inset` pill. Never vermilion.
 
 ---
 
@@ -188,7 +195,7 @@ Route changes use the View Transitions API (React `<ViewTransition>`,
 
 ## 8. Accessibility
 
-- `ink` on `cream` = ~13:1 ✓. `ink-soft` on `cream` = ~4.6:1 — body-size only, never under 14px.
+- `ink` on `cream` = ~13:1 ✓. `ink-soft` on `cream` = ~4.6:1 — body-size only, never under 14px. Exception: the `.eyebrow` (§13) runs 13px in `ink-soft` — 600-weight tracked caps have the apparent size of 15px+ text, and 4.6:1 still clears WCAG AA's 4.5:1 for normal text.
 - Never set text over poster art without the 35% espresso scrim.
 - Touch targets ≥ 44px; pills already comply (48–56px).
 - White on vermilion `#D7492B` = ~3.9:1 — fine for 17px/600 button text + icon, don't use vermilion for small body text.
@@ -304,3 +311,29 @@ workaday UI grotesque. Arbitrary-size display text opts in with
 **Kitsch guard:** red + gold turns discount-ticket fast. Ivory dominates;
 crimson obeys the one-accent rule; gilt is reserved for praise, light, and
 live urgency (never fills, never body text).
+
+---
+
+## 13. The printed program — typographic conventions
+
+Added 2026-07-17. Where §11 renders the *house* (light, velvet, paper
+stock), §13 renders the *program in your hand*: conventions lifted from
+real playbills, chosen because they are old print craft rather than app
+decoration. All primitives live in `globals.css`.
+
+| Convention | Spec | Where |
+|---|---|---|
+| **Eyebrow** (`.eyebrow`) | 13px / 600 / +0.08em, uppercase, `ink-soft` | Content-section heads on browse/editorial surfaces: Discover shelves, Rush feed sections, show-page sections ("Ways to save", "The house"), Record wins, Follows lists. Never buttons, tabs, badges, or page titles (§2 exception). |
+| **Dot leader** (`.dot-leader`) | 2px dotted `ink-faint` fill between label and value in an `items-baseline` flex row | Fact rows only — the show page's "The house" block (theater / operated by / box office / seats / address). Never navigation, never lists of tappable rows. |
+| **Double rule** (`.rule-double`) | Two 1px `line` hairlines, 2px apart, standalone element | Major editorial section breaks (show-page sections, About page), replacing the single `border-t`. Inset within the text measure, not full-bleed. |
+| **Gilt rail** | 1px solid `gold` top edge on the light sheet where it meets the velvet header | Profile, mobile mode only — the box-seat rail. **The one gilt line in the app**; it does not extend the §12 gilt roles (praise/light/urgency) anywhere else. |
+| **Perforation** (`.ticket-tear`) | 14px paper strip, CSS-masked: 12px semicircular edge notches + 3px punch holes every 9px — real cutouts, the background shows through | Diary ticket only — the tear line between body and stub (§5 diary ticket). **The app's single skeuomorphic flourish**; do not add perforations, staples, or folds anywhere else. |
+
+Rules:
+- These are *print* conventions: they belong on paper surfaces (cream/white).
+  None of them appear on velvet except the gilt rail that borders it.
+- The eyebrow demotes what used to be `heading`-size section heads on browse
+  surfaces; screen titles and card titles keep their type scale.
+- One perforation per card, one gilt line per app. Restraint is the point —
+  a convention repeated everywhere stops reading as print and starts
+  reading as theme-park.

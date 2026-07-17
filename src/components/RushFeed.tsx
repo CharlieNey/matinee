@@ -107,7 +107,7 @@ function FeedSection({
   return (
     <section className="mt-8">
       <div className="flex items-baseline justify-between">
-        <h2 className="text-heading">{title}</h2>
+        <h2 className="eyebrow">{title}</h2>
         <span className="text-caption text-ink-soft">{groups.length}</span>
       </div>
       {groups.length > 0 ? (

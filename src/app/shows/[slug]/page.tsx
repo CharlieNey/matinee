@@ -9,6 +9,18 @@ import { WatchShowCard } from "@/components/WatchShowCard";
 import { officialTicketsForShow } from "@/lib/officialTickets";
 import { programsForShow } from "@/lib/programs";
 import { allShows, getShow } from "@/lib/shows";
+import { allTheaters, TICKETER_LABELS } from "@/lib/theaters";
+
+/** One program-page fact row: label, dot leader, value (DESIGN.md §13). */
+function HouseFact({ label, value }: { label: string; value: string }) {
+  return (
+    <p className="flex items-baseline text-caption">
+      <span className="shrink-0 text-ink-soft">{label}</span>
+      <span className="dot-leader" aria-hidden />
+      <span className="truncate font-medium text-ink">{value}</span>
+    </p>
+  );
+}
 
 export function generateStaticParams() {
   return allShows().map((show) => ({ slug: show.slug }));
@@ -29,6 +41,9 @@ export default async function ShowPage({
 
   const officialTickets = officialTicketsForShow(slug);
   const hasPrograms = programsForShow(slug).length > 0;
+  // Broadway houses only — Off-Broadway venues aren't in the theater data,
+  // so the house section simply doesn't render for them.
+  const theater = allTheaters().find((t) => t.name === show.venue);
 
   return (
     <main className="pb-10 web:mx-auto web:max-w-[1160px]">
@@ -80,6 +95,35 @@ export default async function ShowPage({
       </div>
 
       <ShowPrograms show={show} />
+
+      {/* The house (Phase 15): the program page's fact block — typeset
+          straight on the ivory, no card. Data is the hand-curated theater
+          record (owner/ticketer/capacity, DATA.md). */}
+      {theater && (
+        <section className="mt-9 px-4 web:px-6">
+          <div className="rule-double" aria-hidden />
+          <h2 className="eyebrow mt-7">The house</h2>
+          <div className="mt-4 flex flex-col gap-2.5 web:max-w-[560px]">
+            <HouseFact label="Theater" value={theater.name} />
+            <HouseFact label="Operated by" value={theater.owner} />
+            <HouseFact
+              label="Box office"
+              value={TICKETER_LABELS[theater.ticketer]}
+            />
+            <HouseFact
+              label="Seats"
+              value={theater.capacity.toLocaleString("en-US")}
+            />
+            <HouseFact label="Address" value={theater.address} />
+          </div>
+          <Link
+            href="/district"
+            className="mt-5 inline-block text-caption font-medium underline underline-offset-2 transition-opacity active:opacity-60"
+          >
+            See it on the District map
+          </Link>
+        </section>
+      )}
     </main>
   );
 }

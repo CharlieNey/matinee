@@ -11,7 +11,9 @@ import {
   programKindLabel,
   programPlatformLabel,
 } from "@/lib/programs";
+import { Toggle } from "@/components/Toggle";
 import { buildTripPlan, daypartOf, TripSlot } from "@/lib/trip";
+import { useApp } from "@/lib/store";
 import { useNow } from "@/lib/useNow";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -35,7 +37,9 @@ const clock = new Intl.DateTimeFormat("en-US", {
 
 function windowLabel(slot: TripSlot): string {
   const opens = clock.format(slot.opensAt).replace(":00", "");
-  if (slot.whileSuppliesLast) return `from ${opens} · while supplies last`;
+  // "while supplies last" rides with the price line — a long label here
+  // would crush the show title out of the row.
+  if (slot.whileSuppliesLast) return `from ${opens}`;
   const closes = clock.format(slot.closesAt).replace(":00", "");
   return `${opens}–${closes}`;
 }
@@ -65,6 +69,7 @@ function SlotRow({ slot }: { slot: TripSlot }) {
         </span>
         <span className="mt-0.5 block text-caption text-ink-soft">
           {program.price === 0 ? "Free" : `$${program.price}`}
+          {slot.whileSuppliesLast ? " · supplies last" : ""}
         </span>
       </span>
       <ExternalLink
@@ -84,13 +89,20 @@ const DAYPARTS = [
 
 export function TripPlanner() {
   const now = useNow();
+  const { isSaved, savedShows } = useApp();
   const [startOffset, setStartOffset] = useState(0);
   const [nights, setNights] = useState(3);
+  const [interestedOnly, setInterestedOnly] = useState(false);
 
-  const plan = useMemo(
-    () => (now ? buildTripPlan(now, startOffset, nights) : null),
-    [now, startOffset, nights],
-  );
+  const plan = useMemo(() => {
+    if (!now) return null;
+    const days = buildTripPlan(now, startOffset, nights);
+    if (!interestedOnly) return days;
+    return days.map((day) => ({
+      ...day,
+      slots: day.slots.filter((slot) => isSaved(slot.show.slug)),
+    }));
+  }, [now, startOffset, nights, interestedOnly, isSaved]);
 
   if (!now || !plan) {
     return (
@@ -146,6 +158,19 @@ export function TripPlanner() {
         format={(v) => `${v} night${v === 1 ? "" : "s"}`}
       />
 
+      {savedShows.length > 0 && (
+        <div className="mt-5 flex items-center justify-between gap-4">
+          <span className="text-body">
+            Only shows I&apos;m interested in
+          </span>
+          <Toggle
+            on={interestedOnly}
+            onChange={setInterestedOnly}
+            label="Only shows I'm interested in"
+          />
+        </div>
+      )}
+
       {plan.map((day) => (
         <section key={day.dayKey} className="mt-9">
           <div className="flex items-baseline justify-between">
@@ -154,6 +179,13 @@ export function TripPlanner() {
               {day.slots.length} window{day.slots.length === 1 ? "" : "s"}
             </span>
           </div>
+
+          {interestedOnly && day.slots.length === 0 && (
+            <p className="mt-3 text-body text-ink-faint">
+              Nothing from your interested shows this day — flip the toggle
+              off to see every window.
+            </p>
+          )}
 
           {DAYPARTS.map(([part, label]) => {
             const slots = day.slots.filter(

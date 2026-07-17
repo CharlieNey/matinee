@@ -104,7 +104,7 @@ function QuickLink({
 function SectionHead({ title, detail }: { title: string; detail?: string }) {
   return (
     <div className="mt-8 flex items-baseline justify-between">
-      <h2 className="text-heading">{title}</h2>
+      <h2 className="eyebrow">{title}</h2>
       {detail && <span className="text-caption text-ink-soft">{detail}</span>}
     </div>
   );

@@ -234,7 +234,7 @@ export function LogScreen({ show }: { show: Show }) {
         </div>
       </section>
 
-      <h2 className="mt-8 text-title">Share Your Thoughts</h2>
+      <h2 className="mt-8 text-title">Share your thoughts</h2>
 
       <section className={`${fieldCard} mt-4`}>
         {/* Sentiment */}
@@ -387,7 +387,7 @@ export function LogScreen({ show }: { show: Show }) {
         </div>
       </section>
 
-      <h2 className="mt-8 text-title">Private Note</h2>
+      <h2 className="mt-8 text-title">Private note</h2>
       <section className={`${fieldCard} mt-4 p-4`}>
         <textarea
           value={note}

@@ -5,7 +5,8 @@ import posterImages from "@/lib/posters.json";
 
 const POSTER_SRC: Record<string, string> = posterImages;
 
-/** Crop tuning for landscape key art whose focal point isn't centered. */
+/** Crop tuning for key art whose focal point isn't centered (landscape →
+ *  "X% center", portrait → "center Y%"). Full-catalog audit 2026-07-17. */
 const POSTER_POSITION: Record<string, string> = {
   "little-shop-of-horrors": "35% center",
   "the-gin-game": "30% center",
@@ -15,6 +16,19 @@ const POSTER_POSITION: Record<string, string> = {
   "broad-strokes": "62% center",
   "the-potluck": "center 18%",
   "shifters": "center 35%",
+  "the-outsiders": "0% center",
+  "heathers": "70% center",
+  "the-lost-boys": "80% center",
+  "operation-mincemeat": "center 65%",
+  "two-strangers": "0% center",
+  "maybe-happy-ending": "0% center",
+  "death-of-a-salesman": "0% center",
+  "aladdin": "90% center",
+  "just-in-time": "0% center",
+  "stranger-things-first-shadow": "85% center",
+  "spelling-bee": "25% center",
+  "the-saviors": "center 15%",
+  "a-walk-on-the-moon": "65% center",
 };
 
 const STYLE_CLASSES: Record<Show["poster"]["style"], string> = {

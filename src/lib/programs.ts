@@ -933,6 +933,21 @@ export function programKindLabel(kind: ProgramKind): string {
   return KIND_LABELS[kind];
 }
 
+/* One-word-ish forms for tight lines (catalog cards): the price is the
+ * headline there; digital-vs-in-person nuance lives on the show page. */
+const KIND_SHORT_LABELS: Record<ProgramKind, string> = {
+  "digital-lottery": "Lottery",
+  "in-person-lottery": "Lottery",
+  rush: "Rush",
+  "digital-rush": "Rush",
+  "student-rush": "Student rush",
+  sro: "Standing room",
+};
+
+export function programKindShortLabel(kind: ProgramKind): string {
+  return KIND_SHORT_LABELS[kind];
+}
+
 export function programPlatformLabel(platform: ProgramPlatform): string {
   return PLATFORM_LABELS[platform];
 }

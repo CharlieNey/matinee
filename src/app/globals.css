@@ -78,10 +78,74 @@
   letter-spacing: 0;
 }
 
+/*
+ * Print-program conventions (DESIGN.md §13): the playbill's typographic
+ * furniture — tracked-caps eyebrows, dot leaders, double rules. These are
+ * borrowed from the printed program, not invented app chrome.
+ */
+
+/* Eyebrow — the program page's section introducer ("CAST", "MUSICAL
+   NUMBERS"), and the ONE sanctioned use of caps (§2 exception). Section
+   heads on browse/editorial surfaces only; never buttons, tabs, or badges.
+   600-weight tracked caps read a size up from 13px; ink-soft still clears
+   4.5:1 on cream (§8). */
+.eyebrow {
+  font-size: 13px;
+  line-height: 1.2;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-ink-soft);
+}
+
+/* Dot leader — the cast-page fill (Name . . . . Role). An empty flex child
+   in an items-baseline row: its bottom edge sits on the text baseline, so
+   the dotted rule lands exactly where periods would. */
+.dot-leader {
+  flex: 1;
+  min-width: 24px;
+  margin-inline: 6px;
+  border-bottom: 2px dotted var(--color-ink-faint);
+}
+
+/* Double rule — print's major-section divider, replacing single hairlines
+   at editorial section breaks. Standalone: <div class="rule-double" />. */
+.rule-double {
+  height: 4px;
+  border-block: 1px solid var(--color-line);
+}
+
+/* Ticket tear (DESIGN.md §13) — the diary ticket's perforation, cut for
+   real. A paper strip masked away at the sides (12px semicircular notches)
+   and along the middle (3px punch holes every 9px), so whatever sits behind
+   the ticket shows through actual holes — the card genuinely has the shape
+   of a torn ticket. Body and stub carry the paper above and below. */
+.ticket-tear {
+  height: 14px;
+  background: var(--color-paper);
+  mask-image:
+    radial-gradient(circle at 0 50%, transparent 6px, #000 6.5px),
+    radial-gradient(circle at 100% 50%, transparent 6px, #000 6.5px),
+    radial-gradient(circle at 50% 50%, transparent 1.5px, #000 2px);
+  mask-size:
+    100% 100%,
+    100% 100%,
+    9px 100%;
+  mask-repeat: no-repeat, no-repeat, repeat-x;
+  mask-composite: intersect;
+}
+
 body {
   background: var(--color-cream);
   color: var(--color-ink);
   font-family: var(--font-sans);
+}
+
+/* Tailwind v4's preflight leaves buttons on the OS default arrow; on the web
+ * this reads as inert chrome. Pills are controls — give them the hand. */
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]) {
+  cursor: pointer;
 }
 
 /* Motion: iOS-quiet (DESIGN.md §7) — 200-300ms ease-out, no loops */

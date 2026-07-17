@@ -1,5 +1,9 @@
 import Link from "next/link";
-import { cheapestProgram, programKindLabel, programsForShow } from "@/lib/programs";
+import {
+  cheapestProgram,
+  programKindShortLabel,
+  programsForShow,
+} from "@/lib/programs";
 import { Show } from "@/lib/shows";
 import { Poster } from "./Poster";
 
@@ -43,7 +47,7 @@ export function ShowCard({
           {program ? (
             <>
               <span className="truncate text-caption text-ink-soft">
-                {programKindLabel(program.kind)}
+                {programKindShortLabel(program.kind)}
               </span>
               <span className="text-[24px] font-bold leading-none tracking-tight">
                 {program.price > 0 ? `$${program.price}` : "Free"}
@@ -65,7 +69,7 @@ export function ShowCard({
             {onTktsToday
               ? "On TKTS today"
               : otherWays > 0
-                ? `+${otherWays} more way${otherWays > 1 ? "s" : ""}`
+                ? `+${otherWays} more`
                 : ""}
           </span>
         </p>

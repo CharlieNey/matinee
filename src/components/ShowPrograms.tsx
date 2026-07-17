@@ -13,11 +13,9 @@ export function ShowPrograms({ show }: { show: Show }) {
 
   if (programs.length === 0) {
     return (
-      <section
-      id="ways-to-save"
-      className="scroll-mt-20 border-t border-line px-4 pt-7 web:px-6"
-    >
-        <h2 className="text-heading">Ways to save</h2>
+      <section id="ways-to-save" className="scroll-mt-20 px-4 web:px-6">
+        <div className="rule-double" aria-hidden />
+        <h2 className="eyebrow mt-7">Ways to save</h2>
         <div className="mt-4 rounded-card bg-paper px-4 py-5">
           <p className="text-body font-semibold">No verified program listed</p>
           <p className="mt-1 text-caption text-ink-soft">
@@ -31,17 +29,15 @@ export function ShowPrograms({ show }: { show: Show }) {
   }
 
   return (
-    <section
-      id="ways-to-save"
-      className="scroll-mt-20 border-t border-line px-4 pt-7 web:px-6"
-    >
-      <div className="flex items-baseline justify-between">
-        <h2 className="text-heading">Ways to save</h2>
+    <section id="ways-to-save" className="scroll-mt-20 px-4 web:px-6">
+      <div className="rule-double" aria-hidden />
+      <div className="mt-7 flex items-baseline justify-between">
+        <h2 className="eyebrow">Ways to save</h2>
         <span className="text-caption text-ink-soft">
           {programs.length} program{programs.length === 1 ? "" : "s"}
         </span>
       </div>
-      <p className="mt-1 text-caption text-ink-soft">
+      <p className="mt-2 text-caption text-ink-soft">
         Official rush and lottery options, updated with live entry windows.
       </p>
       <div className="mt-4 rounded-card bg-paper px-4 py-1.5">

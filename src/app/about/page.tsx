@@ -17,7 +17,8 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="mt-9 border-t border-line pt-7 first:mt-0 first:border-t-0 first:pt-0">
+    <section className="group mt-9 first:mt-0">
+      <div className="rule-double mb-7 group-first:hidden" aria-hidden />
       <h2 className="text-heading">{title}</h2>
       <div className="mt-3 flex flex-col gap-3 text-body text-ink-soft">
         {children}
