@@ -1,9 +1,12 @@
-# Theatr (web prototype)
+# Matinee (web prototype)
 
-A mobile-web clone of the **Theatr** iOS app — a poster-forward theatre ticket
-marketplace with a built-in show diary. Built as a personal prototype from
-screenshots of the live app (see `reference/theatr-screens/`), then extended
-with flows the app doesn't have yet.
+**Matinee** — a poster-forward theatre ticket marketplace with a built-in
+show diary. Live at **[matinee.nyc](https://matinee.nyc)**.
+
+Started as a mobile-web clone of the Theatr iOS app, rebuilt from screenshots
+of that app, then rebranded and extended with flows the original doesn't
+have. (The reference screenshots are the original app's copyrighted material
+and are deliberately not distributed with this repo.)
 
 Presents as a phone product: a centered 430px column on cream. The UI is
 client-side with mock data and `localStorage` persistence; the one real
@@ -20,7 +23,8 @@ npx eslint src     # lint
 ```
 
 To reset all prototype state (listings, alerts, diary, profile edits), clear
-the `theatr-state-v1` key in localStorage.
+the `matinee-state-v1` key in localStorage (plus the legacy `theatr-state-v1`
+key, which is still read as a migration fallback).
 
 ## Screens
 
@@ -30,9 +34,9 @@ the `theatr-state-v1` key in localStorage.
 | `/shows/[slug]` | Show listings — urgency strip ("3 sold today · median $55"), listing grid, sold-listings social proof; empty pages capture demand with a pre-filled Notify alert CTA |
 | `/notify` | Your Notify — matches banner (count-up), deadline-push opt-in, alert cards with toggles, add/edit/delete with undo |
 | `/rush` | Rush & Lottery — curated program feed grouped by Open now / Later today / Coming up, live countdowns, deep links to entry pages |
-| `/orders` | Orders — Buy/Sell toggle, accordions; sell listings carry a **Listed → Sold → Paid** pipeline with a prototype control to simulate the buyer side |
-| `/profile` | Espresso identity header (edit profile, settings, wallet, share), Activity / Listing / Collection tabs; diary entries render as rich ticket-stub cards |
-| `/discover` | The diary home — My Top 10, live Interested shelf (bookmarks), Attended, "For you" recommendations, and the **Log a show** entry point |
+| `/listings` | Your listings — the seller console; listings carry a **Listed → Sold → Paid** pipeline with a prototype control to simulate the buyer side |
+| `/profile` | Espresso identity header (edit profile, settings, wallet, share), Activity / History / Collection tabs; diary entries render as rich ticket-stub cards, History records what you bought and sold |
+| `/discover` | The diary home — live Interested shelf (bookmarks), Attended, "For you" recommendations, and the **Log a show** entry point |
 | `/log/[slug]` | Log a show — sentiment (Recommend / Mixed / Didn't like), thoughts, tags, photo upload, Public/Private visibility, private note; publishes to the profile timeline |
 
 ## Architecture
@@ -50,7 +54,7 @@ the `theatr-state-v1` key in localStorage.
 - **`src/lib/store.tsx`** — client context store: notify alerts, your
   listings (with pipeline status), bookmarks, diary entries, profile edits,
   wallet balance (sum of paid listings). Persists to `localStorage`
-  (`theatr-state-v1`); shows serialize as slugs and rehydrate via `getShow`
+  (`matinee-state-v1`); shows serialize as slugs and rehydrate via `getShow`
   so stale saved data can never render broken.
 - **`src/components/`** — the component kit: `Sheet` (bottom sheet), `Toast`
   (with undo actions), `Poster`, `TabBar` (notched raised Sell button),
@@ -97,24 +101,33 @@ and Playbill covers (`src/lib/posters.json` maps slug → file; provenance in
 the git history). The `Poster` component falls back to a generated
 typographic tile for any show without an image.
 
-> ⚠️ The poster images are copyrighted marketing material — fine for a
-> private prototype, but replace or license them before making this repo or
-> a deployment public.
+> ⚠️ The poster images are copyrighted marketing material, included here as
+> non-commercial portfolio reference with attribution — they are **not**
+> covered by this repo's MIT license (see LICENSE). Replace or license them
+> before any commercial use, and takedown requests are honored immediately.
 
 ## Prototype controls
 
-- **Sell flow**: tab-bar Sell button → listing appears in Marketplace and
-  Orders → Sell.
-- **Pipeline**: tap a sell-side order card → "Simulate sale" / "Simulate
-  payout" advance Listed → Sold → Paid; paid listings move to Completed,
-  leave the Marketplace, and land in the profile Wallet balance.
+- **Sell flow**: Profile → Listings (or `/listings`) → "List tickets" → the
+  listing appears in the Marketplace and on Your listings.
+- **Pipeline**: tap a listing card on Your listings → "Simulate sale" /
+  "Simulate payout" advance Listed → Sold → Paid; paid listings move to
+  Completed, leave the Marketplace, land in the profile Wallet balance, and
+  show up under Profile → History alongside purchases.
 - **Diary**: Discover → "Log a show" (or `/log/[slug]`) → Publish → rich
   card on the profile Activity timeline. Photos are downscaled client-side
   (≤900px JPEG data URL) so they survive localStorage.
 
 ## Reference material
 
-- `reference/theatr-screens/` — screenshots of the live iOS app (the clone
-  baseline).
 - `DESIGN.md` — the derived design language.
 - `PLAN.md` — working product plan for evolving the prototype beyond a clone.
+- The original clone-baseline screenshots live in a local `reference/` folder
+  that is gitignored — they're the reference app's copyrighted material.
+
+## License
+
+Code and original documentation are [MIT](LICENSE). Poster artwork and show
+marketing assets are **not** — they belong to their productions and are
+included only as non-commercial portfolio reference (see the scope note in
+LICENSE and the Colophon on [/about](https://matinee.nyc/about)).

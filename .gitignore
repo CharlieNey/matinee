@@ -32,6 +32,8 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+# ...but the template must ship with the repo
+!.env.example
 
 # vercel
 .vercel
@@ -40,3 +42,10 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .gstack/
+
+# local-only reference material (copyrighted app screenshots — never distribute)
+/reference/
+
+# scratch / working files
+reddit_search.json
+supabase/.temp/
