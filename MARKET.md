@@ -29,13 +29,10 @@
 - **Praise**: real discounts, flash-sale alerts, lottery/rush without lining up; refundability add-on drives loyalty.
 - **The tracking gap in their own words**: users juggle "Todaytix, broadway direct, lucky seats and telecharge… around 10+ lotteries and more Rush options" daily; alarm-setting is universal folk practice ("don't make me set an alarm to look at my phone at exactly 9am and then give myself RSI speed-tapping").
 
-## Sentiment: Theatr (the app this project cloned)
+## Sentiment: resale apps
 
-- Bootstrapped (founder Eva Wang, ex-@stooping_theatre Instagram; launched Mar 2023; rejected investment offers; run break-even), NYC-only, ~10K registered users by year two, 4.9★/~4.5K ratings, ~39K Instagram followers, TikTok ambassador program. **Expansion "to major cities in the US and UK" announced for 2026.**
-- Loved for: speed ("sold 5 sets… all within 5 minutes"), face-value-or-less anti-gouging with escrow, price alerts, and "window shopping" price-watching.
-- Complaints: **fees crept up** from processing-only (Jan 2024) to ~15% effective ("Theatr's ticket fees are NUTS"), scalper gaming (list at cost, cancel if a better offer appears elsewhere), door fraud attempts (support generally makes users whole), opaque account restrictions, BBB F.
-- Diary/community layer is real but secondary to the marketplace ("earn Karma as you buy, sell, and contribute").
-- **Implication for this project**: the real Theatr is alive, growing, press-covered, and expanding in 2026 — shipping a public portfolio piece under their name is untenable. Rename before deploy (PLAN.md open question 4) should be treated as decided-yes.
+- Notes on individual resale apps (including Theatr, this project's original design reference) are kept in local, uncommitted notes.
+- **Implication for this project**: Matinee stays an index of official discount programs, not a marketplace, and carries its own name.
 
 ## Sentiment: the rest of the landscape
 

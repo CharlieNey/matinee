@@ -1,6 +1,6 @@
-# Theatr Design Language
+# Matinee Design Language
 
-Reverse-engineered from the live iOS app (see `reference/theatr-screens/`, captured 2026-07-15).
+Began as a design study of the Theatr iOS app (reference screenshots kept locally in `reference/theatr-screens/`, captured 2026-07-15) and has since diverged; see §12.
 This file is the source of truth for every screen we build. When in doubt, match the screenshots;
 when the screenshots are silent, follow the rules here.
 
@@ -18,7 +18,7 @@ Hex values are **pixel-sampled from the screenshots** (PIL, solid fill regions),
 > **Theme note (2026-07-16):** these espresso values are the *reference* palette
 > from the iOS screenshots. The live app now wears **House Velvet in both layout
 > modes** (§12) — the tokens below are semantic roles, and their current values
-> are the velvet column of §12's table. The clone palette is retired.
+> are the velvet column of §12's table. The study palette is retired.
 
 | Token | Hex | Usage |
 |---|---|---|
@@ -131,7 +131,7 @@ White floating bar, hairline top edge. Four equal slots: Discover, **Log**, Rush
 17/600, active `ink` with 2px `ink` underline sitting on the container's hairline; inactive `ink-soft`. 32px gaps, left-aligned.
 
 ### Timeline (activity feed)
-Left rail: 10px dot + 1.5px vertical line in `line` color. Entries: date 20/700 → action line ("Marked as attended" 17 `ink-soft`, optional gold suffix chip "👍 Recommend it" 15/600 `gold`) → inset row(s). Year marker 17 `ink-faint` when it changes. Milestones close the rail: "First day on Theatr! 🎉".
+Left rail: 10px dot + 1.5px vertical line in `line` color. Entries: date 20/700 → action line ("Marked as attended" 17 `ink-soft`, optional gold suffix chip "👍 Recommend it" 15/600 `gold`) → inset row(s). Year marker 17 `ink-faint` when it changes. Milestones close the rail: "First day on Matinee! 🎉".
 
 ### Empty state
 Centered, upper-third: outline glyph 64px `ink-faint` → "Nothing here yet…" 20/400 `ink-faint` → underlined `ink` link to the escape action ("See today's windows"). No illustration sets, no mascots.
@@ -157,7 +157,7 @@ The Collection tab is state-backed: **Your ranking** is user-curated (binary mat
 
 1. **Poster-first.** Every show reference carries its art. Text-only show mentions are a bug.
 2. **Outcomes as overlay.** State stamps itself on art (the Collection's bookmark/star covers, the win card's price-vs-face) — the app brags in place, not in copy.
-3. **Warm authority, light celebration.** Copy is plain and warm ("Nothing here yet…", "First day on Theatr! 🎉"). Exactly one emoji allowed per screen, only for milestones.
+3. **Warm authority, light celebration.** Copy is plain and warm ("Nothing here yet…", "First day on Matinee! 🎉"). Exactly one emoji allowed per screen, only for milestones.
 4. **Dark = identity, light = commerce.** Espresso surfaces frame *you* (profile); cream/white frames *inventory*. Keep that split when inventing screens.
 5. **Controls are pills, content is cards.** If it's tappable chrome it's a pill; if it's a thing it's a rounded card.
 6. **One thumb, one action.** A screen gets at most one full-width vermilion CTA, always reachable one-handed.
@@ -252,7 +252,7 @@ The app has **two presentations**, switched by a visitor-facing toggle (floating
 **Mobile mode** (the product, phone-sized):
 - Centered 430px column on `cream`, hairline side borders; design mobile-first at 390px.
 - Floating four-slot tab bar with a flush Log action (§5); `BackHeader` on detail screens; compact poster hero on show pages.
-- Started as a pixel-faithful clone of the reference screenshots and keeps that structural DNA, but evolves with the product.
+- Started from the design-study screenshots and keeps that structural DNA, but evolves with the product.
 
 **Web mode** (the product):
 - Sticky top bar on `cream/95` + blur: ticket mark + wordmark, Discover / Rush & Lottery / Trip / Profile links (active = `ink` + 2px underline; inactive `ink-soft`), About icon, and a vermilion "Log a show" action.

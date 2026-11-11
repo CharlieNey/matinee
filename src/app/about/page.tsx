@@ -177,10 +177,10 @@ export default function AboutPage() {
 
         <Section title="Colophon">
           <p>
-            Built with Next.js, React, Tailwind, and Motion. The design
-            language is reverse-engineered from screenshots of the Theatr iOS
-            app and documented in DESIGN.md; the phased build lives in
-            PLAN.md. This is a personal portfolio experiment — it is not
+            Built with Next.js, React, Tailwind, and Motion. The visual
+            design began as a study of the Theatr iOS app and has grown its
+            own language since, documented in DESIGN.md; the phased build
+            lives in PLAN.md. This is a personal portfolio project. It is not
             affiliated with Theatr, the ticketing platforms, or any theater
             owner, and poster art belongs to its productions.
           </p>

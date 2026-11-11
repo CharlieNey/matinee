@@ -1,4 +1,4 @@
-# Plan: Theatr — from clone to portfolio product
+# Plan: Matinee — from design study to portfolio product
 
 *Working plan, revised 2026-07-16. Grounded in RESEARCH.md (feasibility/APIs), MARKET.md (market & sentiment), and DATA.md (public data inventory). Portfolio piece, web-first.*
 

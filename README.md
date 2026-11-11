@@ -6,14 +6,13 @@
 **Matinee** — the live board for Broadway rush, lotteries, and cheap seats,
 with a built-in show diary. Live at **[matinee.nyc](https://matinee.nyc)**.
 
-Started as a mobile-web clone of the Theatr iOS app, rebuilt from screenshots
-of that app, then rebranded and rebuilt around what that app doesn't do:
-curated rush/lottery programs, official-ticketer clarity, and the TKTS
-board. The cloned peer-to-peer marketplace was retired outright (PLAN.md
-Phase 14) — every purchase deep-links out to the official seller; we are the
-index, never the checkout. (The reference screenshots are the original
-app's copyrighted material and are deliberately not distributed with this
-repo.)
+Matinee began in July 2026 as a design study of the Theatr iOS app, a
+face-value ticket resale app I use, and grew into its own product around a
+different problem: curated rush/lottery programs, official-ticketer clarity,
+and the TKTS board. It has no marketplace. Every purchase deep-links out to
+the official seller; Matinee is the index, never the checkout. (The study's
+reference screenshots are Theatr's copyrighted material and are not
+distributed with this repo.)
 
 Presents as a centered 430px phone experience by default, with a responsive
 web layout available from the desktop layout switch. Catalog and program data
@@ -55,8 +54,8 @@ key in localStorage and the `matinee-diary` IndexedDB database (plus the legacy
 - **Next.js 16** (App Router, Turbopack) + **React 19** + **Tailwind v4** +
   [`motion`](https://motion.dev) + [`lucide-react`](https://lucide.dev).
 - **`DESIGN.md` is the design source of truth** — palette, type scale, radii,
-  motion rules, and component specs reverse-engineered from the app
-  screenshots. Tokens are wired as Tailwind `@theme` variables in
+  motion rules, and component specs, which began from the original design
+  study and have since diverged. Tokens are wired as Tailwind `@theme` variables in
   `src/app/globals.css` (`bg-vermilion`, `text-ink-soft`, `rounded-card`,
   `text-display`, …). Read it before building any new screen.
 - **`src/lib/shows.ts`** — the show catalog (title, tier, genre, venue, face
@@ -156,9 +155,9 @@ without an image.
 ## Reference material
 
 - `DESIGN.md` — the derived design language.
-- `PLAN.md` — working product plan for evolving the prototype beyond a clone.
-- The original clone-baseline screenshots live in a local `reference/` folder
-  that is gitignored — they're the reference app's copyrighted material.
+- `PLAN.md` — working product plan, from the design study to its own product.
+- The design-study screenshots live in a local `reference/` folder that is
+  gitignored, because they're Theatr's copyrighted material.
 
 ## License
 
