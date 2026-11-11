@@ -1,20 +1,24 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "motion/react";
 import {
   Armchair,
   BellPlus,
   Calendar,
+  Download,
   EyeOff,
   Plus,
+  Pencil,
   Settings,
   SquarePen,
   Swords,
   ThumbsDown,
   ThumbsUp,
+  Trash2,
   Trophy,
+  Upload,
   Zap,
 } from "lucide-react";
 import { AttendedTicket } from "@/components/AttendedTicket";
@@ -47,6 +51,11 @@ import {
 } from "@/lib/programs";
 import { renderStubCard, shareImage } from "@/lib/shareCards";
 import { encodeSharedProfile } from "@/lib/shareProfile";
+import {
+  BACKUP_FORMAT,
+  parseDiaryBackup,
+  PERSISTENCE_VERSION,
+} from "@/lib/persistence";
 import { DiaryEntry, useApp } from "@/lib/store";
 import { allShows, getShow, Show } from "@/lib/shows";
 import { useNow } from "@/lib/useNow";
@@ -63,7 +72,13 @@ type SheetName =
   | "interested"
   | "attended"
   | "rank"
+  | "import-diary"
+  | "reset-diary"
   | null;
+
+function performanceDate(date: string): Date {
+  return new Date(`${date}T12:00:00`);
+}
 
 function HeaderPill({
   icon,
@@ -128,6 +143,7 @@ function SentimentChip({
 /** Rich "ticket stub" card for an entry logged through the diary flow. */
 function DiaryCard({ entry }: { entry: DiaryEntry }) {
   const toast = useToast();
+  const { removeDiaryEntry, restoreDiaryEntry } = useApp();
 
   // Phase 11: the stub as a share image, rendered on-device.
   const handleShare = async () => {
@@ -140,7 +156,7 @@ function DiaryCard({ entry }: { entry: DiaryEntry }) {
             ? "Mixed feelings"
             : "Didn't like it",
       thoughts: entry.visibility === "public" ? entry.thoughts : null,
-      date: new Date(entry.loggedAt),
+      date: performanceDate(entry.performanceDate),
     });
     const result = await shareImage(
       blob,
@@ -206,7 +222,7 @@ function DiaryCard({ entry }: { entry: DiaryEntry }) {
       <div className="flex flex-col gap-3 rounded-b-card bg-paper p-4 pt-2.5">
         <p className="flex items-center gap-2 text-caption text-ink-soft">
           <Armchair className="size-4 shrink-0" strokeWidth={1.8} />
-          {entry.seat}
+          {entry.seat || "Seat not recorded"}
         </p>
         {entry.note && (
           <p className="flex items-start gap-2 text-caption text-ink-faint">
@@ -216,11 +232,38 @@ function DiaryCard({ entry }: { entry: DiaryEntry }) {
             </span>
           </p>
         )}
-        <ShareButton
-          variant="quiet"
-          label="Share as image"
-          onShare={handleShare}
-        />
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+          <ShareButton
+            variant="quiet"
+            label="Share as image"
+            onShare={handleShare}
+          />
+          <Link
+            href={`/log/${entry.show.slug}?entry=${encodeURIComponent(entry.id)}`}
+            className="flex items-center gap-2 text-caption font-semibold text-ink-soft transition-colors hover:text-ink"
+          >
+            <Pencil className="size-4" strokeWidth={2} />
+            Edit
+          </Link>
+          <button
+            type="button"
+            onClick={() => {
+              const removed = removeDiaryEntry(entry.id);
+              if (!removed) return;
+              toast({
+                message: `${entry.show.title} removed`,
+                action: {
+                  label: "Undo",
+                  onClick: () => restoreDiaryEntry(removed),
+                },
+              });
+            }}
+            className="flex items-center gap-2 text-caption font-semibold text-ink-soft transition-colors hover:text-ink"
+          >
+            <Trash2 className="size-4" strokeWidth={2} />
+            Delete
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -233,9 +276,14 @@ type TimelineItem =
 function ActivityTimeline() {
   const { diary } = useApp();
 
-  // Fresh diary entries stack on top of the static feed.
+  // The editable performance day, not publish time, determines diary order.
+  const sortedDiary = [...diary].sort(
+    (a, b) =>
+      b.performanceDate.localeCompare(a.performanceDate) ||
+      b.loggedAt.localeCompare(a.loggedAt),
+  );
   const items: TimelineItem[] = [
-    ...diary.map((entry): TimelineItem => ({ kind: "diary", entry })),
+    ...sortedDiary.map((entry): TimelineItem => ({ kind: "diary", entry })),
     ...activityFeed.map((entry): TimelineItem => ({ kind: "static", entry })),
   ];
 
@@ -253,7 +301,7 @@ function ActivityTimeline() {
               <>
                 <span className="absolute left-0 top-1.5 size-2.5 rounded-full bg-espresso-raised" />
                 <h3 className="text-heading">
-                  {new Date(item.entry.loggedAt).toLocaleDateString("en-US", {
+                  {performanceDate(item.entry.performanceDate).toLocaleDateString("en-US", {
                     month: "short",
                     day: "numeric",
                   })}
@@ -456,7 +504,11 @@ function Gallery({
               aria-label={`${show.title} tickets`}
               className="transition-transform duration-150 active:scale-[0.96]"
             >
-              <Poster show={show} className="w-full rounded-thumb" />
+              <Poster
+                show={show}
+                className="w-full rounded-thumb"
+                sizes="(min-width: 1024px) 170px, 25vw"
+              />
             </Link>
           ))}
         </div>
@@ -568,6 +620,9 @@ export default function ProfilePage() {
     toggleSaved,
     addAttended,
     removeAttended,
+    clearDiary,
+    restoreDiaryBackup,
+    persistenceError,
   } = useApp();
   const toast = useToast();
   const now = useNow();
@@ -596,6 +651,11 @@ export default function ProfilePage() {
 
   const [draftName, setDraftName] = useState(profile.name);
   const [draftBio, setDraftBio] = useState(profile.bio ?? "");
+  const [pendingImport, setPendingImport] = useState<{
+    entries: DiaryEntry[];
+    skipped: number;
+  } | null>(null);
+  const importInputRef = useRef<HTMLInputElement>(null);
 
   const openEdit = () => {
     setDraftName(profile.name);
@@ -612,6 +672,82 @@ export default function ProfilePage() {
     toast({ message: "Profile updated" });
   };
 
+  const exportDiary = () => {
+    const payload = {
+      format: BACKUP_FORMAT,
+      version: PERSISTENCE_VERSION,
+      exportedAt: new Date().toISOString(),
+      profile,
+      diary: diary.map(({ show, ...entry }) => ({
+        ...entry,
+        show: {
+          slug: show.slug,
+          title: show.title,
+          venue: show.venue,
+        },
+      })),
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `matinee-diary-${new Date().toISOString().slice(0, 10)}.json`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+    toast({ message: "Diary exported" });
+  };
+
+  const chooseDiaryBackup = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    if (file.size > 25_000_000) {
+      toast({ message: "That backup is too large to import" });
+      return;
+    }
+    try {
+      const parsed = parseDiaryBackup(JSON.parse(await file.text()));
+      let unknownShows = 0;
+      const entries = parsed.entries.flatMap((entry): DiaryEntry[] => {
+        const show = getShow(entry.slug);
+        if (!show) {
+          unknownShows += 1;
+          return [];
+        }
+        return [{ ...entry, show }];
+      });
+      if (entries.length === 0) {
+        toast({ message: "No compatible diary entries were found" });
+        return;
+      }
+      setPendingImport({ entries, skipped: parsed.skipped + unknownShows });
+      setSheet("import-diary");
+    } catch (error) {
+      toast({
+        message:
+          error instanceof Error ? error.message : "That backup couldn’t be read",
+      });
+    }
+  };
+
+  const importDiary = (mode: "merge" | "replace") => {
+    if (!pendingImport) return;
+    restoreDiaryBackup(pendingImport.entries, mode);
+    const count = pendingImport.entries.length;
+    const skipped = pendingImport.skipped;
+    setPendingImport(null);
+    setSheet(null);
+    toast({
+      message: `${count} ${count === 1 ? "entry" : "entries"} restored${
+        skipped > 0 ? ` · ${skipped} skipped` : ""
+      }`,
+    });
+  };
+
   // Phase 11: the whole diary travels inside the link — no backend, no
   // account. Photos and private words are stripped before encoding.
   const shareProfile = async () => {
@@ -623,7 +759,7 @@ export default function ProfilePage() {
         bio: profile.bio,
         diary: diary.map((entry) => ({
           slug: entry.show.slug,
-          loggedAt: entry.loggedAt,
+          performanceDate: entry.performanceDate,
           sentiment: entry.sentiment,
           thoughts: entry.visibility === "public" ? entry.thoughts : null,
           tags: entry.visibility === "public" ? entry.tags : [],
@@ -809,6 +945,15 @@ export default function ProfilePage() {
           where velvet meets ivory (DESIGN.md §13). Web mode: no overlap, no
           rail — it's the right column beside the card. */}
       <div className="relative -mt-6 rounded-t-sheet border-t border-gold bg-cream web:mt-0 web:rounded-none web:border-t-0">
+        {persistenceError && (
+          <div role="alert" className="mx-4 mt-5 rounded-card bg-blush p-4">
+            <p className="text-body font-semibold">Changes aren’t being saved</p>
+            <p className="mt-1 text-caption text-ink-soft">
+              This browser’s storage is unavailable or full. Keep this tab open
+              and export your diary from Settings before leaving.
+            </p>
+          </div>
+        )}
         <div className="border-b border-line px-4">
           <div
             className="flex gap-8"
@@ -944,13 +1089,125 @@ export default function ProfilePage() {
           <div className="flex items-start gap-3 py-4">
             <EyeOff className="mt-0.5 size-5 shrink-0" strokeWidth={1.8} />
             <div className="min-w-0">
-              <p className="text-body font-semibold">Private by default</p>
+              <p className="text-body font-semibold">Stored on this device</p>
               <p className="mt-0.5 text-caption text-ink-soft">
                 Your diary stays in this browser. A profile is visible only
                 through a link you choose to share.
               </p>
             </div>
           </div>
+          <button
+            type="button"
+            onClick={exportDiary}
+            className="flex w-full items-center gap-3 border-t border-line py-4 text-left transition-opacity active:opacity-70"
+          >
+            <Download className="size-5 shrink-0" strokeWidth={1.8} />
+            <span className="min-w-0">
+              <span className="block text-body font-semibold">Export diary</span>
+              <span className="mt-0.5 block text-caption text-ink-soft">
+                Download every entry and photo as a JSON backup
+              </span>
+            </span>
+          </button>
+          <input
+            ref={importInputRef}
+            type="file"
+            accept="application/json,.json"
+            onChange={chooseDiaryBackup}
+            className="sr-only"
+            tabIndex={-1}
+          />
+          <button
+            type="button"
+            onClick={() => importInputRef.current?.click()}
+            className="flex w-full items-center gap-3 border-t border-line py-4 text-left transition-opacity active:opacity-70"
+          >
+            <Upload className="size-5 shrink-0" strokeWidth={1.8} />
+            <span className="min-w-0">
+              <span className="block text-body font-semibold">Import diary</span>
+              <span className="mt-0.5 block text-caption text-ink-soft">
+                Restore a Matinee JSON backup
+              </span>
+            </span>
+          </button>
+          <button
+            type="button"
+            disabled={diary.length === 0}
+            onClick={() => setSheet("reset-diary")}
+            className="flex w-full items-center gap-3 border-t border-line py-4 text-left text-vermilion transition-opacity active:opacity-70 disabled:text-ink-faint"
+          >
+            <Trash2 className="size-5 shrink-0" strokeWidth={1.8} />
+            <span className="text-body font-semibold">Clear diary</span>
+          </button>
+        </div>
+      </Sheet>
+
+      <Sheet
+        open={sheet === "import-diary"}
+        onClose={() => {
+          setPendingImport(null);
+          setSheet(null);
+        }}
+        title="Restore diary backup?"
+      >
+        <p className="mt-4 text-body text-ink-soft">
+          Found {pendingImport?.entries.length ?? 0} compatible entr
+          {pendingImport?.entries.length === 1 ? "y" : "ies"}.
+          {pendingImport && pendingImport.skipped > 0
+            ? ` ${pendingImport.skipped} invalid or unknown entries will be skipped.`
+            : ""}
+        </p>
+        <p className="mt-3 text-caption text-ink-soft">
+          Merge keeps your current diary and updates entries with matching IDs.
+          Replace removes the current diary first. Your profile and collections
+          are not changed.
+        </p>
+        <div className="mt-6 grid grid-cols-2 gap-3">
+          <button
+            type="button"
+            onClick={() => importDiary("merge")}
+            className="h-12 rounded-full bg-paper text-body font-semibold text-ink"
+          >
+            Merge
+          </button>
+          <button
+            type="button"
+            onClick={() => importDiary("replace")}
+            className="h-12 rounded-full bg-vermilion text-body font-semibold text-white"
+          >
+            Replace
+          </button>
+        </div>
+      </Sheet>
+
+      <Sheet
+        open={sheet === "reset-diary"}
+        onClose={() => setSheet(null)}
+        title="Clear your diary?"
+      >
+        <p className="mt-4 text-body text-ink-soft">
+          This removes all {diary.length} diary entr{diary.length === 1 ? "y" : "ies"}
+          {" "}and their photos from this browser. Export first if you want a backup.
+        </p>
+        <div className="mt-6 grid grid-cols-2 gap-3">
+          <button
+            type="button"
+            onClick={() => setSheet(null)}
+            className="h-12 rounded-full bg-paper text-body font-semibold text-ink"
+          >
+            Keep diary
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              clearDiary();
+              setSheet(null);
+              toast({ message: "Diary cleared" });
+            }}
+            className="h-12 rounded-full bg-vermilion text-body font-semibold text-white"
+          >
+            Clear diary
+          </button>
         </div>
       </Sheet>
 

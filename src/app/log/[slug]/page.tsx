@@ -23,12 +23,15 @@ export async function generateMetadata({
 
 export default async function LogPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ entry?: string }>;
 }) {
   const { slug } = await params;
+  const { entry } = await searchParams;
   const show = getShow(slug);
   if (!show) notFound();
 
-  return <LogScreen show={show} />;
+  return <LogScreen show={show} entryId={entry} />;
 }

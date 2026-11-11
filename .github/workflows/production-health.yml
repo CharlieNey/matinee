@@ -1,0 +1,19 @@
+name: Production health
+
+on:
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  health:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check catalog, database, and TKTS
+        run: |
+          curl -fsS "${{ secrets.APP_URL }}/api/health" \
+            | tee health.json \
+            | jq -e '.ok == true'

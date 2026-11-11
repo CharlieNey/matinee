@@ -2,7 +2,6 @@ import { ViewTransition } from "react";
 import type { Metadata } from "next";
 import { Bodoni_Moda, Schibsted_Grotesk } from "next/font/google";
 import { LayoutToggle } from "@/components/LayoutToggle";
-import { PaperGrain } from "@/components/PaperGrain";
 import { Providers } from "@/components/Providers";
 import { WebNav } from "@/components/WebNav";
 import "./globals.css";
@@ -53,7 +52,6 @@ export default function RootLayout({
     >
       <body className="min-h-full">
         <script dangerouslySetInnerHTML={{ __html: LAYOUT_MODE_SCRIPT }} />
-        <PaperGrain />
         <Providers>
           <WebNav />
           {/* Mobile mode: single centered phone column, hairline edges on

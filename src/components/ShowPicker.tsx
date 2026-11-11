@@ -71,7 +71,11 @@ export function ShowPicker({
                       : ""
                   }`}
                 >
-                  <Poster show={show} className="w-full" />
+                  <Poster
+                    show={show}
+                    className="w-full"
+                    sizes="(min-width: 1024px) 160px, 30vw"
+                  />
                 </span>
                 <span className="mt-1.5 block truncate text-caption font-medium text-ink">
                   {show.title}

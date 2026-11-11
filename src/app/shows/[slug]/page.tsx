@@ -91,6 +91,8 @@ export default async function ShowPage({
               show={show}
               className="w-[104px] shrink-0 rounded-thumb shadow-float web:w-[230px] web:rounded-card"
               name={`poster-${show.slug}`}
+              sizes="(min-width: 1024px) 230px, 104px"
+              priority
             />
             <div className="min-w-0 pb-0.5 web:pb-1">
               <p className="truncate text-label font-medium text-ink-soft web:text-caption">

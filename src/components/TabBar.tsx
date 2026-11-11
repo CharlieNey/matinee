@@ -8,19 +8,6 @@ import { Sheet } from "./Sheet";
 import { ShowPicker } from "./ShowPicker";
 import { allShows } from "@/lib/shows";
 
-/* Filled tab glyphs (reference app uses solid icons; lucide strokes fill badly) */
-function PinGlyph() {
-  return (
-    <svg viewBox="0 0 24 24" className="size-7" aria-hidden>
-      <path
-        d="M12 2.5a7 7 0 0 0-7 7c0 4.9 5.35 10.6 6.6 11.85a.56.56 0 0 0 .8 0C13.65 20.1 19 14.4 19 9.5a7 7 0 0 0-7-7Z"
-        fill="currentColor"
-      />
-      <circle cx="12" cy="9.5" r="2.6" fill="var(--color-paper)" />
-    </svg>
-  );
-}
-
 function CompassGlyph() {
   return (
     <svg viewBox="0 0 24 24" className="size-7" aria-hidden>

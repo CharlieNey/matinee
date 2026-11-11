@@ -9,7 +9,7 @@ Keep the design language; make four things real, in this order of importance:
 1. A **curated rush/lottery layer** with live open/closed statuses, deadline countdowns, and deep links — the differentiator no competitor does well.
 2. **Real show data** — Ticketmaster Discovery API where it has coverage, curated data everywhere else.
 3. **Working notifications** for lottery/rush deadlines.
-4. **A standout presentation layer** (added 2026-07-16): demo time machine, theater-district map, and colophon — the reframe from "clone with extras" to "the live board for Broadway rush & lotteries, in a design shell I reverse-engineered."
+4. **A standout presentation layer** (added 2026-07-16): theater-district map, responsive web mode, and colophon — the reframe from "clone with extras" to "the live board for Broadway rush & lotteries, in a design shell I reverse-engineered."
 
 All purchasing happens via deep links out. We are the index, never the checkout.
 
@@ -87,7 +87,11 @@ Free-tier findings (verified 2026-07-16):
 - Toggle is a persistent UI control (and remembered per visitor); components and tokens are shared, only layout shells differ.
 - Rewrite DESIGN.md's viewport section ("this is a phone product…") to define both modes and the toggle.
 
-## Phase 5 — Demo time machine
+## Phase 5 — Demo time machine (retired)
+
+**Current state (2026-07-20):** the control is no longer mounted. Live schedule
+status always uses real time; the old component remains only as removable
+prototype history. The notes below document the experiment, not current UI.
 
 *Added 2026-07-16. The rush layer is invisible outside program windows — a visitor landing at 3pm sees a dead board. Fix: let them move the clock.*
 
@@ -106,12 +110,12 @@ Free-tier findings (verified 2026-07-16):
 - **Stylized SVG map** of the theater district (roughly 41st–54th St, 6th–8th Ave) drawn in the DESIGN.md language — NOT a Mapbox/Leaflet embed. A hand-drawn map of hand-curated data is the project's ethos made visible; no API keys, no tile servers. Inset for outliers (e.g. Vivian Beaumont at Lincoln Center).
 - **Ownership layer** (always on): every Broadway house colored by owner→ticketer (Shubert→Telecharge, Nederlander/Disney→Ticketmaster, ATG→ATG Tickets, nonprofits→own). The legend *is* the explainer — tapping a legend entry highlights that owner's houses. This is the genuinely confusing information the aggregator sites bury.
 - **Now-playing layer**: current show per house (poster chip + title) from the catalog; dark theaters render as *dark* — itself informative.
-- **Live rush/lottery layer**: houses pulse/badge when a program is open or closing soon — same status engine, driven by the Phase 5 time machine. Scrub to 10am and watch the district light up.
+- **Live rush/lottery layer**: houses pulse/badge when a program is open or closing soon, driven by the shared real-time status engine.
 - **Tap a theater** → card: show, owner, official ticketer + buy link, program statuses → through to the show page.
 - **Data model** (`src/lib/theaters.ts`): all ~41 Broadway houses (not just catalog shows) — `{ name, owner, ticketer, address, coords, currentShowSlug | null }`. Stable, hand-curated facts; the map is the reason to expand the catalog toward ~35 shows.
 - Lives at `/district`, linked from Discover; candidate hero page for web mode (Phase 4).
 
-**Built 2026-07-16.** All 41 houses in `theaters.ts` (now-playing derived from catalog venue strings, so dark theaters fall out automatically — e.g. the Imperial after Chess closed); stylized SVG grid W 41st–54th with Broadway fitted through the on-Broadway houses; ownership legend doubles as filter; open-window halos driven by the status engine + time machine (verified: 26 halos at 1 PM → 2 at 11:55 PM); tap → Sheet card with poster, owner→ticketer buy link, live program rows, show-page CTA; Lincoln Center inset. Entry points: Discover card + web-nav "District" link. Polish candidates: keyboard focus ring on markers uses the browser default blue; the dev-overlay badge overlaps the time-machine pill in dev only.
+**Built 2026-07-16.** All 41 houses in `theaters.ts` (now-playing derived from catalog venue strings, so dark theaters fall out automatically); stylized SVG grid W 41st–54th; ownership legend doubles as filter; real-time open-window halos; tap → Sheet card with poster, owner→ticketer buy link, live program rows, and show-page CTA; Lincoln Center inset. Current entry point: the prominent District row on Discover.
 
 **Refinement (decided 2026-07-16, post-build): OSM-traced geometry + attribution.**
 - Re-derive the map's street grid and theater positions (optionally footprint shapes) by tracing from OpenStreetMap via Overpass (query recipe in DATA.md — 43 theatre ways in the district bbox, tagged with Wikidata QIDs). Keep it stylized/hand-drawn: under ODbL a stylized traced map is a "Produced Work" — the artwork isn't share-alike, it just needs credit.
@@ -148,7 +152,7 @@ Free-tier findings (verified 2026-07-16):
 *Added 2026-07-16, from MARKET.md: the compressed-trip tourist ("7 shows in 5 days") reads the community Rush Report daily; international visitors over-index at TKTS (12.2% of their admissions). The daily-grinder persona is served by the /rush feed; this serves the visitor.*
 
 - Input: a date range ("In NYC Jul 20–24"), optionally party size/budget later.
-- Output: a day-by-day plan for the window — enter-tonight lotteries (for tomorrow's shows), morning digital rushes, in-person rush open times, TKTS as the standing fallback; statuses and countdowns from the same status engine (and the time machine works here too).
+- Output: a day-by-day plan for the window — enter-tonight lotteries (for tomorrow's shows), morning digital rushes, in-person rush open times, and TKTS as the standing fallback; statuses and countdowns come from the same real-time engine.
 - No LLM — this is deterministic calendar math over the dataset, and it becomes the tool the Tonight Concierge stretch goal calls later. Build the logic once, use it twice.
 
 **Built 2026-07-16.** `src/lib/trip.ts` (`buildTripPlan` over `programOccurrencesNear`) + `/trip`: arrive-day chips (10 days out), nights stepper (1–7), day-by-day windows grouped Morning/Afternoon/Evening with prices + deep links, TKTS fallback card per day, "enter tonight for tomorrow" guidance. Entry points: web-nav Trip link, Discover two-up card row (with District). Party size/budget inputs deferred.
@@ -193,7 +197,7 @@ Free-tier findings (verified 2026-07-16):
 *Added 2026-07-16, from DATA.md: tdf.org's TKTS Live page server-renders the full board (show, % off, price range, curtain time, per-board `Updated:` stamp, both NYC booths, Broadway + Off-Broadway) and is robots-clean. This is the only live discount inventory the app can legitimately carry — and it's the natural fallback everywhere the answer is "you lost the lottery, now what."*
 
 - **Data flow**: server route fetches + parses the TKTS Live HTML on a 15–60 min revalidation (descriptive User-Agent; `wp/v2/tkts_booth` `modified` stamps as a cheap freshness pre-check). Normalize to `{ booth, circuit, rows: [{ title, showSlug | null, pctOff, priceRange, curtain }], boardUpdatedAt }`. Hand-curated alias map board-title → catalog slug (like the TM mapping table); **unmatched titles are kept as title-only rows** — the board renders complete even where the catalog is thinner.
-- **Honesty rules**: always display *their* `Updated:` stamp, never our fetch time (upstream observed 3 days stale once). If the stamp is old or the booth is closed, present as "last board" (e.g. "Board from Sat 4:01 PM"), never as "now". Attribute "Data: TDF TKTS Live" with a link. **Exempt from the demo time machine** — this is real external data; scrubbing the clock can't simulate it, so the module runs on real time and says so when demo time is active.
+- **Honesty rules**: always display *their* `Updated:` stamp, never our fetch time (upstream observed 3 days stale once). If the stamp is old or the booth is closed, present as "last board" (e.g. "Board from Sat 4:01 PM"), never as "now". Attribute "Data: TDF TKTS Live" with a link. TKTS always runs on real time.
 - **Surfaces, in build order**:
   1. **Show page "Ways to save"**: when the show is on today's board — "On the TKTS board now · 50% off · $65–110 · 7:00 PM (board updated 3:02 PM)". Highest value per effort; completes the per-show answer alongside rush/lottery rows.
   2. **`/rush` board section**: a collapsible "The TKTS board" card — booth open/closed + hours, N shows, best discount, expandable full list with deep links to TDF show pages. Kept visually distinct from program cards (different kind: walk-up purchase, no entry window).
@@ -216,7 +220,7 @@ Follow-ups (researched 2026-07-16, DATA.md §TKTS alternatives — no third part
 **A. IA — Discover becomes home**
 - The merged Discover page lives at `/` (move `discover/page.tsx` content into `(tabs)/page.tsx`); the Marketplace home and its `SellingFastShelf` are deleted.
 - Redirects so no shared link 404s: `/discover` → `/`, `/tickets/:id` → `/`, `/listings` → `/profile` (its only entry point was the Profile pill). Route dirs `(tabs)/listings/` and `tickets/[id]/` are deleted.
-- TabBar: `Discover · District | Log FAB | Rush · Profile` — the freed slot goes to the District map (the hero page earns it; Trip stays a Discover-linked card). Rewrite the `:61` comment: *find, explore, enter, you*.
+- Historical proposal: `Discover · District | Log FAB | Rush · Profile`. Superseded by the current four equal slots: `Discover · Log · Rush · Profile`; District and Trip are Discover quick links.
 - WebNav: drop Marketplace; `/` = Discover; `/shows/*` becomes a child of Discover in `isActive`; the `/tickets/*` mapping dies.
 
 **B. Discover absorbs the browse layer**
@@ -230,7 +234,7 @@ Follow-ups (researched 2026-07-16, DATA.md §TKTS alternatives — no third part
 - Promote `OfficialTicketsCard` to the primary action slot (it already carries the all-in fee estimate — Phase 10).
 - `ShowPrograms` ("Ways to save" + TKTS row + platform tips) moves directly under it — the page's center of gravity.
 - Delete: `UrgencyStrip`, the `ListingBrowser`/`TicketStub` listings section, the "Sold Listings" social-proof grid, and `NotifyCapture`.
-- New engagement action replacing "buy": a **"Watch this show" card** wired to the existing `alerts` slice → the real push pipeline ("we'll ping you when its rush or lottery opens"). The emotional CTA survives the checkout's death.
+- New engagement action replacing "buy": a **Follow this show** card wired to the existing `alerts` persistence key → the real push pipeline ("we'll ping you when its rush or lottery opens").
 - Small charm: venue line links to the show's house on `/district` (map sheet deep link) — ties the pages together.
 
 **D. Notify untangle — price alerts become watches**
@@ -270,7 +274,18 @@ Follow-ups (researched 2026-07-16, DATA.md §TKTS alternatives — no third part
 
 **Verification bar**: type-check + build clean; every tab and redirect click-through in both layout modes; a browser profile carrying an old `matinee-state-v1` blob with listings/purchases loads without error; the marketplace grep returns only legitimate rush vocabulary; view-transition poster morph still fires Discover → show page from both grid and shelf.
 
-**Built 2026-07-17.** All of A–H, verified in-browser (mobile + web modes): `/` is the merged Discover (rush banner → District/Trip quick links → Interested shelf → "Now playing" browse grid → Attended/For you); the grid uses the big Marketplace-style cards (Charlie's call) with the cheapest-way-in answer line — free programs render "Free", not "$0" (Winter's Tale caught this in testing); TabBar = Discover · District | Log | Rush · Profile with a filled pin glyph; redirects 308 (`/discover`→`/`, `/listings`→`/profile`, `/tickets/*`→`/`); Watches page shows live next-window lines off the status engine; profile Record tab built (entries, wins + %, streak, saved vs face, win rows) — the Phase 8 stats go/no-go resolved yes; old marketplace-era localStorage blobs load clean and shed `listings`/`purchases`/`maxPrice` on first write (same storage key, no migration code). Deviations from the letter of the plan: quick links sit *above* the browse grid (two compact rows shouldn't sink under 46 cards), and `useCountUp` was deleted (orphaned once the matches banner and UrgencyStrip died). Deleted: 2 pages, 7 components, the Selling/Buying store slices, the `Listing` seed data. The colophon's rejections section gained the fourth entry: the marketplace itself.
+**Built 2026-07-17, current IA updated 2026-07-20.** All of A–H, verified in mobile + web modes: `/` is the merged Discover; cards show cheapest verified ways in; legacy marketplace routes redirect; Watches shows live next-window lines; Profile includes Activity / Record / Collection. Current mobile TabBar = Discover · Log · Rush · Profile, with District and Trip as Discover quick links. Old marketplace localStorage fields remain read-compatible and are dropped on the next write.
+
+## Phase 15 — Production foundation
+
+**Built 2026-07-22.** Diary metadata now passes through explicit v1→v2
+validation/migration; photos live in IndexedDB; versioned JSON backups can be
+merged or restored. CI runs lint, TypeScript, unit tests, dependency audit,
+production build, Chromium/WebKit diary journeys, and automated accessibility
+checks. Production hardening adds a static CSP + SRI, structured client/server
+error logs, durable Supabase rate limits, 45-day notification-log retention,
+and an hourly `/api/health` check for data freshness, database readiness, and
+TKTS availability. Next, sharp, and PostCSS are pinned to audited versions.
 
 ## Stretch goals — AI features (decided 2026-07-15)
 
@@ -297,7 +312,7 @@ Anti-features (won't build): AI-written show synopses or editorial (hallucinatio
 ## Open questions
 
 1. Phase order — does the web-first layout rework (Phase 4) move before Phases 2–3?
-2. Does `/rush` deserve a tab-bar slot (e.g. replacing Orders) or stay a Discover-linked page? **RESOLVED 2026-07-16**: Rush has held a tab since the tab-bar redesign; Phase 14 hands the *Marketplace* slot to District.
+2. Does `/rush` deserve a tab-bar slot? **RESOLVED**: yes. Current mobile tabs are Discover · Log · Rush · Profile; District and Trip live on Discover.
 3. **TKTS daily board — RESOLVED 2026-07-16 (DATA.md).** The live board is server-rendered HTML (show, % off, price range, curtain time, `Updated:` stamp per board, both booths, Broadway + Off-Broadway), robots-clean, trivially parseable. Adopt as the app's second automated feed. Successor question: where does live TKTS surface first — the trip-day fallback card, a `/rush` section, or the district map?
 4. **Rename before public deploy?** Carrying the cloned app's name reads as a clone regardless of what's inside. Theater-slang candidates: *Half Hour*, *Standby*, *Rush*, *Cheap Seats*. *Update 2026-07-16: the real Theatr announced 2026 expansion to major US/UK cities (MARKET.md) — recommendation: treat as decided-yes.*
 5. **Poster art for public deploy** — current images are copyrighted marketing material (README warning). Lean into the generated typographic tiles as the visual identity, or replace/license. Decide before Phases 6–7 ship publicly, since it shapes the map and hero pages.

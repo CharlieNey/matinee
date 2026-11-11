@@ -49,3 +49,6 @@ next-env.d.ts
 # scratch / working files
 reddit_search.json
 supabase/.temp/
+
+# private working notes (AWS.local.md etc.)
+*.local.md

@@ -21,7 +21,11 @@ import { Show } from "@/lib/shows";
 type Sentiment = "recommend" | "mixed" | "disliked";
 
 const PRESET_TAGS = ["First Preview", "Preview", "Opening Night"];
-const SEAT = "Center ORCH / Row B / Seat 102";
+
+function localDay(date = new Date()): string {
+  const pad = (value: number) => String(value).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
 
 /** Downscale a picked photo (≤900px long edge, JPEG q0.8) to a data URL
  *  small enough to survive localStorage persistence. */
@@ -126,35 +130,95 @@ const SENTIMENTS: { key: Sentiment; label: string }[] = [
   { key: "disliked", label: "Didn't like it" },
 ];
 
-export function LogScreen({ show }: { show: Show }) {
+export function LogScreen({
+  show,
+  entryId,
+}: {
+  show: Show;
+  entryId?: string;
+}) {
   const router = useRouter();
-  const { addDiaryEntry } = useApp();
+  const { diary, hydrated } = useApp();
+
+  if (!hydrated) {
+    return (
+      <main className="px-4 pt-16 web:mx-auto web:max-w-[560px]">
+        <div className="h-40 animate-pulse rounded-card bg-paper" aria-label="Loading diary" />
+      </main>
+    );
+  }
+
+  const initialEntry = entryId
+    ? diary.find(
+        (entry) => entry.id === entryId && entry.show.slug === show.slug,
+      )
+    : undefined;
+
+  if (entryId && !initialEntry) {
+    return (
+      <main className="px-6 pt-16 text-center web:mx-auto web:max-w-[560px]">
+        <h1 className="text-heading">That diary entry isn’t here anymore</h1>
+        <p className="mt-2 text-body text-ink-soft">
+          It may have been deleted or belong to another browser.
+        </p>
+        <button
+          type="button"
+          onClick={() => router.replace("/profile")}
+          className="mt-6 h-12 rounded-full bg-vermilion px-6 text-body font-semibold text-white"
+        >
+          Back to profile
+        </button>
+      </main>
+    );
+  }
+
+  return (
+    <LogEditor
+      key={initialEntry?.id ?? `new-${show.slug}`}
+      show={show}
+      entryId={entryId}
+      initialEntry={initialEntry}
+    />
+  );
+}
+
+function LogEditor({
+  show,
+  entryId,
+  initialEntry,
+}: {
+  show: Show;
+  entryId?: string;
+  initialEntry?: ReturnType<typeof useApp>["diary"][number];
+}) {
+  const router = useRouter();
+  const {
+    addDiaryEntry,
+    updateDiaryEntry,
+    persistenceError,
+  } = useApp();
   const toast = useToast();
 
-  const [dateLabel, setDateLabel] = useState("");
-  const [sentiment, setSentiment] = useState<Sentiment>("recommend");
-  const [thoughts, setThoughts] = useState("");
-  const [tags, setTags] = useState<string[]>([]);
-  const [customTags, setCustomTags] = useState<string[]>([]);
+  const [performanceDate, setPerformanceDate] = useState(
+    initialEntry?.performanceDate ?? localDay(),
+  );
+  const [seat, setSeat] = useState(initialEntry?.seat ?? "");
+  const [sentiment, setSentiment] = useState<Sentiment>(
+    initialEntry?.sentiment ?? "recommend",
+  );
+  const [thoughts, setThoughts] = useState(initialEntry?.thoughts ?? "");
+  const [tags, setTags] = useState<string[]>(initialEntry?.tags ?? []);
+  const [customTags, setCustomTags] = useState<string[]>(
+    initialEntry?.tags.filter((tag) => !PRESET_TAGS.includes(tag)) ?? [],
+  );
   const [addingTag, setAddingTag] = useState(false);
   const [tagDraft, setTagDraft] = useState("");
-  const [photo, setPhoto] = useState<string | null>(null);
-  const [visibility, setVisibility] = useState<"public" | "private">("public");
-  const [note, setNote] = useState("");
+  const [photo, setPhoto] = useState<string | null>(initialEntry?.photo ?? null);
+  const [visibility, setVisibility] = useState<"public" | "private">(
+    initialEntry?.visibility ?? "public",
+  );
+  const [note, setNote] = useState(initialEntry?.note ?? "");
   const tagInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    const raf = requestAnimationFrame(() =>
-      setDateLabel(
-        new Date().toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-        }),
-      ),
-    );
-    return () => cancelAnimationFrame(raf);
-  }, []);
 
   useEffect(() => {
     if (addingTag) tagInputRef.current?.focus();
@@ -176,18 +240,31 @@ export function LogScreen({ show }: { show: Show }) {
   };
 
   const publish = () => {
-    addDiaryEntry({
-      show,
-      loggedAt: new Date().toISOString(),
-      seat: SEAT,
+    if (!performanceDate) {
+      toast({ message: "Choose the performance date first" });
+      return;
+    }
+    const entry = {
+      performanceDate,
+      seat: seat.trim(),
       sentiment,
       thoughts: thoughts.trim() || null,
       tags,
       visibility,
       note: note.trim() || null,
       photo,
-    });
-    toast({ message: "Published to your diary" });
+    };
+    if (entryId) {
+      updateDiaryEntry(entryId, entry);
+      toast({ message: "Diary entry updated" });
+    } else {
+      addDiaryEntry({
+        ...entry,
+        show,
+        loggedAt: new Date().toISOString(),
+      });
+      toast({ message: "Published to your diary" });
+    }
     router.push("/profile");
   };
 
@@ -209,9 +286,16 @@ export function LogScreen({ show }: { show: Show }) {
           onClick={publish}
           className="-mr-1 px-1 text-heading text-vermilion transition-opacity active:opacity-60"
         >
-          Publish
+          {entryId ? "Save" : "Publish"}
         </button>
       </header>
+
+      {persistenceError && (
+        <p role="alert" className="mb-3 rounded-card bg-blush p-4 text-caption text-ink">
+          This browser can’t save changes right now. Keep this tab open and
+          export your diary from Profile settings before you leave.
+        </p>
+      )}
 
       {/* What you saw */}
       <section className={`${fieldCard} mt-2 divide-y divide-line px-4`}>
@@ -224,14 +308,37 @@ export function LogScreen({ show }: { show: Show }) {
             <p className="truncate text-body text-ink-soft">{show.venue}</p>
           </div>
         </div>
-        <div className="flex items-center gap-4 py-4">
+        <label className="flex items-center gap-4 py-4">
           <Calendar className="size-6 shrink-0" strokeWidth={1.8} />
-          <p className="text-body">{dateLabel || "…"}</p>
-        </div>
-        <div className="flex items-center gap-4 py-4">
+          <span className="min-w-0 flex-1">
+            <span className="block text-label font-medium text-ink-soft">
+              Performance date
+            </span>
+            <input
+              type="date"
+              required
+              max={localDay()}
+              value={performanceDate}
+              onChange={(event) => setPerformanceDate(event.target.value)}
+              className="mt-0.5 w-full bg-transparent text-body text-ink outline-none"
+            />
+          </span>
+        </label>
+        <label className="flex items-center gap-4 py-4">
           <Armchair className="size-6 shrink-0" strokeWidth={1.8} />
-          <p className="text-body">{SEAT}</p>
-        </div>
+          <span className="min-w-0 flex-1">
+            <span className="block text-label font-medium text-ink-soft">
+              Seat or section <span className="font-normal">(optional)</span>
+            </span>
+            <input
+              value={seat}
+              maxLength={120}
+              onChange={(event) => setSeat(event.target.value)}
+              placeholder="Orchestra · Row B · Seat 102"
+              className="mt-0.5 w-full bg-transparent text-body text-ink outline-none placeholder:text-ink-faint"
+            />
+          </span>
+        </label>
       </section>
 
       <h2 className="mt-8 text-title">Share your thoughts</h2>

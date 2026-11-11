@@ -28,7 +28,11 @@ function DuelCard({ show, onPick }: { show: Show; onPick: () => void }) {
       onClick={onPick}
       className="flex flex-col gap-2.5 rounded-card bg-paper p-2.5 text-left transition-transform duration-150 active:scale-[0.97]"
     >
-      <Poster show={show} className="w-full rounded-thumb" />
+      <Poster
+        show={show}
+        className="w-full rounded-thumb"
+        sizes="(min-width: 1024px) 240px, 45vw"
+      />
       <div className="min-w-0 px-1 pb-0.5">
         <p className="truncate text-body font-semibold">{show.title}</p>
         <p className="mt-0.5 truncate text-caption text-ink-soft">
