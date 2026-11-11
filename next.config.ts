@@ -4,6 +4,7 @@ import type { NextConfig } from "next";
 // and the pre-paint layout script require inline allowances; all external
 // origins, frames, plugins, and cross-origin connections remain denied.
 const isDevelopment = process.env.NODE_ENV === "development";
+const isVercel = process.env.VERCEL === "1";
 const contentSecurityPolicy = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline'${isDevelopment ? " 'unsafe-eval'" : ""}`,
@@ -17,7 +18,10 @@ const contentSecurityPolicy = [
   "base-uri 'self'",
   "form-action 'self'",
   "frame-ancestors 'none'",
-  ...(isDevelopment ? [] : ["upgrade-insecure-requests"]),
+  // Only on Vercel, where every request is HTTPS. On a local `next start`
+  // over http://127.0.0.1, WebKit upgrades script URLs to https and the app
+  // never hydrates (Chromium exempts loopback).
+  ...(isVercel ? ["upgrade-insecure-requests"] : []),
 ].join("; ");
 
 /** Baseline response hardening for every page and route. */
