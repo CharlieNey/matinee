@@ -91,6 +91,8 @@ export default async function ShowPage({
               show={show}
               className="w-[104px] shrink-0 rounded-thumb shadow-float web:w-[230px] web:rounded-card"
               name={`poster-${show.slug}`}
+              sizes="(min-width: 1024px) 230px, 104px"
+              priority
             />
             <div className="min-w-0 pb-0.5 web:pb-1">
               <p className="truncate text-label font-medium text-ink-soft web:text-caption">
@@ -121,13 +123,15 @@ export default async function ShowPage({
             </div>
           </div>
         </div>
-        <div className="mt-3 flex web:mt-4">
-          <InterestedButton show={show} />
+        <div className="mt-3 flex flex-col gap-3 web:mt-4">
+          <div className="flex">
+            <InterestedButton show={show} />
+          </div>
+          {officialTickets && (
+            <OfficialTicketsCard show={show} ticketLink={officialTickets} />
+          )}
+          {hasPrograms && <FollowShowCard show={show} />}
         </div>
-        {officialTickets && (
-          <OfficialTicketsCard show={show} ticketLink={officialTickets} />
-        )}
-        {hasPrograms && <FollowShowCard show={show} />}
       </div>
 
       <ShowPrograms show={show} />

@@ -106,7 +106,9 @@ export default function SharedProfilePage() {
                       {show.title}
                     </h2>
                     <p className="mt-0.5 text-caption text-ink-soft">
-                      {entryDate.format(new Date(entry.loggedAt))}
+                      {entryDate.format(
+                        new Date(`${entry.performanceDate}T12:00:00`),
+                      )}
                     </p>
                   </div>
                   {entry.sentiment === "recommend" && (

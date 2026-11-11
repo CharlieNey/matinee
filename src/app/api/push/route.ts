@@ -1,4 +1,5 @@
 import webpush from "web-push";
+import { rateLimitResponse, rejectCrossOrigin } from "@/lib/rateLimit";
 import { getShow } from "@/lib/shows";
 import { pushBackendConfigured, supabaseAdmin } from "@/lib/supabaseAdmin";
 
@@ -13,6 +14,43 @@ type SubscribeBody = {
   slugs?: unknown;
   entries?: unknown;
 };
+
+async function readObjectBody(
+  request: Request,
+): Promise<
+  | { ok: true; value: Record<string, unknown> }
+  | { ok: false; response: Response }
+> {
+  const contentLength = Number(request.headers.get("content-length") ?? 0);
+  if (contentLength > 100_000) {
+    return {
+      ok: false,
+      response: Response.json({ error: "Payload too large" }, { status: 413 }),
+    };
+  }
+  try {
+    const text = await request.text();
+    if (text.length > 100_000) {
+      return {
+        ok: false,
+        response: Response.json(
+          { error: "Payload too large" },
+          { status: 413 },
+        ),
+      };
+    }
+    const value: unknown = JSON.parse(text);
+    if (typeof value !== "object" || value === null || Array.isArray(value)) {
+      throw new Error("Body must be an object");
+    }
+    return { ok: true, value: value as Record<string, unknown> };
+  } catch {
+    return {
+      ok: false,
+      response: Response.json({ error: "Invalid JSON" }, { status: 400 }),
+    };
+  }
+}
 
 /** Validate the synced lottery-log entries: {key, day} pairs, capped. */
 function sanitizeEntries(raw: unknown): { key: string; day: string }[] {
@@ -36,13 +74,13 @@ export async function POST(request: Request) {
   if (!pushBackendConfigured()) {
     return Response.json({ error: "Push is not configured" }, { status: 503 });
   }
-
-  let body: SubscribeBody;
-  try {
-    body = await request.json();
-  } catch {
-    return Response.json({ error: "Invalid JSON" }, { status: 400 });
-  }
+  const crossOrigin = rejectCrossOrigin(request);
+  if (crossOrigin) return crossOrigin;
+  const limited = await rateLimitResponse(request, "push-subscribe", 30, 60);
+  if (limited) return limited;
+  const parsed = await readObjectBody(request);
+  if (!parsed.ok) return parsed.response;
+  const body = parsed.value as SubscribeBody;
 
   const endpoint = body.subscription?.endpoint;
   const p256dh = body.subscription?.keys?.p256dh;
@@ -93,12 +131,13 @@ export async function DELETE(request: Request) {
     return Response.json({ error: "Push is not configured" }, { status: 503 });
   }
 
-  let body: { endpoint?: unknown };
-  try {
-    body = await request.json();
-  } catch {
-    return Response.json({ error: "Invalid JSON" }, { status: 400 });
-  }
+  const crossOrigin = rejectCrossOrigin(request);
+  if (crossOrigin) return crossOrigin;
+  const limited = await rateLimitResponse(request, "push-delete", 30, 60);
+  if (limited) return limited;
+  const parsed = await readObjectBody(request);
+  if (!parsed.ok) return parsed.response;
+  const body = parsed.value;
   if (typeof body.endpoint !== "string") {
     return Response.json({ error: "Invalid endpoint" }, { status: 400 });
   }
@@ -131,13 +170,13 @@ export async function PUT(request: Request) {
   if (!vapidPublic || !vapidPrivate) {
     return Response.json({ error: "VAPID keys missing" }, { status: 503 });
   }
-
-  let body: { endpoint?: unknown };
-  try {
-    body = await request.json();
-  } catch {
-    return Response.json({ error: "Invalid JSON" }, { status: 400 });
-  }
+  const crossOrigin = rejectCrossOrigin(request);
+  if (crossOrigin) return crossOrigin;
+  const limited = await rateLimitResponse(request, "push-test", 3, 600);
+  if (limited) return limited;
+  const parsed = await readObjectBody(request);
+  if (!parsed.ok) return parsed.response;
+  const body = parsed.value;
   if (
     typeof body.endpoint !== "string" ||
     !body.endpoint.startsWith("https://") ||

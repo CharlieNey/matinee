@@ -31,8 +31,8 @@ export function Toggle({
       aria-checked={on}
       aria-label={label}
       onClick={handleClick}
-      className={`relative h-8 w-[52px] shrink-0 rounded-full transition-colors duration-150 after:absolute after:-inset-2 after:content-[''] ${
-        on ? "bg-espresso" : "bg-toggle-off"
+      className={`relative h-8 w-[52px] shrink-0 rounded-full border transition-colors duration-150 after:absolute after:-inset-2 after:content-[''] ${
+        on ? "border-espresso bg-espresso" : "border-ink-faint/50 bg-toggle-off"
       }`}
     >
       <motion.span

@@ -13,7 +13,10 @@ export function ShowPrograms({ show }: { show: Show }) {
 
   if (programs.length === 0) {
     return (
-      <section id="ways-to-save" className="scroll-mt-20 px-4 web:px-6">
+      <section
+        id="ways-to-save"
+        className="mt-4 scroll-mt-20 px-4 web:px-6"
+      >
         <div className="rule-double" aria-hidden />
         <h2 className="eyebrow mt-7">Ways to save</h2>
         <div className="mt-4 rounded-card bg-paper px-4 py-5">
@@ -29,7 +32,10 @@ export function ShowPrograms({ show }: { show: Show }) {
   }
 
   return (
-    <section id="ways-to-save" className="scroll-mt-20 px-4 web:px-6">
+    <section
+      id="ways-to-save"
+      className="mt-4 scroll-mt-20 px-4 web:px-6"
+    >
       <div className="rule-double" aria-hidden />
       <div className="mt-7 flex items-baseline justify-between">
         <h2 className="eyebrow">Ways to save</h2>

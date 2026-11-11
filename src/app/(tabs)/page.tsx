@@ -58,6 +58,7 @@ function PosterShelf({
             show={show}
             className="w-full rounded-thumb"
             name={claimName(show.slug)}
+            sizes="104px"
           />
           <p className="mt-1.5 truncate text-caption font-medium text-ink">
             {show.title}

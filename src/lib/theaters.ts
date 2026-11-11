@@ -47,7 +47,9 @@ export const TICKETER_LABELS: Record<Ticketer, string> = {
   own: "Own box office",
 };
 
-const LAST_VERIFIED = "2026-07-16";
+// Re-checked 2026-11-11: all 41 names and owners against Wikipedia’s "List of
+// Broadway theatres" (rev. 2026-10-29); now-playing derives from the catalog.
+const LAST_VERIFIED = "2026-11-11";
 
 function t(
   name: string,

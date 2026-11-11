@@ -57,9 +57,12 @@ export const activityFeed: ActivityEntry[] = [
   { kind: "milestone", text: "First day on Matinee! 🎉" },
 ];
 
+// Demo persona (seeded default; editable & persisted per visitor). A generic
+// placeholder name so the seeded record reads as an explorable demo, not a
+// real person's account.
 export const profile = {
-  name: "Charlie Ney",
-  handle: "@Charlie_yfcn",
+  name: "John Doe",
+  handle: "@johndoe",
   bio: null as string | null,
   joined: "December 2025",
 };

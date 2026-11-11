@@ -36,6 +36,7 @@ export function ShowCard({
           show={show}
           className="w-full web:transition-transform web:duration-200 web:ease-out web:group-hover:scale-[1.03]"
           name={posterName}
+          sizes="(min-width: 1024px) 272px, (min-width: 768px) 33vw, 50vw"
         />
       </div>
       <div className="p-4">

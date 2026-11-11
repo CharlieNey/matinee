@@ -81,7 +81,12 @@ export type ProgramStatus = {
 };
 
 const TIMEZONE = "America/New_York" as const;
-const LAST_VERIFIED = "2026-07-13";
+/**
+ * Date of the latest full catalog check. Builders stamp it on every program;
+ * rows that could not be re-verified pin their older date explicitly so the
+ * per-row staleness note (and /api/health) stays honest.
+ */
+const LAST_VERIFIED = "2026-11-11";
 const MONDAY_TO_FRIDAY: readonly Weekday[] = [1, 2, 3, 4, 5];
 const MONDAY_TO_SATURDAY: readonly Weekday[] = [1, 2, 3, 4, 5, 6];
 const TUESDAY_TO_SATURDAY: readonly Weekday[] = [2, 3, 4, 5, 6];
@@ -144,14 +149,33 @@ function telechargeLottery(
     {
       notes: "Winners are drawn at 10 AM and 3 PM.",
       claimWindow: {
-        minutes: 60,
+        minutes: 300,
         channel: "email",
-        notifiedAround: "after the 10 AM and 3 PM drawings",
+        notifiedAround: "shortly after the 10 AM and 3 PM drawings",
       },
       tips: [
         "Telecharge lotteries require a US phone number for verification — international visitors should set one up before entering.",
       ],
     },
+  );
+}
+
+function telechargeDigitalRush(showSlug: string, price = 49): Program {
+  return program(
+    showSlug,
+    "digital-rush",
+    "telecharge",
+    price,
+    2,
+    "https://rush.telecharge.com/",
+    dailyWindow(
+      "Opens at 11 AM on performance days",
+      "11:00",
+      "20:00",
+      PERFORMANCE_DAYS,
+      true,
+    ),
+    { notes: "Subject to same-day availability." },
   );
 }
 
@@ -310,11 +334,26 @@ function todayTixRush(
 }
 
 /**
- * Source: Playbill’s Broadway rush, lottery, and standing-room roundup,
- * updated 2026-07-13. Two current productions (Two Strangers and Stranger
- * Things: The First Shadow) had no listed program and are intentionally absent.
+ * Source: Playbill’s Broadway rush, lottery, and standing-room roundup dated
+ * 2026-11-09, cross-checked 2026-11-11 against official show sites where they
+ * publish policies (Hamilton, Wicked, Hadestown, The Outsiders, Oh, Mary!,
+ * Harry Potter). Two running productions (Two Strangers, closing 2026-11-29,
+ * and Stranger Things: The First Shadow) list no program and are
+ * intentionally absent. Programs of closed shows are removed rather than
+ * kept: the feed, banner, trip planner and push cron read every program.
  */
 const PROGRAMS: readonly Program[] = [
+  telechargeLottery("860", 59),
+  boxOfficeProgram("860", "rush", 59, "Imperial Theatre"),
+  telechargeDigitalRush("860", 59),
+
+  // Lincoln Center Theater routes entries through its Telecharge-run
+  // lctlottery.com (lct.org/shows/a-few-good-men).
+  {
+    ...telechargeLottery("a-few-good-men", 49),
+    entryUrl: "https://lctlottery.com/",
+  },
+
   todayTixRush(
     "and-juliet",
     49,
@@ -368,33 +407,14 @@ const PROGRAMS: readonly Program[] = [
     "Gerald Schoenfeld Theatre",
   ),
 
-  telechargeLottery("cats-jellicle-ball"),
-  boxOfficeProgram("cats-jellicle-ball", "rush", 45, "Broadhurst Theatre"),
-
   boxOfficeProgram("chicago", "rush", 49, "Ambassador Theatre"),
   boxOfficeProgram("chicago", "sro", 39, "Ambassador Theatre"),
 
-  telechargeLottery("death-of-a-salesman"),
-
-  boxOfficeProgram(
-    "every-brilliant-thing",
-    "rush",
-    45,
-    "Hudson Theatre",
-    2,
-    { startDay: "tuesday" },
-  ),
-  luckySeatLottery(
-    "every-brilliant-thing",
-    45,
-    "https://www.luckyseat.com/shows/everybrilliantthing-newyork-2026Feb",
-    "10:30",
-  ),
-  todayTixRush(
-    "every-brilliant-thing",
-    45,
-    "https://www.todaytix.com/nyc/shows/45675-every-brilliant-thing",
-  ),
+  telechargeLottery("galileo", 45),
+  boxOfficeProgram("galileo", "rush", 45, "Shubert Theatre", 2, {
+    notes:
+      "Subject to availability. Sunday hours unconfirmed: Playbill says noon, the show's site lists the box office closed Sundays.",
+  }),
 
   telechargeLottery("the-great-gatsby", 45),
   boxOfficeProgram("the-great-gatsby", "rush", 40, "Broadway Theatre"),
@@ -444,7 +464,7 @@ const PROGRAMS: readonly Program[] = [
     {
       notes: "Winners are notified Thursday afternoon.",
       claimWindow: {
-        minutes: 60,
+        minutes: 120,
         channel: "email",
         notifiedAround: "Thursday afternoon",
       },
@@ -476,19 +496,7 @@ const PROGRAMS: readonly Program[] = [
     },
   ),
 
-  telechargeLottery("joe-turners-come-and-gone"),
-  boxOfficeProgram(
-    "joe-turners-come-and-gone",
-    "rush",
-    45,
-    "Ethel Barrymore Theatre",
-  ),
-  boxOfficeProgram(
-    "joe-turners-come-and-gone",
-    "student-rush",
-    35,
-    "Ethel Barrymore Theatre",
-  ),
+  telechargeLottery("inter-alia", 45),
 
   boxOfficeProgram("just-in-time", "rush", 40, "Circle in the Square Theatre"),
 
@@ -515,22 +523,7 @@ const PROGRAMS: readonly Program[] = [
   // production prices its lottery as a nod to it.
   telechargeLottery("maybe-happy-ending", 20.64),
   boxOfficeProgram("maybe-happy-ending", "rush", 49, "Belasco Theatre"),
-  program(
-    "maybe-happy-ending",
-    "digital-rush",
-    "telecharge",
-    49,
-    2,
-    "https://rush.telecharge.com/",
-    dailyWindow(
-      "Opens at 11 AM on performance days",
-      "11:00",
-      "20:00",
-      PERFORMANCE_DAYS,
-      true,
-    ),
-    { notes: "Subject to same-day availability." },
-  ),
+  telechargeDigitalRush("maybe-happy-ending"),
   boxOfficeProgram("maybe-happy-ending", "sro", 49, "Belasco Theatre"),
 
   broadwayDirectLottery(
@@ -541,11 +534,7 @@ const PROGRAMS: readonly Program[] = [
     "15:00",
   ),
 
-  luckySeatLottery(
-    "moulin-rouge",
-    49,
-    "https://www.luckyseat.com/shows/moulinrouge!themusical-newyork",
-  ),
+  telechargeLottery("much-ado-about-nothing", 49),
 
   telechargeLottery("oh-mary", 47),
   boxOfficeProgram("oh-mary", "rush", 43, "Lyceum Theatre"),
@@ -553,14 +542,28 @@ const PROGRAMS: readonly Program[] = [
   telechargeLottery("operation-mincemeat"),
   boxOfficeProgram("operation-mincemeat", "rush", 49, "John Golden Theatre"),
 
+  luckySeatLottery(
+    "other-desert-cities",
+    49,
+    "https://www.luckyseat.com/shows/otherdesertcities-newyork-2026Sep",
+    "10:30",
+  ),
+  todayTixRush(
+    "other-desert-cities",
+    49,
+    "https://www.todaytix.com/nyc/shows/47066-other-desert-cities",
+  ),
+
   telechargeLottery("the-outsiders"),
   boxOfficeProgram("the-outsiders", "rush", 45, "Bernard B. Jacobs Theatre"),
   boxOfficeProgram("the-outsiders", "sro", 39, "Bernard B. Jacobs Theatre"),
 
-  telechargeLottery("proof"),
-  boxOfficeProgram("proof", "rush", 45, "Booth Theatre"),
-
-  telechargeLottery("ragtime"),
+  todayTixRush(
+    "paranormal-activity",
+    40,
+    "https://www.todaytix.com/nyc/shows/46971-paranormal-activity",
+  ),
+  boxOfficeProgram("paranormal-activity", "rush", 40, "August Wilson Theatre"),
 
   program(
     "rocky-horror-show",
@@ -606,20 +609,9 @@ const PROGRAMS: readonly Program[] = [
   boxOfficeProgram("six", "student-rush", 35, "Lena Horne Theatre"),
   boxOfficeProgram("six", "sro", 49, "Lena Horne Theatre"),
 
-  boxOfficeProgram("titanique", "rush", 45, "St. James Theatre"),
-  luckySeatLottery(
-    "titanique",
-    49,
-    "https://www.luckyseat.com/shows/titanique-newyork-2026Mar",
-    "10:30",
-  ),
-  todayTixRush(
-    "titanique",
-    49,
-    "https://www.todaytix.com/nyc/shows/25241-titanique",
-  ),
+  telechargeLottery("wanted", 35),
 
-  boxOfficeProgram("wicked", "student-rush", 45, "Gershwin Theatre"),
+  boxOfficeProgram("wicked", "rush", 45, "Gershwin Theatre"),
   broadwayDirectLottery(
     "wicked",
     55,
@@ -629,77 +621,55 @@ const PROGRAMS: readonly Program[] = [
   ),
 
   /*
-   * Off-Broadway programs (Phase 12), verified 2026-07-16 against the shows'
-   * sites and the NYTG Off-Broadway guide. Only rows we could confirm —
-   * shows without a verified program correctly render "No verified program
-   * listed" on their pages.
+   * Off-Broadway programs (Phase 12), first verified 2026-07-16 against the
+   * shows' sites and the NYTG Off-Broadway guide; re-checked 2026-11-11
+   * against Playbill's Off-Broadway roundup dated 2026-11-09 and the shows'
+   * own sites. Only rows we could confirm — shows without a verified program
+   * correctly render "No verified program listed" on their pages.
    */
   {
-    ...telechargeLottery("little-shop-of-horrors", 35),
-    lastVerified: "2026-07-16",
-  },
-  {
-    ...telechargeLottery("the-play-that-goes-wrong", 35),
-    lastVerified: "2026-07-16",
-  },
-  {
-    ...boxOfficeProgram(
-      "perfect-crime",
-      "student-rush",
-      30,
-      "The Theater Center",
+    // littleshopnyc.com (fetched 2026-11-11): "$45 tickets two days before
+    // the performance", entry 12:00 AM–3:00 PM, limit 2. Playbill's
+    // 2026-11-09 roundup lists $40; the show's own site wins. Claim window
+    // follows the Telecharge default (Playbill 2026-11-09).
+    ...telechargeLottery("little-shop-of-horrors", 45),
+    schedule: dailyWindow(
+      "Midnight–3 PM two days before a performance",
+      "00:00",
+      "15:00",
     ),
-    lastVerified: "2026-07-16",
+    lastVerified: "2026-11-11",
   },
-
-  // Free Shakespeare in the Park — the platonic ideal of this dataset:
-  // completely free, two entry paths, chronically confusing to newcomers.
-  {
-    ...program(
-      "the-winters-tale",
-      "digital-lottery",
-      "todaytix",
-      0,
-      2,
-      "https://www.todaytix.com/nyc/shows/free-shakespeare-in-the-park",
-      dailyWindow(
-        "Midnight–noon the day of the performance",
-        "00:00",
-        "12:00",
-        [0, 2, 3, 4, 5, 6],
-      ),
-      {
-        notes: "Performances begin July 25. Winners drawn after noon.",
-        claimWindow: {
-          minutes: 60,
-          channel: "app",
-          notifiedAround: "early afternoon",
-        },
+  // Entered on the show's own site (Playbill 2026-11-09; broadwaygoeswrong.com).
+  program(
+    "the-play-that-goes-wrong",
+    "digital-lottery",
+    "official-site",
+    35,
+    2,
+    "https://broadwaygoeswrong.com/lottery/",
+    dailyWindow(
+      "Midnight–3 PM two days before a performance",
+      "00:00",
+      "15:00",
+    ),
+    {
+      notes: "Winners are drawn at 10 AM and 3 PM.",
+      claimWindow: {
+        minutes: 360,
+        channel: "email",
+        notifiedAround: "after the 10 AM and 3 PM drawings",
       },
-    ),
-    lastVerified: "2026-07-16",
-  },
-  {
-    ...program(
-      "the-winters-tale",
-      "rush",
-      "box-office",
-      0,
-      2,
-      "https://publictheater.org/free-shakespeare-in-the-park/",
-      dailyWindow(
-        "Free tickets distributed at noon at the Delacorte — line up early",
-        "08:00",
-        "12:00",
-        [0, 2, 3, 4, 5, 6],
-        true,
-      ),
-      {
-        notes: "Performances begin July 25. Two tickets per person.",
-      },
-    ),
-    lastVerified: "2026-07-16",
-  },
+    },
+  ),
+  boxOfficeProgram(
+    "perfect-crime",
+    "student-rush",
+    35,
+    "The Theater Center",
+    2,
+    { sundayOpensAt: "11:00" },
+  ),
 ];
 
 const KIND_LABELS: Record<ProgramKind, string> = {
@@ -885,6 +855,14 @@ export function programsLastVerified(): string {
 }
 
 /** Stable identity for a program — (show, kind, platform) is unique. */
+/** "45 min", "2 hr", "5 hr", "1 hr 30 min". */
+export function formatMinutes(minutes: number): string {
+  if (minutes < 60) return `${minutes} min`;
+  const hours = Math.floor(minutes / 60);
+  const remainder = minutes % 60;
+  return remainder ? `${hours} hr ${remainder} min` : `${hours} hr`;
+}
+
 export function programKey(item: Program): string {
   return `${item.showSlug}/${item.kind}/${item.platform}`;
 }

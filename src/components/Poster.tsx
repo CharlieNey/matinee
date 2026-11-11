@@ -59,10 +59,15 @@ export function Poster({
   show,
   className = "",
   name,
+  sizes = "96px",
+  priority = false,
 }: {
   show: Show;
   className?: string;
   name?: string;
+  /** Responsive rendered width for Next's image optimizer. */
+  sizes?: string;
+  priority?: boolean;
 }) {
   const { poster } = show;
   const src = POSTER_SRC[show.slug];
@@ -83,7 +88,12 @@ export function Poster({
         className={`relative aspect-square shrink-0 overflow-hidden ${className}`}
         style={{ background: poster.bg }}
       >
-        <PosterImage src={src} position={POSTER_POSITION[show.slug]} />
+        <PosterImage
+          src={src}
+          position={POSTER_POSITION[show.slug]}
+          sizes={sizes}
+          priority={priority}
+        />
       </div>,
     );
   }

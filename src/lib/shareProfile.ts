@@ -10,7 +10,7 @@
 
 export type SharedDiaryEntry = {
   slug: string;
-  loggedAt: string;
+  performanceDate: string;
   sentiment: "recommend" | "mixed" | "disliked";
   thoughts: string | null;
   tags: string[];
@@ -91,8 +91,17 @@ function sanitizeProfile(parsed: unknown): SharedProfile | null {
     if (typeof item !== "object" || item === null) return [];
     const entry = item as Record<string, unknown>;
     const slug = asString(entry.slug, 100);
-    const loggedAt = asString(entry.loggedAt, 40);
-    if (!slug || !loggedAt || Number.isNaN(Date.parse(loggedAt))) return [];
+    // New links carry the date of the performance. Fall back to `loggedAt`
+    // so links created before performance dates were introduced still work.
+    const performanceDate =
+      asString(entry.performanceDate, 10) ?? asString(entry.loggedAt, 40);
+    if (
+      !slug ||
+      !performanceDate ||
+      Number.isNaN(Date.parse(performanceDate))
+    ) {
+      return [];
+    }
     const sentiment =
       entry.sentiment === "recommend" ||
       entry.sentiment === "mixed" ||
@@ -106,7 +115,13 @@ function sanitizeProfile(parsed: unknown): SharedProfile | null {
           .slice(0, 12)
       : [];
     return [
-      { slug, loggedAt, sentiment, thoughts: asString(entry.thoughts, 2000), tags },
+      {
+        slug,
+        performanceDate,
+        sentiment,
+        thoughts: asString(entry.thoughts, 2000),
+        tags,
+      },
     ];
   });
 

@@ -62,6 +62,16 @@ export async function POST(request: Request) {
   );
 
   const db = supabaseAdmin();
+  const retentionCutoff = new Date(
+    Date.now() - 45 * 24 * 60 * 60 * 1000,
+  ).toISOString();
+  const { count: expiredLogs, error: retentionError } = await db
+    .from("notification_log")
+    .delete({ count: "exact" })
+    .lt("sent_at", retentionCutoff);
+  if (retentionError) {
+    console.error("notification log retention failed:", retentionError.message);
+  }
   const { data: subs, error: subsError } = await db
     .from("push_subscriptions")
     .select("endpoint,p256dh,auth,slugs,entries")
@@ -78,6 +88,7 @@ export async function POST(request: Request) {
     sent: 0,
     deduped: 0,
     pruned: 0,
+    expiredLogs: retentionError ? 0 : (expiredLogs ?? 0),
   };
   if (!subs?.length || !events.length) return Response.json(summary);
 

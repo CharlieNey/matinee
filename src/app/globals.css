@@ -17,8 +17,8 @@
   --color-cream: #f5efe3; /* ivory program paper */
   --color-paper: #ffffff;
   --color-ink: #241418; /* wine-cast near-black */
-  --color-ink-soft: #8c7a7e;
-  --color-ink-faint: #bbaeab;
+  --color-ink-soft: #746267; /* 4.98:1 on cream */
+  --color-ink-faint: #78676b; /* 4.64:1 on cream */
   --color-espresso: #3a0d19; /* velvet */
   --color-espresso-glow: #5a1a2a; /* velvet, house-lit */
   --color-espresso-raised: #6b2a3a;
@@ -27,7 +27,7 @@
   --color-blush: #f6e7e3;
   --color-inset: #ece4d4;
   --color-gold: #c9a227; /* gilt */
-  --color-gold-ink: #8a6d1c; /* gilt for TEXT on light grounds (≥4.5:1) */
+  --color-gold-ink: #7d6415; /* gilt for TEXT on light grounds (≥4.5:1) */
   --color-sage: #dee8da;
   --color-sage-ink: #3f5c46;
   --color-line: #e6decf;
@@ -139,6 +139,21 @@ body {
   background: var(--color-cream);
   color: var(--color-ink);
   font-family: var(--font-sans);
+  isolation: isolate;
+  position: relative;
+}
+
+/* Paper stock without a global WebGL bundle/context. The tiny inline SVG is
+ * fixed beneath the app, costs no render loop, and keeps the same quiet grain
+ * behind clean white cards. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E");
 }
 
 /* Tailwind v4's preflight leaves buttons on the OS default arrow; on the web
@@ -146,6 +161,15 @@ body {
 button:not(:disabled),
 [role="button"]:not([aria-disabled="true"]) {
   cursor: pointer;
+}
+
+/* A consistent keyboard focus treatment, including controls that remove the
+ * browser outline to make room for custom field styling. The paper halo keeps
+ * the crimson ring legible on both ivory and velvet surfaces. */
+:where(a, button, input, textarea, select, [tabindex]):focus-visible {
+  outline: 3px solid var(--color-vermilion);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 2px var(--color-paper);
 }
 
 /* Motion: iOS-quiet (DESIGN.md §7) — 200-300ms ease-out, no loops */

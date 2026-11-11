@@ -8,6 +8,7 @@ import { Sheet } from "@/components/Sheet";
 import { TktsBoardSheet } from "@/components/TktsBoard";
 import { officialTicketsForShow } from "@/lib/officialTickets";
 import {
+  formatMinutes,
   getProgramStatus,
   ProgramStatus,
   programKindLabel,
@@ -77,12 +78,7 @@ function statusLine(status: ProgramStatus): string {
     status.countdownMs !== null
       ? Math.max(1, Math.round(status.countdownMs / 60_000))
       : null;
-  const countdown =
-    minutes === null
-      ? null
-      : minutes >= 60
-        ? `${Math.floor(minutes / 60)} hr ${minutes % 60} min`
-        : `${minutes} min`;
+  const countdown = minutes === null ? null : formatMinutes(minutes);
 
   switch (status.state) {
     case "open":

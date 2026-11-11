@@ -121,7 +121,11 @@ export function CollectionEditorSheet({
                 aria-label={`${show.title} tickets`}
                 className="block transition-transform duration-150 active:scale-[0.96]"
               >
-                <Poster show={show} className="w-full rounded-thumb" />
+                <Poster
+                  show={show}
+                  className="w-full rounded-thumb"
+                  sizes="(min-width: 1024px) 160px, 30vw"
+                />
               </Link>
               <button
                 type="button"

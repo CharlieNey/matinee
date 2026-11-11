@@ -1,6 +1,6 @@
-# Theatr Design Language
+# Matinee Design Language
 
-Reverse-engineered from the live iOS app (see `reference/theatr-screens/`, captured 2026-07-15).
+Began as a design study of the Theatr iOS app (reference screenshots kept locally in `reference/theatr-screens/`, captured 2026-07-15) and has since diverged; see §12.
 This file is the source of truth for every screen we build. When in doubt, match the screenshots;
 when the screenshots are silent, follow the rules here.
 
@@ -18,7 +18,7 @@ Hex values are **pixel-sampled from the screenshots** (PIL, solid fill regions),
 > **Theme note (2026-07-16):** these espresso values are the *reference* palette
 > from the iOS screenshots. The live app now wears **House Velvet in both layout
 > modes** (§12) — the tokens below are semantic roles, and their current values
-> are the velvet column of §12's table. The clone palette is retired.
+> are the velvet column of §12's table. The study palette is retired.
 
 | Token | Hex | Usage |
 |---|---|---|
@@ -29,7 +29,7 @@ Hex values are **pixel-sampled from the screenshots** (PIL, solid fill regions),
 | `ink-faint` | `#B9B4B1` | Placeholders, disabled, empty-state text |
 | `espresso` | `#220C06` | Dark surface base (profile header); pairs with `espresso-glow` gradient |
 | `espresso-glow` | `#43230C` | Top of the profile-header gradient (see rule below) |
-| `espresso-raised` | `#4E3D38` | Pills/buttons sitting on espresso (Orders / Wallet / Notify) |
+| `espresso-raised` | `#4E3D38` | Pills/buttons sitting on the dark identity surface |
 | `vermilion` | `#D7492B` | THE accent. Primary CTA fill, Sell button. Measured identical on both |
 | `blush` | `#F7EAE7` | Tinted info banner bg ("Your Notify Matches") |
 | `card-inset` | `#E9E6E6` | Inset cards on white (show rows inside timeline cards) |
@@ -40,7 +40,7 @@ Hex values are **pixel-sampled from the screenshots** (PIL, solid fill regions),
 
 ### Rules
 
-- **One accent.** Vermilion appears at most twice per screen (one primary CTA + the Log FAB). Everything else earns attention through type weight and poster art.
+- **One accent.** Vermilion appears at most twice per screen (usually one primary CTA plus one urgent state). Everything else earns attention through type weight and poster art.
 - **Warm grays only.** Every neutral carries a brown/red cast. No cool grays, no blue-grays.
 - **Dark surfaces are brown, not black.** The profile header is *top-lit*: a vertical gradient from `espresso-glow #43230C` at the very top down to `espresso #220C06` where the light sheet begins — like stage lighting falling off. White text at 100%, secondary at 60% white.
 - **Poster art is the color system.** UI chrome stays quiet so show art (any palette) never clashes.
@@ -49,7 +49,7 @@ Hex values are **pixel-sampled from the screenshots** (PIL, solid fill regions),
 
 ## 2. Typography
 
-iOS app uses SF Pro. Web equivalent: **Inter** (or Geist, already in the scaffold) with `-0.01em` tracking on headings. House Velvet adds a serif display tier in **both modes** (see §12): `display` and `title` set in Playfair Display with tracking reset to 0; everything from `heading` down stays grotesque — hierarchy still comes from weight and size.
+iOS app uses SF Pro. Matinee uses **Schibsted Grotesk** with `-0.01em` tracking on headings. House Velvet adds a serif display tier in **both modes** (see §12): `display` and `title` use Bodoni Moda with tracking reset to 0; everything from `heading` down stays grotesque.
 
 | Style | Size / weight / line-height | Where seen |
 |---|---|---|
@@ -86,7 +86,7 @@ Rules:
 | `r-pill` | 999px | Buttons, filter chips, toggles, Edit Profile |
 | `r-sheet` | 24px top corners | Light sheet sliding over espresso header |
 
-Elevation: essentially **flat**. Cards separate from cream by being white, not by shadow. Max allowed: `0 1px 3px rgb(43 29 22 / 0.06)` on floating elements (tab bar, raised Sell button). Never stack shadows.
+Elevation: essentially **flat**. Cards separate from cream by being white, not by shadow. Max allowed: `0 1px 3px rgb(43 29 22 / 0.06)` on floating navigation and dialogs. Never stack shadows.
 
 ---
 
@@ -122,7 +122,7 @@ The big card the Marketplace grid pioneered, now answering with curated data (`S
 > Retired with the marketplace (Phase 14, 2026-07-17): the listing card, the perforated ticket stub ("Below face" chip, sold scrims), the seller status pipeline, and the Orders accordion. Their specs live in this file's git history.
 
 ### Tab bar
-White floating bar, hairline top edge. Five slots — four flat tabs, 2+2 around the center FAB (the reference app's balanced silhouette, with evolved contents): Discover, District, **Log**, Rush, Profile. The flat tabs are the four pillars — what, where, when, you (the Marketplace slot went to District when the marketplace retired, Phase 14). Log is a 64px vermilion circle raised ~20px above the bar, sitting in a paper collar — the bar's own white rises in an 88px bump around it (see `profile-overview.png`; a bump, not a notch) — white pen icon + "Log" 12/600 inside the circle, dead-center. The FAB is an *action* (open the diary's show picker), not a destination. Active tab: `ink` icon + label; inactive: `ink-faint`. No badges on tabs.
+White floating bar, hairline top edge. Four equal slots: Discover, **Log**, Rush, Profile. Log is an action that opens the diary show picker; the other three are destinations. All four are flush, with the same icon and label anatomy. Active destination: `ink`; inactive destinations and Log at rest: `ink-faint`. District and Trip remain prominent Discover quick links instead of permanent tabs. No badges.
 
 ### Banner (tinted info)
 `blush` fill, `r-card`, 20px padding: title 22/700 `ink`, sub 17/400 `ink-soft`. Informational only — whole banner may be tappable but contains no buttons.
@@ -131,16 +131,16 @@ White floating bar, hairline top edge. Five slots — four flat tabs, 2+2 around
 17/600, active `ink` with 2px `ink` underline sitting on the container's hairline; inactive `ink-soft`. 32px gaps, left-aligned.
 
 ### Timeline (activity feed)
-Left rail: 10px dot + 1.5px vertical line in `line` color. Entries: date 20/700 → action line ("Marked as attended" 17 `ink-soft`, optional gold suffix chip "👍 Recommend it" 15/600 `gold`) → inset row(s). Year marker 17 `ink-faint` when it changes. Milestones close the rail: "First day on Theatr! 🎉".
+Left rail: 10px dot + 1.5px vertical line in `line` color. Entries: date 20/700 → action line ("Marked as attended" 17 `ink-soft`, optional gold suffix chip "👍 Recommend it" 15/600 `gold`) → inset row(s). Year marker 17 `ink-faint` when it changes. Milestones close the rail: "First day on Matinee! 🎉".
 
 ### Empty state
 Centered, upper-third: outline glyph 64px `ink-faint` → "Nothing here yet…" 20/400 `ink-faint` → underlined `ink` link to the escape action ("See today's windows"). No illustration sets, no mascots.
 
 ### Log screen (diary entry — from live app, July 2026)
-Back arrow left, **Publish** as bare vermilion text top-right (no pill — text-button is the exception for editor screens). Stacked white cards with hairline-divided rows: what-you-saw (44px poster thumb + title 20/700 + venue 17 `ink-soft`; calendar + date row; seat row). "Share Your Thoughts" card: 3-option sentiment row (gold thumbs-up+star = Recommend it, gray-circle faces for Mixed feelings / Didn't like it; active = full-color icon + 17/600 `ink` label, inactive = muted icon + `ink-soft`), free-text area, outlined `# Tag` chips (rounded-lg 8px — squarer than control pills; selected = espresso fill), 130px Upload Photo bordered box, sage "Public" visibility pill (rounded-lg, eye icon). Separate "Private Note" card. Sentiment/tags/visibility state lives in color, never layout.
+Back arrow left, **Publish** (or **Save** while editing) as bare vermilion text top-right. Stacked white cards with hairline-divided rows: what-you-saw (44px poster thumb + title + venue; editable performance date; optional seat/section). "Share your thoughts" contains the 3-option sentiment row, free text, outlined `# Tag` chips, photo upload, and Public/Private visibility. A separate Private note card stays local. Existing entries reopen through `/log/[slug]?entry=<id>`; storage failures render an explicit recovery warning.
 
 ### Diary ticket (timeline entry — reshaped 2026-07-17)
-Diary-logged attendance renders as a **ticket**, not a card-in-a-card: white `r-card` with everything typeset flat on the paper (no nested `inset` row, no bookmark — controls don't belong on a keepsake). **Body** (above the tear): poster thumb 56px + title 17/600 + `Tier · Genre · Venue` caption (the row links to the show), italic quoted public thoughts, photo (3:4, `r-thumb`, max ~220px), read-only `# tag` chips (outlined, caption, `ink-soft`). **Tear line** (§13 perforation): a real cut, not paint — the `.ticket-tear` strip is CSS-masked so the 12px edge notches and 3px punch holes are genuine holes in the paper (whatever is behind shows through); body and stub carry the paper above and below it. Always present; the shape is the card's identity. **Stub** (below the tear — what a ticket keeps): armchair + seat caption, the private-note row when present (EyeOff + "Only you · …" in `ink-faint`), and the "Share as image" action. Sentiment on the "Marked as attended" line: gold ThumbsUp "Recommend it"; **ThumbsDown "Didn't like it" mirrors it in `ink-soft`** (same anatomy, gold stays praise-only); "Mixed feelings" is a quiet `inset` pill. Never vermilion.
+Diary-logged attendance renders as a **ticket**, not a card-in-a-card: white `r-card` with everything typeset flat on the paper. **Body**: poster, title, `Tier · Genre · Venue`, public thoughts, optional photo, and tags. **Tear line** (§13): the `.ticket-tear` strip is CSS-masked so its edge notches and punch holes reveal the page beneath. **Stub**: seat (or “Seat not recorded”), private note, then quiet Share / Edit / Delete actions. Delete is reversible through the toast Undo action. Sentiment remains on the “Marked as attended” line. Timeline order follows performance date rather than publish time. State is schema-versioned and validated; photo payloads live in IndexedDB. Settings supports versioned JSON export plus validated merge/replace restore.
 
 ### Interested control (standardized 2026-07-17)
 One component (`InterestedButton`), one vocabulary: the state is **"Interested"** everywhere — button label, section heads, collection row, Trip toggle, the feed's "Marked interested". The word "saved" is reserved for money ("saved $18 vs face"). Anatomy: Bookmark glyph, filled when active. Two placements: **pill** (show page — idle `espresso` fill/white text inviting the action, active quiet `inset`/`ink`, the follow button's grammar; never vermilion) and **icon** (card action corner, `ink-soft`, fill = state). Counts read "N shows" (Interested) / "N logged" (Attended).
@@ -149,7 +149,7 @@ One component (`InterestedButton`), one vocabulary: the state is **"Interested"*
 One component (`ShareButton`): Forward glyph + a verb-first "Share …" label, always. **primary** = the full-width vermilion CTA (Wrapped, win card); **quiet** = caption text action on keepsakes (diary stub); **icon** = top utility row, label becomes the aria-label.
 
 ### Collection tab (live data, 2026-07-17)
-No seed façade: **My Top 10** is user-curated (pencil corner action → sheet with drag-to-rank grips, X to drop, add from attended ∪ interested; persisted as slugs), **Interested** is the real bookmark set, **Attended** is diary + pre-app history deduped (`attendedShows` — Discover, Collection, and Wrapped all count from this one list). Covers are the newest member with the state stamped on the art (§6.2). The Wrapped row is gone — the header pill owns that entry point.
+The Collection tab is state-backed: **Your ranking** is user-curated (binary matchups place new shows, then drag handles fine-tune the order), **Interested** is the bookmark set, and **Attended** combines editable diary entries with pre-app history. Ranking persists as slugs. Wrapped lives in the profile header.
 
 ---
 
@@ -157,7 +157,7 @@ No seed façade: **My Top 10** is user-curated (pencil corner action → sheet w
 
 1. **Poster-first.** Every show reference carries its art. Text-only show mentions are a bug.
 2. **Outcomes as overlay.** State stamps itself on art (the Collection's bookmark/star covers, the win card's price-vs-face) — the app brags in place, not in copy.
-3. **Warm authority, light celebration.** Copy is plain and warm ("Nothing here yet…", "First day on Theatr! 🎉"). Exactly one emoji allowed per screen, only for milestones.
+3. **Warm authority, light celebration.** Copy is plain and warm ("Nothing here yet…", "First day on Matinee! 🎉"). Exactly one emoji allowed per screen, only for milestones.
 4. **Dark = identity, light = commerce.** Espresso surfaces frame *you* (profile); cream/white frames *inventory*. Keep that split when inventing screens.
 5. **Controls are pills, content is cards.** If it's tappable chrome it's a pill; if it's a thing it's a rounded card.
 6. **One thumb, one action.** A screen gets at most one full-width vermilion CTA, always reachable one-handed.
@@ -222,14 +222,14 @@ Route changes use the View Transitions API (React `<ViewTransition>`,
 ```ts
 // tailwind: extend
 colors: {
-  cream: '#F4F3F2',
-  ink: { DEFAULT: '#200604', soft: '#8A8380', faint: '#B9B4B1' },
-  espresso: { DEFAULT: '#220C06', glow: '#43230C', raised: '#4E3D38' },
-  vermilion: { DEFAULT: '#D7492B', pressed: '#BC3C21' },
-  blush: '#F7EAE7',
-  inset: '#E9E6E6',
-  gold: '#F4AA1B',
-  line: '#E7E4E3',
+  cream: '#F5EFE3',
+  ink: { DEFAULT: '#241418', soft: '#746267', faint: '#78676B' },
+  espresso: { DEFAULT: '#3A0D19', glow: '#5A1A2A', raised: '#6B2A3A' },
+  vermilion: { DEFAULT: '#A61E33', pressed: '#8C1729' },
+  blush: '#F6E7E3',
+  inset: '#ECE4D4',
+  gold: '#C9A227',
+  line: '#E6DECF',
 },
 borderRadius: { thumb: '12px', card: '20px', sheet: '24px' },
 boxShadow: { float: '0 1px 3px rgb(43 29 22 / 0.06)' },
@@ -247,15 +247,15 @@ fontSize: {
 
 ## 10. Layout modes
 
-The app has **two presentations**, switched by a visitor-facing toggle (floating Phone/Web pill, bottom-right, ≥1024px viewports only). A pre-paint script stamps `html[data-layout="mobile"|"web"]` — saved choice (`theatr-layout-v1`) or default: web on ≥1024px viewports, mobile otherwise. All mode styling hangs off the `web:`/`mobile:` Tailwind variants (see `globals.css`); components, tokens, and theme are 100% shared — **the toggle switches layout only** (unified 2026-07-16; previously mobile carried the espresso clone palette as a before/after switch — that story is retired, the reference screenshots remain in `reference/theatr-screens/`).
+The app has **two presentations**, switched by a visitor-facing toggle (floating Phone/Web pill, bottom-right, ≥1024px viewports only). A pre-paint script stamps `html[data-layout="mobile"|"web"]` — saved choice (`matinee-layout-v1`, with a legacy `theatr-layout-v1` fallback) or default: web on ≥1024px viewports, mobile otherwise. All mode styling hangs off the `web:`/`mobile:` Tailwind variants (see `globals.css`); components, tokens, and theme are shared — **the toggle switches layout only**.
 
 **Mobile mode** (the product, phone-sized):
 - Centered 430px column on `cream`, hairline side borders; design mobile-first at 390px.
-- Floating notched tab bar (four tabs + Log FAB, §5); `BackHeader` on detail screens; compact poster hero on show pages.
-- Started as a pixel-faithful clone of the reference screenshots and keeps that structural DNA, but evolves with the product.
+- Floating four-slot tab bar with a flush Log action (§5); `BackHeader` on detail screens; compact poster hero on show pages.
+- Started from the design-study screenshots and keeps that structural DNA, but evolves with the product.
 
 **Web mode** (the product):
-- Sticky top bar on `cream/95` + blur: ticket mark + wordmark, the tab destinations as in-page-tab-style links (active = `ink` + 2px underline; inactive `ink-soft`), vermilion "Log a show" pill right — the tab bar's raised Log FAB, translated.
+- Sticky top bar on `cream/95` + blur: ticket mark + wordmark, Discover / Rush & Lottery / Trip / Profile links (active = `ink` + 2px underline; inactive `ink-soft`), About icon, and a vermilion "Log a show" action.
 - **Inventory pages are wide** (max 1160px): Discover / Rush / show pages. Grids widen instead of stretching: the catalog grid steps 2 → 3 (≥768px) → 4 (≥1024px) columns, rush feed sections 2 columns, shelves show more posters. Show pages swap `BackHeader` for a poster hero (230px art + tier·genre·venue, display title, face value).
 - **Identity & utility pages stay narrow** (560px centered): Profile / Watches / log. Dark = identity keeps its phone proportions on purpose — the espresso header reads as a card, not a banner.
 - The rule of thumb when adding screens: *commerce breathes, identity stays intimate.*
@@ -275,7 +275,7 @@ gradient / plain cream) when WebGL is missing. Library:
 | Show hero (web) | Show's key art behind fluted glass; palette mesh for typographic tiles; cream wash keeps ink readable | `HeroBackdrop` |
 | Profile espresso header | **Follow spot**: elliptical tungsten pool settled over avatar + name, corners in shadow, slow opacity breathing (the CSS gradient is the fallback) | `FollowSpot` |
 | Rush closes-soon chips | **Marquee pulse**: warm gold chip + pulsing halo — glow as live urgency signal, not decoration (CSS, not WebGL: many small chips would exhaust GL contexts) | `.marquee-pulse` |
-| Cream page background | Static paper-stock grain at 5% opacity, under content — cards stay clean paper on grainy stock | `PaperGrain` |
+| Cream page background | Static inline-SVG noise at 3.5% opacity under content — cards stay clean paper on grainy stock without a global WebGL bundle/context | `body::before` in `globals.css` |
 
 Rules:
 - Poster `bg` values may be CSS gradients — always extract hex stops before
@@ -313,12 +313,13 @@ component; JS-side colors (shaders, share cards) use the same velvet hexes.
 | `ink` | `#200604` espresso ink | `#241418` wine ink |
 | `espresso` / `-glow` / `-raised` | `#220C06` / `#43230C` / `#4E3D38` | `#3A0D19` / `#5A1A2A` / `#6B2A3A` velvet |
 | `vermilion` / `-pressed` | `#D7492B` / `#BC3C21` | `#A61E33` / `#8C1729` crimson |
-| `gold` / `gold-ink` | `#F4AA1B` / `#8F6600` | `#C9A227` gilt / `#8A6D1C` |
+| `ink-soft` / `ink-faint` | `#8A8380` / `#B9B4B1` | `#746267` / `#78676B` (both WCAG AA on ivory) |
+| `gold` / `gold-ink` | `#F4AA1B` / `#8F6600` | `#C9A227` gilt / `#7D6415` |
 | `line` / `inset` / `blush` | cool-cream tints | ivory-warm tints (`#E6DECF` / `#ECE4D4` / `#F6E7E3`) |
 
-**Type:** a serif display tier in both modes — Playfair Display
+**Type:** a serif display tier in both modes — Bodoni Moda
 (`--font-display`, Didot fallback) on `.text-display` and `.text-title`
-with tracking reset to 0; everything else stays Geist. Big moments serif,
+with tracking reset to 0; everything else stays Schibsted Grotesk. Big moments serif,
 workaday UI grotesque. Arbitrary-size display text opts in with
 `font-display`.
 
