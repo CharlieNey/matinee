@@ -8,6 +8,7 @@ import { useEnteredToday } from "@/lib/entries";
 import {
   ClaimChannel,
   etDayKey,
+  formatMinutes,
   isProgramStale,
   Program,
   programKey,
@@ -48,12 +49,7 @@ function shortTime(date: Date, now: Date): string {
 }
 
 function countdown(ms: number): string {
-  const minutes = Math.max(1, Math.ceil(ms / 60_000));
-  if (minutes < 60) return `${minutes} min`;
-
-  const hours = Math.floor(minutes / 60);
-  const remainder = minutes % 60;
-  return remainder ? `${hours} hr ${remainder} min` : `${hours} hr`;
+  return formatMinutes(Math.max(1, Math.ceil(ms / 60_000)));
 }
 
 /**
@@ -206,7 +202,7 @@ function ProgramRow({
                 If you win: {CHANNEL_VERBS[program.claimWindow.channel]}{" "}
                 {program.claimWindow.notifiedAround} ·{" "}
                 <b className="font-semibold text-ink">
-                  {program.claimWindow.minutes} min
+                  {formatMinutes(program.claimWindow.minutes)}
                 </b>{" "}
                 to claim — the clock starts on send.
               </p>

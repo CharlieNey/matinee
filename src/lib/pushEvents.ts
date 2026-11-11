@@ -1,6 +1,7 @@
 import {
   allPrograms,
   etDayKey,
+  formatMinutes,
   getProgramStatus,
   programKey,
   programKindLabel,
@@ -89,7 +90,7 @@ export function duePushEvents(now: Date): PushEvent[] {
           slug: item.showSlug,
           eventKey: `${programKey(item)}|claim|${occurrence.opensAt.toISOString()}`,
           title: `${title} ${kindLabel} closed — watch for winners`,
-          body: `Winners usually notified ${item.claimWindow.notifiedAround} · ${item.claimWindow.minutes} min to claim, ${CHANNEL_HINTS[item.claimWindow.channel]}`,
+          body: `Winners usually notified ${item.claimWindow.notifiedAround} · ${formatMinutes(item.claimWindow.minutes)} to claim, ${CHANNEL_HINTS[item.claimWindow.channel]}`,
           url: item.entryUrl,
           requiresEntry: {
             key: programKey(item),

@@ -628,22 +628,17 @@ const PROGRAMS: readonly Program[] = [
    * correctly render "No verified program listed" on their pages.
    */
   {
-    // Partly re-verified: the entry window moved to two days ahead (Playbill
-    // 2026-11-09 and littleshopnyc.com agree), but the price is unresolved —
-    // Playbill says $40, the show's site $45 — so the row keeps its July
-    // price, claim window and date and renders as due for verification.
-    ...telechargeLottery("little-shop-of-horrors", 35),
+    // littleshopnyc.com (fetched 2026-11-11): "$45 tickets two days before
+    // the performance", entry 12:00 AM–3:00 PM, limit 2. Playbill's
+    // 2026-11-09 roundup lists $40; the show's own site wins. Claim window
+    // follows the Telecharge default (Playbill 2026-11-09).
+    ...telechargeLottery("little-shop-of-horrors", 45),
     schedule: dailyWindow(
       "Midnight–3 PM two days before a performance",
       "00:00",
       "15:00",
     ),
-    claimWindow: {
-      minutes: 60,
-      channel: "email",
-      notifiedAround: "after the 10 AM and 3 PM drawings",
-    },
-    lastVerified: "2026-07-16",
+    lastVerified: "2026-11-11",
   },
   // Entered on the show's own site (Playbill 2026-11-09; broadwaygoeswrong.com).
   program(
@@ -860,6 +855,14 @@ export function programsLastVerified(): string {
 }
 
 /** Stable identity for a program — (show, kind, platform) is unique. */
+/** "45 min", "2 hr", "5 hr", "1 hr 30 min". */
+export function formatMinutes(minutes: number): string {
+  if (minutes < 60) return `${minutes} min`;
+  const hours = Math.floor(minutes / 60);
+  const remainder = minutes % 60;
+  return remainder ? `${hours} hr ${remainder} min` : `${hours} hr`;
+}
+
 export function programKey(item: Program): string {
   return `${item.showSlug}/${item.kind}/${item.platform}`;
 }

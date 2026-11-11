@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   allPrograms,
+  formatMinutes,
   getProgramStatus,
   isProgramStale,
 } from "./programs";
@@ -38,5 +39,14 @@ describe("program schedule engine", () => {
     expect(new Set(events.map((event) => event.eventKey)).size).toBe(
       events.length,
     );
+  });
+});
+
+describe("formatMinutes", () => {
+  it("renders claim windows and countdowns in hours once past 59 minutes", () => {
+    expect(formatMinutes(45)).toBe("45 min");
+    expect(formatMinutes(60)).toBe("1 hr");
+    expect(formatMinutes(90)).toBe("1 hr 30 min");
+    expect(formatMinutes(300)).toBe("5 hr");
   });
 });
