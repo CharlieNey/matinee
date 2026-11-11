@@ -23,13 +23,13 @@ describe("program schedule engine", () => {
   });
 
   it("marks verification dates stale after fourteen days", () => {
+    // Relative to the row's own date, so routine data refreshes don't break it.
     const program = allPrograms()[0];
-    expect(isProgramStale(program, new Date("2026-07-20T12:00:00Z"))).toBe(
-      false,
-    );
-    expect(isProgramStale(program, new Date("2026-08-01T12:00:00Z"))).toBe(
-      true,
-    );
+    const verifiedAt = new Date(`${program.lastVerified}T12:00:00-04:00`);
+    const daysLater = (days: number) =>
+      new Date(verifiedAt.getTime() + days * 24 * 60 * 60 * 1000);
+    expect(isProgramStale(program, daysLater(7))).toBe(false);
+    expect(isProgramStale(program, daysLater(19))).toBe(true);
   });
 
   it("generates stable, unique push-event keys", () => {

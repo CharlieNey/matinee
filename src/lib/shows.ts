@@ -47,6 +47,7 @@ const SHOWS: Show[] = [
     tier: "Off-Broadway",
     genre: "Musical",
     venue: 'New World Stages',
+    currentlyRunning: false, // closed 2026-10-11
     faceValue: 79,
     poster: {
       bg: "linear-gradient(165deg, #22315c 0%, #131b3a 70%, #0c1229 100%)",
@@ -123,7 +124,7 @@ const SHOWS: Show[] = [
     tier: "Broadway",
     genre: "Musical",
     venue: 'Imperial Theatre',
-    currentlyRunning: false,
+    currentlyRunning: false, // closed 2026-06-21
     faceValue: 129,
     poster: {
       bg: "linear-gradient(180deg, #1a1a1f 0%, #0b0b0e 100%)",
@@ -169,6 +170,7 @@ const SHOWS: Show[] = [
     tier: "Broadway",
     genre: "Musical",
     venue: 'Vivian Beaumont Theater',
+    currentlyRunning: false, // closed 2026-08-16
     faceValue: 109,
     poster: {
       bg: "#c8102e",
@@ -184,6 +186,7 @@ const SHOWS: Show[] = [
     tier: "Broadway",
     genre: "Play",
     venue: 'Winter Garden Theatre',
+    currentlyRunning: false, // closed 2026-08-09
     faceValue: 139,
     poster: {
       bg: "#efe9dc",
@@ -244,6 +247,7 @@ const SHOWS: Show[] = [
     tier: "Broadway",
     genre: "Musical",
     venue: "Al Hirschfeld Theatre",
+    currentlyRunning: false, // closed 2026-08-30
     faceValue: 99,
     poster: {
       bg: "radial-gradient(circle at 50% 30%, #9d1923 0%, #2c0508 72%)",
@@ -334,6 +338,7 @@ const SHOWS: Show[] = [
     tier: "Broadway",
     genre: "Musical",
     venue: "Broadhurst Theatre",
+    currentlyRunning: false, // closed 2026-08-08
     faceValue: 99,
     poster: {
       bg: "linear-gradient(145deg, #5e278b 0%, #171447 100%)",
@@ -424,6 +429,7 @@ const SHOWS: Show[] = [
     tier: "Broadway",
     genre: "Play",
     venue: "Hudson Theatre",
+    currentlyRunning: false, // closed 2026-08-09
     faceValue: 89,
     poster: {
       bg: "#f3db35",
@@ -454,6 +460,7 @@ const SHOWS: Show[] = [
     tier: "Broadway",
     genre: "Play",
     venue: "Ethel Barrymore Theatre",
+    currentlyRunning: false, // closed 2026-07-26
     faceValue: 89,
     poster: {
       bg: "linear-gradient(160deg, #6d3f25 0%, #28180f 100%)",
@@ -484,6 +491,7 @@ const SHOWS: Show[] = [
     tier: "Broadway",
     genre: "Musical",
     venue: "St. James Theatre",
+    currentlyRunning: false, // closed 2026-09-20
     faceValue: 79,
     poster: {
       bg: "linear-gradient(180deg, #78b8d5 0%, #173d65 100%)",
@@ -499,6 +507,7 @@ const SHOWS: Show[] = [
     tier: "Broadway",
     genre: "Play",
     venue: "Booth Theatre",
+    currentlyRunning: false, // closed 2026-07-19
     faceValue: 89,
     poster: {
       bg: "linear-gradient(180deg, #f1efe8 0%, #d3cec1 100%)",
@@ -525,9 +534,139 @@ const SHOWS: Show[] = [
   },
 
   /*
+   * Fall 2026 Broadway arrivals in order of first preview, added 2026-11-11
+   * from Playbill's rush and lottery roundup (2026-11-09), TDF listings and
+   * the shows' own sites.
+   * faceValue is TDF's lowest full price, a deliberately conservative anchor.
+   * Posters render as typographic tiles.
+   */
+  {
+    slug: "paranormal-activity",
+    title: "Paranormal Activity",
+    tier: "Broadway",
+    genre: "Play",
+    venue: "August Wilson Theatre",
+    faceValue: 66,
+    poster: {
+      bg: "linear-gradient(180deg, #0f2326 0%, #050b0c 100%)",
+      fg: "#ff3b2f",
+      style: "condensed",
+      caption: "A New Story Live on Stage",
+      captionColor: "#5f9ea3",
+    },
+  },
+  {
+    slug: "other-desert-cities",
+    title: "Other Desert Cities",
+    tier: "Broadway",
+    genre: "Play",
+    venue: "Hudson Theatre",
+    faceValue: 110,
+    poster: {
+      bg: "linear-gradient(180deg, #2f7f86 0%, #1c4f57 100%)",
+      fg: "#f6dcc0",
+      style: "serif",
+      caption: "By Jon Robin Baitz",
+      captionColor: "#b9e0dc",
+    },
+  },
+  {
+    slug: "860",
+    title: "860",
+    tier: "Broadway",
+    genre: "Play",
+    venue: "Imperial Theatre",
+    faceValue: 99,
+    poster: {
+      bg: "linear-gradient(180deg, #1b2a4a 0%, #0c1426 100%)",
+      fg: "#f3e6c4",
+      style: "condensed",
+      caption: "Written & Performed by Billy Crystal",
+      captionColor: "#9fb0d0",
+    },
+  },
+  {
+    slug: "a-few-good-men",
+    title: "A Few Good Men",
+    tier: "Broadway",
+    genre: "Play",
+    venue: "Vivian Beaumont Theater",
+    faceValue: 58,
+    poster: {
+      bg: "linear-gradient(180deg, #1f2b22 0%, #0d140f 100%)",
+      fg: "#f1ede2",
+      style: "condensed",
+      caption: "By Aaron Sorkin",
+      captionColor: "#a3ad98",
+    },
+  },
+  {
+    slug: "wanted",
+    title: "Wanted",
+    tier: "Broadway",
+    genre: "Musical",
+    venue: "James Earl Jones Theatre",
+    faceValue: 49,
+    poster: {
+      bg: "linear-gradient(170deg, #8a3a1c 0%, #3f170b 100%)",
+      fg: "#f4dcae",
+      style: "serif",
+      caption: "A New American Musical",
+      captionColor: "#d9a066",
+    },
+  },
+  {
+    slug: "much-ado-about-nothing",
+    title: "Much Ado About Nothing",
+    tier: "Broadway",
+    genre: "Play",
+    venue: "Winter Garden Theatre",
+    faceValue: 74,
+    poster: {
+      bg: "linear-gradient(160deg, #f6d1dc 0%, #e48aa7 100%)",
+      fg: "#2a1020",
+      style: "serif",
+      caption: "By William Shakespeare",
+      captionColor: "#6d2a44",
+    },
+  },
+  {
+    slug: "galileo",
+    title: "Galileo",
+    tier: "Broadway",
+    genre: "Musical",
+    venue: "Shubert Theatre",
+    faceValue: 66,
+    poster: {
+      bg: "radial-gradient(120% 100% at 50% 15%, #2b2d6e 0%, #12123a 55%, #06061a 100%)",
+      fg: "#f2c14e",
+      style: "condensed",
+      caption: "A Rock Musical",
+      captionColor: "#9aa5e6",
+    },
+  },
+  {
+    slug: "inter-alia",
+    title: "Inter Alia",
+    tier: "Broadway",
+    genre: "Play",
+    venue: "Music Box Theatre",
+    faceValue: 84,
+    poster: {
+      bg: "linear-gradient(180deg, #f2f0ea 0%, #d9d5ca 100%)",
+      fg: "#7a1220",
+      style: "sans",
+      caption: "By Suzie Miller",
+      captionColor: "#5f5a52",
+    },
+  },
+
+  /*
    * Off-Broadway slate (Phase 12), verified against the July 2026 listings
    * (Playbill / NYTG / show sites, checked 2026-07-16). Long-runners first,
-   * then this month's openings. Posters render as typographic tiles.
+   * then that month's openings. Posters render as typographic tiles.
+   * Statuses re-checked 2026-11-11: the summer limited runs have closed and
+   * stay in the catalog (diary entries reference them) as not running.
    */
   {
     slug: "little-shop-of-horrors",
@@ -581,6 +720,7 @@ const SHOWS: Show[] = [
     tier: "Off-Broadway",
     genre: "Musical",
     venue: "New World Stages — Stage 3",
+    currentlyRunning: false, // closed 2026-10-11
     faceValue: 79,
     poster: {
       bg: "#f2d43c",
@@ -612,6 +752,7 @@ const SHOWS: Show[] = [
     tier: "Off-Broadway",
     genre: "Play",
     venue: "Housing Works Bookstore",
+    currentlyRunning: false, // closed 2026-08-09
     faceValue: 89,
     poster: {
       bg: "linear-gradient(180deg, #efe4cf 0%, #ddcba6 100%)",
@@ -658,6 +799,7 @@ const SHOWS: Show[] = [
     tier: "Off-Broadway",
     genre: "Play",
     venue: "Cherry Lane Theatre",
+    currentlyRunning: false, // closed 2026-09-20
     faceValue: 69,
     poster: {
       bg: "linear-gradient(180deg, #2c2440 0%, #191430 100%)",
@@ -673,6 +815,7 @@ const SHOWS: Show[] = [
     tier: "Off-Broadway",
     genre: "Play",
     venue: "Mitzi E. Newhouse Theater",
+    currentlyRunning: false, // closed 2026-08-30
     faceValue: 99,
     poster: {
       bg: "linear-gradient(180deg, #46215c 0%, #2a1138 100%)",
@@ -688,6 +831,7 @@ const SHOWS: Show[] = [
     tier: "Off-Broadway",
     genre: "Musical",
     venue: "Lucille Lortel Theatre",
+    currentlyRunning: false, // closed 2026-09-25
     faceValue: 89,
     poster: {
       bg: "#e9dcc8",
@@ -704,6 +848,7 @@ const SHOWS: Show[] = [
     tier: "Off-Broadway",
     genre: "Play",
     venue: "Linda Gross Theater",
+    currentlyRunning: false, // closed 2026-08-15
     faceValue: 69,
     poster: {
       bg: "linear-gradient(180deg, #5b6770 0%, #333d44 100%)",
@@ -719,6 +864,7 @@ const SHOWS: Show[] = [
     tier: "Off-Broadway",
     genre: "Musical",
     venue: "Perelman Performing Arts Center",
+    currentlyRunning: false, // closed 2026-08-02
     faceValue: 99,
     poster: {
       bg: "linear-gradient(170deg, #64152e 0%, #37081a 100%)",
@@ -735,6 +881,7 @@ const SHOWS: Show[] = [
     tier: "Off-Broadway",
     genre: "Musical",
     venue: "Laura Pels Theatre",
+    currentlyRunning: false, // closed 2026-08-22
     faceValue: 89,
     poster: {
       bg: "linear-gradient(180deg, #1d2c5e 0%, #0e1636 100%)",
@@ -750,6 +897,7 @@ const SHOWS: Show[] = [
     tier: "Off-Broadway",
     genre: "Play",
     venue: "Delacorte Theater",
+    currentlyRunning: false, // closed 2026-08-23
     faceValue: 0,
     poster: {
       bg: "linear-gradient(180deg, #1f4a33 0%, #0e2c1c 100%)",
@@ -765,6 +913,7 @@ const SHOWS: Show[] = [
     tier: "Off-Broadway",
     genre: "Musical",
     venue: "Playwrights Horizons",
+    currentlyRunning: false, // closed 2026-08-09
     faceValue: 59,
     poster: {
       bg: "linear-gradient(160deg, #b8541f 0%, #7a2f12 100%)",
@@ -781,6 +930,7 @@ const SHOWS: Show[] = [
     tier: "Off-Broadway",
     genre: "Play",
     venue: "Pershing Square Signature Center",
+    currentlyRunning: false, // closed 2026-10-04
     faceValue: 59,
     poster: {
       bg: "#101418",
