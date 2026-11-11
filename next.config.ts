@@ -41,7 +41,6 @@ const nextConfig: NextConfig = {
     qualities: [75, 85],
   },
   experimental: {
-    viewTransition: true,
     sri: { algorithm: "sha256" },
   },
   async headers() {
