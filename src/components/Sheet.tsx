@@ -55,6 +55,19 @@ export function Sheet({
       "select:not(:disabled)",
       '[tabindex]:not([tabindex="-1"])',
     ].join(",");
+    const focusableElements = (dialog: HTMLElement) =>
+      [...dialog.querySelectorAll<HTMLElement>(focusableSelector)].filter(
+        (element) =>
+          element.tabIndex >= 0 &&
+          !element.closest('[inert], [hidden], [aria-hidden="true"]') &&
+          element.getClientRects().length > 0 &&
+          getComputedStyle(element).visibility !== "hidden",
+      );
+    const onFocus = (event: FocusEvent) => {
+      const dialog = dialogRef.current;
+      if (!dialog || (event.target instanceof Node && dialog.contains(event.target))) return;
+      (focusableElements(dialog)[0] ?? dialog).focus();
+    };
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         e.preventDefault();
@@ -64,25 +77,22 @@ export function Sheet({
       if (e.key !== "Tab") return;
       const dialog = dialogRef.current;
       if (!dialog) return;
-      const focusable = [
-        ...dialog.querySelectorAll<HTMLElement>(focusableSelector),
-      ].filter((element) => !element.hasAttribute("hidden"));
+      const focusable = focusableElements(dialog);
+      // Move focus explicitly: Safari's keyboard preference can omit buttons
+      // and links from its native Tab order, bypassing endpoint-only traps.
+      e.preventDefault();
       if (focusable.length === 0) {
-        e.preventDefault();
         dialog.focus();
         return;
       }
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      if (e.shiftKey && document.activeElement === first) {
-        e.preventDefault();
-        last.focus();
-      } else if (!e.shiftKey && document.activeElement === last) {
-        e.preventDefault();
-        first.focus();
-      }
+      const index = focusable.indexOf(document.activeElement as HTMLElement);
+      const next = index < 0
+        ? (e.shiftKey ? focusable.length - 1 : 0)
+        : (index + (e.shiftKey ? -1 : 1) + focusable.length) % focusable.length;
+      focusable[next].focus();
     };
     document.addEventListener("keydown", onKey);
+    document.addEventListener("focusin", onFocus);
     document.body.style.overflow = "hidden";
     const frame = requestAnimationFrame(() => {
       const dialog = dialogRef.current;
@@ -110,6 +120,7 @@ export function Sheet({
     return () => {
       cancelAnimationFrame(frame);
       document.removeEventListener("keydown", onKey);
+      document.removeEventListener("focusin", onFocus);
       document.body.style.overflow = previousOverflow;
       for (const { element, inert, ariaHidden } of mutedSiblings) {
         element.inert = inert;
@@ -118,7 +129,7 @@ export function Sheet({
       }
       if (previousFocus?.isConnected) previousFocus.focus();
     };
-  }, [open]);
+  }, [open, web]);
 
   // Portal to <body>: callers render sheets inside styled containers (e.g.
   // WebNav's backdrop-blur header), which would otherwise become the

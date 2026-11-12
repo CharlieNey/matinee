@@ -301,12 +301,12 @@ function ActivityTimeline() {
             {item.kind === "diary" ? (
               <>
                 <span className="absolute left-0 top-1.5 size-2.5 rounded-full bg-espresso-raised" />
-                <h3 className="text-heading">
+                <h2 className="text-heading">
                   {performanceDate(item.entry.performanceDate).toLocaleDateString("en-US", {
                     month: "short",
                     day: "numeric",
                   })}
-                </h3>
+                </h2>
                 <p className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-body text-ink-soft">
                   Marked as attended
                   <SentimentChip sentiment={item.entry.sentiment} />
@@ -330,7 +330,7 @@ function ActivityTimeline() {
                     item.entry.yearMarker ? "top-10" : "top-1.5"
                   }`}
                 />
-                <h3 className="text-heading">{item.entry.date}</h3>
+                <h2 className="text-heading">{item.entry.date}</h2>
                 <p className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-body text-ink-soft">
                   {item.entry.action}
                   {item.entry.recommend && (
@@ -1038,19 +1038,21 @@ export default function ProfilePage() {
         onClose={() => setSheet(null)}
         title="Edit profile"
       >
-        <label className="mb-2 mt-6 block text-caption font-medium text-ink-soft">
+        <label htmlFor="profile-name" className="mb-2 mt-6 block text-caption font-medium text-ink-soft">
           Name
         </label>
         <input
+          id="profile-name"
           value={draftName}
           maxLength={TEXT_LIMITS.name}
           onChange={(e) => setDraftName(e.target.value)}
           className="h-12 w-full rounded-2xl bg-paper px-4 text-body text-ink outline-none transition-shadow focus:ring-2 focus:ring-espresso/15"
         />
-        <label className="mb-2 mt-5 block text-caption font-medium text-ink-soft">
+        <label htmlFor="profile-bio" className="mb-2 mt-5 block text-caption font-medium text-ink-soft">
           About you
         </label>
         <textarea
+          id="profile-bio"
           value={draftBio}
           maxLength={TEXT_LIMITS.bio}
           onChange={(e) => setDraftBio(e.target.value)}

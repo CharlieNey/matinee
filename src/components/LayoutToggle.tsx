@@ -62,13 +62,12 @@ export function LayoutToggle() {
   );
 
   return (
-    <div
-      role="group"
+    <aside
       aria-label="Layout mode"
       className="fixed bottom-5 right-5 z-50 hidden items-center gap-0.5 rounded-full border border-line bg-paper p-1 shadow-float lg:flex"
     >
       {segment("mobile", "Phone", Smartphone)}
       {segment("web", "Web", Monitor)}
-    </div>
+    </aside>
   );
 }

@@ -220,6 +220,7 @@ function LogEditor({
   );
   const [note, setNote] = useState(initialEntry?.note ?? "");
   const tagInputRef = useRef<HTMLInputElement>(null);
+  const photoInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (addingTag) tagInputRef.current?.focus();
@@ -463,12 +464,19 @@ function LogEditor({
                 </button>
               </div>
             ) : (
-              <label className="flex aspect-[3/4] w-[130px] cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border border-line text-ink transition-transform duration-150 active:scale-[0.98]">
-                <Plus className="size-6" strokeWidth={2} />
-                <span className="px-3 text-center text-body font-semibold leading-snug">
-                  Upload Photo
-                </span>
+              <div>
+                <button
+                  type="button"
+                  onClick={() => photoInputRef.current?.click()}
+                  className="flex aspect-[3/4] w-[130px] flex-col items-center justify-center gap-2 rounded-2xl border border-line text-ink transition-transform duration-150 active:scale-[0.98]"
+                >
+                  <Plus className="size-6" strokeWidth={2} />
+                  <span className="px-3 text-center text-body font-semibold leading-snug">
+                    Upload Photo
+                  </span>
+                </button>
                 <input
+                  ref={photoInputRef}
                   type="file"
                   accept="image/*"
                   aria-label="Upload a photo from the show"
@@ -482,7 +490,7 @@ function LogEditor({
                     });
                   }}
                 />
-              </label>
+              </div>
             )}
           </div>
 
