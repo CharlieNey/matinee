@@ -18,15 +18,11 @@ import { useToast } from "@/components/Toast";
 import { useApp } from "@/lib/store";
 import { Show } from "@/lib/shows";
 import { MAX_DIARY_TAGS, TEXT_LIMITS } from "@/lib/persistence";
+import { localDay, performanceDateError } from "@/lib/performanceDate";
 
 type Sentiment = "recommend" | "mixed" | "disliked";
 
 const PRESET_TAGS = ["First Preview", "Preview", "Opening Night"];
-
-function localDay(date = new Date()): string {
-  const pad = (value: number) => String(value).padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-}
 
 /** Downscale a picked photo (≤900px long edge, JPEG q0.8) to a data URL
  *  small enough to survive localStorage persistence. */
@@ -203,6 +199,8 @@ function LogEditor({
   const [performanceDate, setPerformanceDate] = useState(
     initialEntry?.performanceDate ?? localDay(),
   );
+  const [dateError, setDateError] = useState<string | null>(null);
+  const dateInputRef = useRef<HTMLInputElement>(null);
   const [seat, setSeat] = useState(initialEntry?.seat ?? "");
   const [sentiment, setSentiment] = useState<Sentiment>(
     initialEntry?.sentiment ?? "recommend",
@@ -251,8 +249,10 @@ function LogEditor({
   };
 
   const publish = () => {
-    if (!performanceDate) {
-      toast({ message: "Choose the performance date first" });
+    const error = performanceDateError(performanceDate);
+    setDateError(error);
+    if (error) {
+      dateInputRef.current?.focus();
       return;
     }
     const entry = {
@@ -326,15 +326,26 @@ function LogEditor({
               Performance date
             </span>
             <input
+              ref={dateInputRef}
               type="date"
               required
               max={localDay()}
               value={performanceDate}
-              onChange={(event) => setPerformanceDate(event.target.value)}
+              aria-invalid={Boolean(dateError)}
+              aria-describedby={dateError ? "performance-date-error" : undefined}
+              onChange={(event) => {
+                setPerformanceDate(event.target.value);
+                setDateError(null);
+              }}
               className="mt-0.5 w-full bg-transparent text-body text-ink outline-none"
             />
           </span>
         </label>
+        {dateError && (
+          <p id="performance-date-error" role="alert" className="py-3 text-caption text-vermilion">
+            {dateError}
+          </p>
+        )}
         <label className="flex items-center gap-4 py-4">
           <Armchair className="size-6 shrink-0" strokeWidth={1.8} />
           <span className="min-w-0 flex-1">
