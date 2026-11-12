@@ -238,9 +238,9 @@ function broadwayDirectLottery(
         channel: "email",
         notifiedAround: "shortly after the window closes",
       },
-      tips: [
-        "Broadway Direct entries actually open at 12:01 AM — set the alarm a minute past midnight, not midnight.",
-      ],
+      // No blanket opening-time tip: each show sets its own window (Wicked's
+      // official page, 2026-11-12: "open the day before at 9am and close the
+      // day before at 3PM"), and a 12:01 AM tip contradicted them.
     },
   );
 }
