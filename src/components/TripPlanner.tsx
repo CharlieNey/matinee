@@ -18,7 +18,7 @@ import {
   programKindLabel,
   programPlatformLabel,
 } from "@/lib/programs";
-import { buildTripPlan, TripDay, TripSlot } from "@/lib/trip";
+import { buildTripPlan, recommendedSlots, TripDay, TripSlot } from "@/lib/trip";
 import { useApp } from "@/lib/store";
 import { useNow } from "@/lib/useNow";
 
@@ -66,52 +66,24 @@ function sortedSlots(day: TripDay, isSaved: (slug: string) => boolean) {
   });
 }
 
-function recommendedSlots(
-  plan: TripDay[],
-  isSaved: (slug: string) => boolean,
-): { day: TripDay; slot: TripSlot }[] {
-  const candidates = plan.flatMap((day, dayIndex) =>
-    day.slots.map((slot) => ({ day, dayIndex, slot })),
-  );
-
-  candidates.sort((a, b) => {
-    const interested =
-      Number(isSaved(b.slot.show.slug)) - Number(isSaved(a.slot.show.slug));
-    if (interested !== 0) return interested;
-    if (a.dayIndex !== b.dayIndex) return a.dayIndex - b.dayIndex;
-    const advance = Number(isAdvanceEntry(b.slot)) - Number(isAdvanceEntry(a.slot));
-    if (advance !== 0) return advance;
-    if (a.slot.program.price !== b.slot.program.price) {
-      return a.slot.program.price - b.slot.program.price;
-    }
-    return a.slot.opensAt.getTime() - b.slot.opensAt.getTime();
-  });
-
-  const seenShows = new Set<string>();
-  const picks: { day: TripDay; slot: TripSlot }[] = [];
-  for (const candidate of candidates) {
-    if (seenShows.has(candidate.slot.show.slug)) continue;
-    seenShows.add(candidate.slot.show.slug);
-    picks.push(candidate);
-    if (picks.length === 5) break;
-  }
-  return picks;
-}
-
 function SlotRow({
   slot,
+  now,
   interested,
 }: {
   slot: TripSlot;
+  now: Date;
   interested: boolean;
 }) {
   const program: Program = slot.program;
+  const closed = slot.closesAt.getTime() <= now.getTime();
   return (
     <a
-      href={program.entryUrl}
+      href={closed ? undefined : program.entryUrl}
+      aria-disabled={closed || undefined}
       target="_blank"
       rel="noreferrer"
-      className="flex items-center gap-3 rounded-card bg-paper p-3 transition-transform duration-150 active:scale-[0.985]"
+      className={`flex items-center gap-3 rounded-card bg-paper p-3 transition-transform duration-150 active:scale-[0.985] ${closed ? "opacity-60" : ""}`}
     >
       <Poster show={slot.show} className="size-12 shrink-0 rounded-thumb" />
       <span className="min-w-0 flex-1">
@@ -135,7 +107,7 @@ function SlotRow({
       </span>
       <span className="shrink-0 text-right">
         <span className="block text-caption font-semibold text-ink">
-          {windowLabel(slot)}
+          {closed ? "Closed · " : ""}{windowLabel(slot)}
         </span>
         <span className="mt-0.5 block text-caption text-ink-soft">
           {program.price === 0 ? "Free" : `$${program.price}`}
@@ -244,8 +216,8 @@ export function TripPlanner() {
     [now, startOffset, nights],
   );
   const recommendations = useMemo(
-    () => (plan ? recommendedSlots(plan, isSaved) : []),
-    [plan, isSaved],
+    () => (plan && now ? recommendedSlots(plan, now, isSaved) : []),
+    [plan, now, isSaved],
   );
   const totalWindows = plan?.reduce((sum, day) => sum + day.slots.length, 0) ?? 0;
 
@@ -412,6 +384,7 @@ export function TripPlanner() {
                           <SlotRow
                             key={`${slot.program.showSlug}-${slot.program.kind}-${slot.program.platform}`}
                             slot={slot}
+                            now={now}
                             interested={isSaved(slot.show.slug)}
                           />
                         ))}
@@ -432,6 +405,7 @@ export function TripPlanner() {
                           <SlotRow
                             key={`${slot.program.showSlug}-${slot.program.kind}-${slot.program.platform}`}
                             slot={slot}
+                            now={now}
                             interested={isSaved(slot.show.slug)}
                           />
                         ))}

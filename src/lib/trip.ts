@@ -58,6 +58,44 @@ export function buildTripPlan(
   return days;
 }
 
+/** Rank only actionable windows, before deduplicating shows. */
+export function recommendedSlots(
+  plan: TripDay[],
+  now: Date,
+  isSaved: (slug: string) => boolean,
+): { day: TripDay; slot: TripSlot }[] {
+  const candidates = plan.flatMap((day, dayIndex) =>
+    day.slots
+      .filter((slot) => slot.closesAt.getTime() > now.getTime())
+      .map((slot) => ({ day, dayIndex, slot })),
+  );
+
+  candidates.sort((a, b) => {
+    const interested =
+      Number(isSaved(b.slot.show.slug)) - Number(isSaved(a.slot.show.slug));
+    if (interested !== 0) return interested;
+    if (a.dayIndex !== b.dayIndex) return a.dayIndex - b.dayIndex;
+    const advance = Number(b.slot.program.kind === "digital-lottery") -
+      Number(a.slot.program.kind === "digital-lottery");
+    if (advance !== 0) return advance;
+    if (a.slot.program.price !== b.slot.program.price) {
+      return a.slot.program.price - b.slot.program.price;
+    }
+    return a.slot.opensAt.getTime() - b.slot.opensAt.getTime();
+  });
+
+  const seenShows = new Set<string>();
+  const picks: { day: TripDay; slot: TripSlot }[] = [];
+  for (const candidate of candidates) {
+    if (seenShows.has(candidate.slot.show.slug)) continue;
+    seenShows.add(candidate.slot.show.slug);
+    picks.push(candidate);
+    if (picks.length === 5) break;
+  }
+  return picks;
+}
+
+
 /** Grouping for the day view: when does this window open, NYC time? */
 export function daypartOf(opensAt: Date): "morning" | "afternoon" | "evening" {
   const hour = Number(
