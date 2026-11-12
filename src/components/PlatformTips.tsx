@@ -36,7 +36,7 @@ export function PlatformTips({
     <>
       <button
         type="button"
-        aria-label={`Good to know — ${tips.length} platform tip${tips.length === 1 ? "" : "s"}`}
+        aria-label={labeled ? undefined : `Good to know — ${tips.length} platform tip${tips.length === 1 ? "" : "s"}`}
         onClick={() => setOpen(true)}
         className={
           labeled
@@ -50,10 +50,10 @@ export function PlatformTips({
           aria-hidden
         />
         {labeled && (
-          <>
-            Good to know
+          <span>
+            Good to know{" "}
             <span className="font-medium text-ink-soft">{tips.length}</span>
-          </>
+          </span>
         )}
       </button>
 

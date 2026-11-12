@@ -24,11 +24,9 @@ import {
   writeDiaryPhoto,
 } from "./diaryPhotos";
 import {
-  LEGACY_STORAGE_KEY,
-  parsePersistedState,
+  createPersistedStateStorage,
   PERSISTENCE_VERSION,
   PersistedState,
-  STORAGE_KEY,
 } from "./persistence";
 import { getShow, Show } from "./shows";
 
@@ -132,7 +130,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [attendedHidden, setAttendedHidden] = useState<Set<string>>(
     () => new Set(),
   );
-  const hydratedRef = useRef(false);
+  const storageRef = useRef<ReturnType<typeof createPersistedStateStorage> | null>(null);
   const [hydrated, setHydrated] = useState(false);
   const [metadataPersistenceError, setMetadataPersistenceError] =
     useState(false);
@@ -147,13 +145,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     queueMicrotask(async () => {
       if (cancelled) return;
       try {
-        const raw =
-          localStorage.getItem(STORAGE_KEY) ??
-          localStorage.getItem(LEGACY_STORAGE_KEY);
-        if (raw) {
-          const { state: data, legacyPhotos } = parsePersistedState(
-            JSON.parse(raw),
-          );
+        storageRef.current = createPersistedStateStorage(localStorage);
+        const parsed = storageRef.current.read();
+        if (parsed) {
+          const { state: data, legacyPhotos } = parsed;
           const seenFollows = new Set<string>();
           const nextFollows = data.alerts.flatMap((a) => {
             if (seenFollows.has(a.slug)) return [];
@@ -197,12 +192,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           setDiary(nextDiary);
         }
       } catch {
-        // Corrupted or unavailable storage: keep the session usable, but tell
-        // the user that their next change cannot be trusted to persist.
+        // Keep the session usable; the storage guard backs up unreadable data
+        // and prevents this fallback session from overwriting it.
         setMetadataPersistenceError(true);
       }
       if (cancelled) return;
-      hydratedRef.current = true;
       setHydrated(true);
     });
     return () => {
@@ -212,7 +206,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   // Persist on change (only once hydration has finished).
   useEffect(() => {
-    if (!hydratedRef.current) return;
+    if (!hydrated) return;
     const state: PersistedState = {
       version: PERSISTENCE_VERSION,
       alerts: follows.map((f) => ({
@@ -239,14 +233,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       })),
     };
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-      queueMicrotask(() => setMetadataPersistenceError(false));
+      const written = storageRef.current?.write(state) ?? false;
+      queueMicrotask(() => setMetadataPersistenceError(!written));
     } catch {
       // Storage full/unavailable: state stays session-only and the profile
       // offers a JSON export so the diary is still recoverable.
       queueMicrotask(() => setMetadataPersistenceError(true));
     }
-  }, [follows, saved, ranking, attendedExtra, attendedHidden, profile, diary]);
+  }, [hydrated, follows, saved, ranking, attendedExtra, attendedHidden, profile, diary]);
 
   const trackPhotoWrite = useCallback((operation: Promise<void>) => {
     void operation.then(

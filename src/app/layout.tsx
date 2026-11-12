@@ -33,9 +33,22 @@ export const metadata: Metadata = {
 
 /**
  * Stamps html[data-layout] before first paint so mode styling never flashes:
- * the visitor's saved choice, else web on desktop-sized viewports.
+ * the visitor's saved choice on desktop; phone below the switch's breakpoint.
+ * Resizing preserves the saved preference so widening restores their choice.
  */
-const LAYOUT_MODE_SCRIPT = `(function(){try{var m=localStorage.getItem("matinee-layout-v1")||localStorage.getItem("theatr-layout-v1");if(m!=="web"&&m!=="mobile"){m=matchMedia("(min-width:1024px)").matches?"web":"mobile"}document.documentElement.setAttribute("data-layout",m)}catch(e){document.documentElement.setAttribute("data-layout","mobile")}})()`;
+const LAYOUT_MODE_SCRIPT = `(function(){
+  var desktop = matchMedia("(min-width:1024px)");
+  function applyLayout() {
+    var mode = "mobile";
+    try {
+      var preferred = localStorage.getItem("matinee-layout-v1") || localStorage.getItem("theatr-layout-v1");
+      if (desktop.matches) mode = preferred === "mobile" ? "mobile" : "web";
+    } catch (e) {}
+    document.documentElement.setAttribute("data-layout", mode);
+  }
+  applyLayout();
+  desktop.addEventListener("change", applyLayout);
+})()`;
 
 export default function RootLayout({
   children,

@@ -55,6 +55,7 @@ import {
   BACKUP_FORMAT,
   parseDiaryBackup,
   PERSISTENCE_VERSION,
+  TEXT_LIMITS,
 } from "@/lib/persistence";
 import { DiaryEntry, useApp } from "@/lib/store";
 import { allShows, getShow, Show } from "@/lib/shows";
@@ -300,12 +301,12 @@ function ActivityTimeline() {
             {item.kind === "diary" ? (
               <>
                 <span className="absolute left-0 top-1.5 size-2.5 rounded-full bg-espresso-raised" />
-                <h3 className="text-heading">
+                <h2 className="text-heading">
                   {performanceDate(item.entry.performanceDate).toLocaleDateString("en-US", {
                     month: "short",
                     day: "numeric",
                   })}
-                </h3>
+                </h2>
                 <p className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-body text-ink-soft">
                   Marked as attended
                   <SentimentChip sentiment={item.entry.sentiment} />
@@ -329,7 +330,7 @@ function ActivityTimeline() {
                     item.entry.yearMarker ? "top-10" : "top-1.5"
                   }`}
                 />
-                <h3 className="text-heading">{item.entry.date}</h3>
+                <h2 className="text-heading">{item.entry.date}</h2>
                 <p className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-body text-ink-soft">
                   {item.entry.action}
                   {item.entry.recommend && (
@@ -792,13 +793,13 @@ export default function ProfilePage() {
   const attendedCandidates = allShows().filter((s) => !attendedSlugs.has(s.slug));
 
   return (
-    <main className="web:mx-auto web:grid web:max-w-[1160px] web:grid-cols-[380px_minmax(0,1fr)] web:items-start web:gap-8 web:px-6 web:pt-8">
+    <main className="web:mx-auto web:grid web:max-w-[1160px] web:grid-cols-[minmax(0,380px)_minmax(0,1fr)] web:items-start web:gap-8 web:px-6 web:pt-8">
       {/* Dark = identity: espresso header with a follow spot settled over
           the avatar + name; the gradient is the no-WebGL fallback.
           Web mode: the header becomes a sticky identity card in the left
           rail (DESIGN.md §10 — the espresso header reads as a card). */}
       <header
-        className="relative overflow-hidden px-4 pb-12 pt-4 text-white web:sticky web:top-24 web:rounded-card web:px-6 web:pb-8"
+        className="relative min-w-0 overflow-hidden px-4 pb-12 pt-4 text-white web:sticky web:top-24 web:rounded-card web:px-6 web:pb-8"
         style={{
           background:
             "linear-gradient(180deg, var(--color-espresso-glow) 0%, var(--color-espresso) 45%)",
@@ -915,7 +916,7 @@ export default function ProfilePage() {
         <button
           type="button"
           onClick={openEdit}
-          className="mt-4 block text-left text-body text-white/60 transition-opacity active:opacity-70"
+          className="mt-4 block max-w-full text-left text-body text-white/60 [overflow-wrap:anywhere] transition-opacity active:opacity-70"
         >
           {profile.bio ?? "Add a few words about yourself"}
         </button>
@@ -944,7 +945,7 @@ export default function ProfilePage() {
           gold top edge is the box-seat rail — the one gilt line in the app,
           where velvet meets ivory (DESIGN.md §13). Web mode: no overlap, no
           rail — it's the right column beside the card. */}
-      <div className="relative -mt-6 rounded-t-sheet border-t border-gold bg-cream web:mt-0 web:rounded-none web:border-t-0">
+      <div className="relative -mt-6 min-w-0 rounded-t-sheet border-t border-gold bg-cream web:mt-0 web:rounded-none web:border-t-0">
         {persistenceError && (
           <div role="alert" className="mx-4 mt-5 rounded-card bg-blush p-4">
             <p className="text-body font-semibold">Changes aren’t being saved</p>
@@ -1037,19 +1038,23 @@ export default function ProfilePage() {
         onClose={() => setSheet(null)}
         title="Edit profile"
       >
-        <label className="mb-2 mt-6 block text-caption font-medium text-ink-soft">
+        <label htmlFor="profile-name" className="mb-2 mt-6 block text-caption font-medium text-ink-soft">
           Name
         </label>
         <input
+          id="profile-name"
           value={draftName}
+          maxLength={TEXT_LIMITS.name}
           onChange={(e) => setDraftName(e.target.value)}
           className="h-12 w-full rounded-2xl bg-paper px-4 text-body text-ink outline-none transition-shadow focus:ring-2 focus:ring-espresso/15"
         />
-        <label className="mb-2 mt-5 block text-caption font-medium text-ink-soft">
+        <label htmlFor="profile-bio" className="mb-2 mt-5 block text-caption font-medium text-ink-soft">
           About you
         </label>
         <textarea
+          id="profile-bio"
           value={draftBio}
+          maxLength={TEXT_LIMITS.bio}
           onChange={(e) => setDraftBio(e.target.value)}
           placeholder="Add a few words about yourself"
           rows={3}

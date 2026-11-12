@@ -17,15 +17,12 @@ import { Poster } from "@/components/Poster";
 import { useToast } from "@/components/Toast";
 import { useApp } from "@/lib/store";
 import { Show } from "@/lib/shows";
+import { MAX_DIARY_TAGS, TEXT_LIMITS } from "@/lib/persistence";
+import { localDay, performanceDateError } from "@/lib/performanceDate";
 
 type Sentiment = "recommend" | "mixed" | "disliked";
 
 const PRESET_TAGS = ["First Preview", "Preview", "Opening Night"];
-
-function localDay(date = new Date()): string {
-  const pad = (value: number) => String(value).padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-}
 
 /** Downscale a picked photo (≤900px long edge, JPEG q0.8) to a data URL
  *  small enough to survive localStorage persistence. */
@@ -202,6 +199,8 @@ function LogEditor({
   const [performanceDate, setPerformanceDate] = useState(
     initialEntry?.performanceDate ?? localDay(),
   );
+  const [dateError, setDateError] = useState<string | null>(null);
+  const dateInputRef = useRef<HTMLInputElement>(null);
   const [seat, setSeat] = useState(initialEntry?.seat ?? "");
   const [sentiment, setSentiment] = useState<Sentiment>(
     initialEntry?.sentiment ?? "recommend",
@@ -219,19 +218,29 @@ function LogEditor({
   );
   const [note, setNote] = useState(initialEntry?.note ?? "");
   const tagInputRef = useRef<HTMLInputElement>(null);
+  const photoInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (addingTag) tagInputRef.current?.focus();
   }, [addingTag]);
 
-  const toggleTag = (tag: string) =>
+  const toggleTag = (tag: string) => {
+    if (!tags.includes(tag) && tags.length >= MAX_DIARY_TAGS) {
+      toast({ message: `Choose up to ${MAX_DIARY_TAGS} tags` });
+      return;
+    }
     setTags((prev) =>
       prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
     );
+  };
 
   const commitTagDraft = () => {
-    const tag = tagDraft.trim().replace(/^#\s*/, "");
+    const tag = tagDraft.trim().replace(/^#\s*/, "").trim();
     if (tag) {
+      if (!tags.includes(tag) && tags.length >= MAX_DIARY_TAGS) {
+        toast({ message: `Choose up to ${MAX_DIARY_TAGS} tags` });
+        return;
+      }
       setCustomTags((prev) => (prev.includes(tag) ? prev : [...prev, tag]));
       setTags((prev) => (prev.includes(tag) ? prev : [...prev, tag]));
     }
@@ -240,8 +249,10 @@ function LogEditor({
   };
 
   const publish = () => {
-    if (!performanceDate) {
-      toast({ message: "Choose the performance date first" });
+    const error = performanceDateError(performanceDate);
+    setDateError(error);
+    if (error) {
+      dateInputRef.current?.focus();
       return;
     }
     const entry = {
@@ -315,15 +326,26 @@ function LogEditor({
               Performance date
             </span>
             <input
+              ref={dateInputRef}
               type="date"
               required
               max={localDay()}
               value={performanceDate}
-              onChange={(event) => setPerformanceDate(event.target.value)}
+              aria-invalid={Boolean(dateError)}
+              aria-describedby={dateError ? "performance-date-error" : undefined}
+              onChange={(event) => {
+                setPerformanceDate(event.target.value);
+                setDateError(null);
+              }}
               className="mt-0.5 w-full bg-transparent text-body text-ink outline-none"
             />
           </span>
         </label>
+        {dateError && (
+          <p id="performance-date-error" role="alert" className="py-3 text-caption text-vermilion">
+            {dateError}
+          </p>
+        )}
         <label className="flex items-center gap-4 py-4">
           <Armchair className="size-6 shrink-0" strokeWidth={1.8} />
           <span className="min-w-0 flex-1">
@@ -332,7 +354,7 @@ function LogEditor({
             </span>
             <input
               value={seat}
-              maxLength={120}
+              maxLength={TEXT_LIMITS.seat}
               onChange={(event) => setSeat(event.target.value)}
               placeholder="Orchestra · Row B · Seat 102"
               className="mt-0.5 w-full bg-transparent text-body text-ink outline-none placeholder:text-ink-faint"
@@ -376,6 +398,7 @@ function LogEditor({
         <div className="p-4">
           <textarea
             value={thoughts}
+            maxLength={TEXT_LIMITS.thoughts}
             onChange={(e) => setThoughts(e.target.value)}
             aria-label="Public thoughts"
             placeholder="Write something..."
@@ -408,6 +431,7 @@ function LogEditor({
             <input
               ref={tagInputRef}
               value={tagDraft}
+              maxLength={TEXT_LIMITS.tag}
               onChange={(e) => setTagDraft(e.target.value)}
               onBlur={commitTagDraft}
               onKeyDown={(e) => {
@@ -451,12 +475,19 @@ function LogEditor({
                 </button>
               </div>
             ) : (
-              <label className="flex aspect-[3/4] w-[130px] cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border border-line text-ink transition-transform duration-150 active:scale-[0.98]">
-                <Plus className="size-6" strokeWidth={2} />
-                <span className="px-3 text-center text-body font-semibold leading-snug">
-                  Upload Photo
-                </span>
+              <div>
+                <button
+                  type="button"
+                  onClick={() => photoInputRef.current?.click()}
+                  className="flex aspect-[3/4] w-[130px] flex-col items-center justify-center gap-2 rounded-2xl border border-line text-ink transition-transform duration-150 active:scale-[0.98]"
+                >
+                  <Plus className="size-6" strokeWidth={2} />
+                  <span className="px-3 text-center text-body font-semibold leading-snug">
+                    Upload Photo
+                  </span>
+                </button>
                 <input
+                  ref={photoInputRef}
                   type="file"
                   accept="image/*"
                   aria-label="Upload a photo from the show"
@@ -470,7 +501,7 @@ function LogEditor({
                     });
                   }}
                 />
-              </label>
+              </div>
             )}
           </div>
 
@@ -500,6 +531,7 @@ function LogEditor({
       <section className={`${fieldCard} mt-4 p-4`}>
         <textarea
           value={note}
+          maxLength={TEXT_LIMITS.note}
           onChange={(e) => setNote(e.target.value)}
           aria-label="Private note"
           placeholder="Something to remember..."

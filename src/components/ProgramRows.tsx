@@ -183,6 +183,8 @@ function ProgramRow({
       </button>
 
       <div
+        inert={!open}
+        aria-hidden={!open}
         className="grid transition-[grid-template-rows] duration-200 ease-out"
         style={{ gridTemplateRows: open ? "1fr" : "0fr" }}
       >
