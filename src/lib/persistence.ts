@@ -8,6 +8,16 @@ export const STORAGE_KEY = "matinee-state-v1";
 export const LEGACY_STORAGE_KEY = "theatr-state-v1";
 export const PERSISTENCE_VERSION = 2 as const;
 export const BACKUP_FORMAT = "matinee-diary" as const;
+export const TEXT_LIMITS = {
+  name: 80,
+  handle: 80,
+  bio: 400,
+  thoughts: 10_000,
+  note: 10_000,
+  tag: 40,
+  seat: 120,
+} as const;
+export const MAX_DIARY_TAGS = 12;
 
 export type PersistedProfile = {
   name: string;
@@ -65,8 +75,10 @@ function text(value: unknown, max: number): string | null {
   return typeof value === "string" && value.length <= max ? value : null;
 }
 
-function nullableText(value: unknown, max: number): string | null {
-  return value === null || value === undefined ? null : text(value, max);
+// Free text can be repaired without discarding the diary. Structured values
+// (IDs, dates, slugs and photos) still use the strict validator above.
+function repairedText(value: unknown, max: number): string | null {
+  return typeof value === "string" ? value.slice(0, max) : null;
 }
 
 function stringList(value: unknown, maxItems = 200, maxLength = 120): string[] {
@@ -96,10 +108,10 @@ function calendarDay(value: unknown): string | null {
 function profile(value: unknown): PersistedProfile | null {
   const item = record(value);
   if (!item) return null;
-  const name = text(item.name, 80);
-  const handle = text(item.handle, 80);
+  const name = repairedText(item.name, TEXT_LIMITS.name);
+  const handle = repairedText(item.handle, TEXT_LIMITS.handle);
   if (!name || handle === null) return null;
-  return { name, handle, bio: nullableText(item.bio, 400) };
+  return { name, handle, bio: repairedText(item.bio, TEXT_LIMITS.bio) };
 }
 
 function photo(value: unknown): string | null {
@@ -131,12 +143,17 @@ function diaryEntry(value: unknown): PortableDiaryEntry | null {
     slug,
     loggedAt,
     performanceDate,
-    seat: text(item.seat, 120) ?? "",
+    seat: repairedText(item.seat, TEXT_LIMITS.seat) ?? "",
     sentiment,
-    thoughts: nullableText(item.thoughts, 10_000),
-    tags: stringList(item.tags, 12, 40),
+    thoughts: repairedText(item.thoughts, TEXT_LIMITS.thoughts),
+    tags: Array.isArray(item.tags)
+      ? item.tags
+          .filter((tag): tag is string => typeof tag === "string" && tag.length > 0)
+          .slice(0, MAX_DIARY_TAGS)
+          .map((tag) => tag.slice(0, TEXT_LIMITS.tag))
+      : [],
     visibility: item.visibility === "public" ? "public" : "private",
-    note: nullableText(item.note, 10_000),
+    note: repairedText(item.note, TEXT_LIMITS.note),
     photo: photo(item.photo),
   };
 }
@@ -195,6 +212,52 @@ export function parsePersistedState(value: unknown): ParsedPersistedState {
       })),
     },
     legacyPhotos,
+  };
+}
+
+/** Keep unreadable state intact, even if the user edits the fallback session.
+ * A failed read blocks writes for the lifetime of this storage session. */
+export function createPersistedStateStorage(
+  storage: Pick<Storage, "getItem" | "setItem">,
+) {
+  let readSucceeded = false;
+  const backedUp = new Map<string, string>();
+  const storedValue = () => {
+    const current = storage.getItem(STORAGE_KEY);
+    return current !== null
+      ? { key: STORAGE_KEY, raw: current }
+      : { key: LEGACY_STORAGE_KEY, raw: storage.getItem(LEGACY_STORAGE_KEY) };
+  };
+
+  return {
+    read(): ParsedPersistedState | null {
+      readSucceeded = false;
+      const { raw } = storedValue();
+      const parsed = raw === null ? null : parsePersistedState(JSON.parse(raw));
+      readSucceeded = true;
+      return parsed;
+    },
+    write(state: PersistedState, now = new Date()): boolean {
+      const { key, raw } = storedValue();
+      let unreadable = !readSucceeded;
+      if (raw !== null && !unreadable) {
+        try {
+          parsePersistedState(JSON.parse(raw));
+        } catch {
+          unreadable = true;
+          readSucceeded = false;
+        }
+      }
+      if (unreadable) {
+        if (raw !== null && backedUp.get(key) !== raw) {
+          storage.setItem(`${key}-backup-${now.toISOString()}`, raw);
+          backedUp.set(key, raw);
+        }
+        return false;
+      }
+      storage.setItem(STORAGE_KEY, JSON.stringify(state));
+      return true;
+    },
   };
 }
 

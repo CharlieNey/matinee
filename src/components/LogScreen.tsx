@@ -17,6 +17,7 @@ import { Poster } from "@/components/Poster";
 import { useToast } from "@/components/Toast";
 import { useApp } from "@/lib/store";
 import { Show } from "@/lib/shows";
+import { MAX_DIARY_TAGS, TEXT_LIMITS } from "@/lib/persistence";
 
 type Sentiment = "recommend" | "mixed" | "disliked";
 
@@ -224,14 +225,23 @@ function LogEditor({
     if (addingTag) tagInputRef.current?.focus();
   }, [addingTag]);
 
-  const toggleTag = (tag: string) =>
+  const toggleTag = (tag: string) => {
+    if (!tags.includes(tag) && tags.length >= MAX_DIARY_TAGS) {
+      toast({ message: `Choose up to ${MAX_DIARY_TAGS} tags` });
+      return;
+    }
     setTags((prev) =>
       prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
     );
+  };
 
   const commitTagDraft = () => {
-    const tag = tagDraft.trim().replace(/^#\s*/, "");
+    const tag = tagDraft.trim().replace(/^#\s*/, "").trim();
     if (tag) {
+      if (!tags.includes(tag) && tags.length >= MAX_DIARY_TAGS) {
+        toast({ message: `Choose up to ${MAX_DIARY_TAGS} tags` });
+        return;
+      }
       setCustomTags((prev) => (prev.includes(tag) ? prev : [...prev, tag]));
       setTags((prev) => (prev.includes(tag) ? prev : [...prev, tag]));
     }
@@ -332,7 +342,7 @@ function LogEditor({
             </span>
             <input
               value={seat}
-              maxLength={120}
+              maxLength={TEXT_LIMITS.seat}
               onChange={(event) => setSeat(event.target.value)}
               placeholder="Orchestra · Row B · Seat 102"
               className="mt-0.5 w-full bg-transparent text-body text-ink outline-none placeholder:text-ink-faint"
@@ -376,6 +386,7 @@ function LogEditor({
         <div className="p-4">
           <textarea
             value={thoughts}
+            maxLength={TEXT_LIMITS.thoughts}
             onChange={(e) => setThoughts(e.target.value)}
             aria-label="Public thoughts"
             placeholder="Write something..."
@@ -408,6 +419,7 @@ function LogEditor({
             <input
               ref={tagInputRef}
               value={tagDraft}
+              maxLength={TEXT_LIMITS.tag}
               onChange={(e) => setTagDraft(e.target.value)}
               onBlur={commitTagDraft}
               onKeyDown={(e) => {
@@ -500,6 +512,7 @@ function LogEditor({
       <section className={`${fieldCard} mt-4 p-4`}>
         <textarea
           value={note}
+          maxLength={TEXT_LIMITS.note}
           onChange={(e) => setNote(e.target.value)}
           aria-label="Private note"
           placeholder="Something to remember..."

@@ -55,6 +55,7 @@ import {
   BACKUP_FORMAT,
   parseDiaryBackup,
   PERSISTENCE_VERSION,
+  TEXT_LIMITS,
 } from "@/lib/persistence";
 import { DiaryEntry, useApp } from "@/lib/store";
 import { allShows, getShow, Show } from "@/lib/shows";
@@ -1042,6 +1043,7 @@ export default function ProfilePage() {
         </label>
         <input
           value={draftName}
+          maxLength={TEXT_LIMITS.name}
           onChange={(e) => setDraftName(e.target.value)}
           className="h-12 w-full rounded-2xl bg-paper px-4 text-body text-ink outline-none transition-shadow focus:ring-2 focus:ring-espresso/15"
         />
@@ -1050,6 +1052,7 @@ export default function ProfilePage() {
         </label>
         <textarea
           value={draftBio}
+          maxLength={TEXT_LIMITS.bio}
           onChange={(e) => setDraftBio(e.target.value)}
           placeholder="Add a few words about yourself"
           rows={3}
