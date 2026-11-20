@@ -23,7 +23,7 @@ import { Sheet } from "@/components/Sheet";
 import { ShowCard } from "@/components/ShowCard";
 import { cheapestProgram } from "@/lib/programs";
 import { useApp } from "@/lib/store";
-import { allShows, Show } from "@/lib/shows";
+import { allShows, runningShows, Show } from "@/lib/shows";
 import { boardIsToday } from "@/lib/tkts";
 import { useTkts } from "@/lib/useTkts";
 
@@ -144,9 +144,12 @@ export default function DiscoverPage() {
     return slugs;
   }, [tkts]);
 
+  // Search spans the whole catalog, closed productions included, so past
+  // shows stay findable; browsing (the grid, its counts, For you) is the
+  // current slate only.
   const catalog = allShows();
+  const nowPlaying = runningShows();
 
-  // Search spans the whole catalog (any circuit), independent of the chips.
   const q = query.trim().toLowerCase();
   const searching = q.length > 0;
   const searchResults = useMemo(
@@ -162,7 +165,7 @@ export default function DiscoverPage() {
   );
 
   const filtered = useMemo(() => {
-    let result = catalog;
+    let result = nowPlaying;
     if (circuit !== "All shows")
       result = result.filter((s) => s.tier === circuit);
     if (rushOnly)
@@ -171,11 +174,11 @@ export default function DiscoverPage() {
     if (cheapest)
       result = [...result].sort((a, b) => wayInPrice(a) - wayInPrice(b));
     return result;
-  }, [catalog, circuit, rushOnly, tktsOnly, cheapest, tktsToday]);
+  }, [nowPlaying, circuit, rushOnly, tktsOnly, cheapest, tktsToday]);
 
   // Faceted counts: the circuit sheet shows results with the other filters on.
   const circuitCounts = useMemo(() => {
-    let pool = catalog;
+    let pool = nowPlaying;
     if (rushOnly) pool = pool.filter((s) => cheapestProgram(s.slug) !== null);
     if (tktsOnly) pool = pool.filter((s) => tktsToday.has(s.slug));
     return Object.fromEntries(
@@ -186,7 +189,7 @@ export default function DiscoverPage() {
           : pool.filter((s) => s.tier === c).length,
       ]),
     );
-  }, [catalog, rushOnly, tktsOnly, tktsToday]);
+  }, [nowPlaying, rushOnly, tktsOnly, tktsToday]);
 
   const forYou = useMemo(() => {
     const taken = new Set([
@@ -194,8 +197,8 @@ export default function DiscoverPage() {
       ...attended.map((s) => s.slug),
       ...follows.map((f) => f.show.slug),
     ]);
-    return catalog.filter((s) => !taken.has(s.slug)).slice(0, 6);
-  }, [catalog, savedShows, attended, follows]);
+    return nowPlaying.filter((s) => !taken.has(s.slug)).slice(0, 6);
+  }, [nowPlaying, savedShows, attended, follows]);
 
   const reason = savedShows[0] ?? attended[0];
 

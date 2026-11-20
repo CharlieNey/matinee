@@ -4,7 +4,7 @@ import {
   programKindShortLabel,
   programsForShow,
 } from "@/lib/programs";
-import { Show } from "@/lib/shows";
+import { closingLabel, Show } from "@/lib/shows";
 import { Poster } from "./Poster";
 
 /**
@@ -23,6 +23,7 @@ export function ShowCard({
   /** On today's TKTS board (live, real-time — never demo time). */
   onTktsToday?: boolean;
 }) {
+  const closed = closingLabel(show);
   const program = cheapestProgram(show.slug);
   const otherWays = programsForShow(show.slug).length - 1;
 
@@ -45,7 +46,11 @@ export function ShowCard({
           {show.tier} · {show.genre}
         </p>
         <p className="mt-2.5 flex items-baseline gap-1.5">
-          {program ? (
+          {closed ? (
+            <span className="truncate text-caption text-ink-soft">
+              Closed {closed}
+            </span>
+          ) : program ? (
             <>
               <span className="truncate text-caption text-ink-soft">
                 {programKindShortLabel(program.kind)}

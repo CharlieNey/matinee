@@ -14,7 +14,7 @@ import {
   programKindLabel,
   programsForShow,
 } from "@/lib/programs";
-import { allShows, getShow } from "@/lib/shows";
+import { allShows, closingLabel, getShow } from "@/lib/shows";
 import { allTheaters, TICKETER_LABELS } from "@/lib/theaters";
 
 /** One program-page fact row: label, dot leader, value (DESIGN.md §13). */
@@ -42,9 +42,12 @@ export async function generateMetadata({
   const show = getShow(slug);
   if (!show) return {};
   const cheapest = cheapestProgram(slug);
-  const description = cheapest
-    ? `${programKindLabel(cheapest.kind)} from $${cheapest.price} — every verified way to see ${show.title} for less, and where the official box office is.`
-    : `Where the official box office is for ${show.title}, and every verified way to pay less.`;
+  const closed = closingLabel(show);
+  const description = closed
+    ? `${show.title} closed on ${closed}.`
+    : cheapest
+      ? `${programKindLabel(cheapest.kind)} from $${cheapest.price} — every verified way to see ${show.title} for less, and where the official box office is.`
+      : `Where the official box office is for ${show.title}, and every verified way to pay less.`;
   // openGraph is shallow-merged and fully overwritten per segment, so
   // re-attach the shared card here — otherwise og:image (and the
   // twitter:image that falls back to it) drop off show links.
@@ -72,7 +75,8 @@ export default async function ShowPage({
   const show = getShow(slug);
   if (!show) notFound();
 
-  const officialTickets = officialTicketsForShow(slug);
+  const closed = closingLabel(show);
+  const officialTickets = closed ? null : officialTicketsForShow(slug);
   const hasPrograms = programsForShow(slug).length > 0;
   // Broadway houses only — Off-Broadway venues aren't in the theater data,
   // so the house section simply doesn't render for them.
@@ -108,7 +112,9 @@ export default async function ShowPage({
                 {show.title}
               </h1>
               <p className="mt-1.5 text-caption text-ink-soft web:mt-3 web:text-body">
-                {show.faceValue > 0 ? (
+                {closed ? (
+                  <>Closed {closed}</>
+                ) : show.faceValue > 0 ? (
                   <>
                     Face value{" "}
                     <b className="font-semibold text-ink">${show.faceValue}</b>{" "}
