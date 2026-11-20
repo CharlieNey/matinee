@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { BackHeader } from "@/components/BackHeader";
-import { allPrograms } from "@/lib/programs";
+import { allPrograms, cheapestProgram } from "@/lib/programs";
+import { runningShows } from "@/lib/shows";
 import { allTheaters } from "@/lib/theaters";
 
 export const metadata = {
@@ -41,6 +42,16 @@ function Endpoint({ path }: { path: string }) {
 export default function AboutPage() {
   const programCount = allPrograms().length;
   const houseCount = allTheaters().length;
+  // Computed from the catalog so the claim is as fresh as the data.
+  const running = runningShows();
+  const under50 = running.filter(
+    (show) => (cheapestProgram(show.slug)?.price ?? Infinity) < 50,
+  ).length;
+  const faces = running
+    .map((show) => show.faceValue)
+    .filter((face) => face > 0)
+    .sort((a, b) => a - b);
+  const medianFace = faces[Math.floor(faces.length / 2)];
 
   return (
     <main className="px-4 pb-12 web:mx-auto web:max-w-[640px]">
@@ -49,14 +60,12 @@ export default function AboutPage() {
       <div className="mt-4">
         <Section title="The cheap seats exist. The interface doesn't.">
           <p>
-            Broadway just closed a record season — $1.91 billion in grosses,
-            an average paid admission around $131, celebrity plays running
-            $300–900 a seat. In the same season,{" "}
+            Of the {running.length} running shows Matinee tracks,{" "}
             <b className="font-semibold text-ink">
-              30 of 32 shows ran an official program that gets you in for
-              under $50
+              {under50} have an official way in for under $50
             </b>
-            : digital lotteries, box-office rush, standing room.
+            : digital lotteries, box-office rush, standing room. The median
+            box-office face value across the same shows is ${medianFace}.
           </p>
           <p>
             The catch is the interface. Those programs live on four or five
