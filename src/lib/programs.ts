@@ -967,6 +967,20 @@ export function etDayKey(date: Date): string {
   return etDayFormat.format(date);
 }
 
+/** New York wall-clock hour (0–23) of an instant. */
+export function etHour(date: Date): number {
+  return getZonedParts(date).hour;
+}
+
+/**
+ * The instant of `time` (HH:MM, New York wall clock) on the New York calendar
+ * day of `date`, shifted by `dayOffset` days. DST-safe: "08:00 tomorrow" is
+ * 8 AM local whichever offset tomorrow has.
+ */
+export function etWallClock(date: Date, time: string, dayOffset = 0): Date {
+  return zonedDate(calendarDate(getZonedParts(date), dayOffset), time);
+}
+
 export function programsForShow(showSlug: string): readonly Program[] {
   return PROGRAMS.filter((item) => item.showSlug === showSlug);
 }
