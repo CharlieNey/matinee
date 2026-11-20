@@ -1,15 +1,19 @@
 import { rateLimitResponse, rejectCrossOrigin } from "@/lib/rateLimit";
-import { pushBackendConfigured } from "@/lib/supabaseAdmin";
+import { getPushStore } from "@/lib/push/server";
 
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
   const crossOrigin = rejectCrossOrigin(request);
   if (crossOrigin) return crossOrigin;
-  if (pushBackendConfigured()) {
-    const limited = await rateLimitResponse(request, "client-error", 10, 60);
-    if (limited) return limited;
-  }
+  const limited = await rateLimitResponse(
+    request,
+    getPushStore(),
+    "client-error",
+    10,
+    60,
+  );
+  if (limited) return limited;
   const contentLength = Number(request.headers.get("content-length") ?? 0);
   if (contentLength > 12_000) {
     return Response.json({ error: "Payload too large" }, { status: 413 });
