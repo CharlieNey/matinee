@@ -1,3 +1,5 @@
+**Declined by Charlie on 2026-11-20. Nothing from this proposal will be built.**
+
 # Proposal: House Lights
 
 A dark-stage look borrowed from the personal-site concept: the house at
