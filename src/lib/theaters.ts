@@ -1,4 +1,4 @@
-import { allShows, Show } from "./shows";
+import { runningShows, Show } from "./shows";
 
 /**
  * Every Broadway house (all 41), hand-curated like the rest of the project's
@@ -136,9 +136,7 @@ const THEATERS: readonly Theater[] = [
 ];
 
 const showByVenue = new Map<string, Show>(
-  allShows()
-    .filter((show) => show.currentlyRunning !== false)
-    .map((show) => [show.venue, show]),
+  runningShows().map((show) => [show.venue, show]),
 );
 
 export function allTheaters(): readonly Theater[] {

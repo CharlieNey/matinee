@@ -1,7 +1,7 @@
 import { RushFeed } from "@/components/RushFeed";
 import { formatCheckedLong } from "@/lib/contact";
 import { allPrograms, programsOldestVerified } from "@/lib/programs";
-import { allShows } from "@/lib/shows";
+import { runningShows } from "@/lib/shows";
 
 export const metadata = {
   title: "Rush & Lottery",
@@ -13,9 +13,7 @@ export const metadata = {
 export default function RushPage() {
   // Phase 12: the catalog spans Broadway and Off-Broadway, so the checked
   // count does too — it must never read smaller than the programs count.
-  const productionCount = allShows().filter(
-    (show) => show.currentlyRunning !== false,
-  ).length;
+  const productionCount = runningShows().length;
   const programs = allPrograms();
   const programShowCount = new Set(programs.map((program) => program.showSlug))
     .size;

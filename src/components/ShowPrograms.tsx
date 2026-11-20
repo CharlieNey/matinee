@@ -4,12 +4,32 @@ import { PlatformTips } from "@/components/PlatformTips";
 import { ProgramRows } from "@/components/ProgramRows";
 import { TktsShowRow } from "@/components/TktsBoard";
 import { getProgramStatus, programsForShow } from "@/lib/programs";
-import { Show } from "@/lib/shows";
+import { closingLabel, Show } from "@/lib/shows";
 import { useNow } from "@/lib/useNow";
 
 export function ShowPrograms({ show }: { show: Show }) {
   const now = useNow();
   const programs = programsForShow(show.slug);
+  const closed = closingLabel(show);
+
+  if (closed) {
+    return (
+      <section
+        id="ways-to-save"
+        className="mt-4 scroll-mt-20 px-4 web:px-6"
+      >
+        <div className="rule-double" aria-hidden />
+        <h2 className="eyebrow mt-7">Ways to save</h2>
+        <div className="mt-4 rounded-card bg-paper px-4 py-5">
+          <p className="text-body font-semibold">This production has closed</p>
+          <p className="mt-1 text-caption text-ink-soft">
+            Its final performance was {closed}. Rush and lottery listings come
+            down when a show closes.
+          </p>
+        </div>
+      </section>
+    );
+  }
 
   if (programs.length === 0) {
     return (

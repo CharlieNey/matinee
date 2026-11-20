@@ -9,8 +9,12 @@ export type Show = {
   /** Schema insurance for a future second market (PLAN.md Phase 12); every
    *  current row is NYC — treat absence as "nyc". */
   market?: "nyc";
-  /** False for retained catalog entries that are not in the current slate. */
-  currentlyRunning?: boolean;
+  /**
+   * Final performance (YYYY-MM-DD) of a production that has closed. Closed
+   * shows stay in the catalog so diaries and shared links keep resolving,
+   * but they leave the browse grid and carry no programs.
+   */
+  closedOn?: string;
   /** Typical box-office price — the savings anchor for rush/lottery math. */
   faceValue: number;
   poster: {
@@ -47,7 +51,7 @@ const SHOWS: Show[] = [
     tier: "Off-Broadway",
     genre: "Musical",
     venue: 'New World Stages',
-    currentlyRunning: false, // closed 2026-10-11
+    closedOn: "2026-10-11",
     faceValue: 79,
     poster: {
       bg: "linear-gradient(165deg, #22315c 0%, #131b3a 70%, #0c1229 100%)",
@@ -124,7 +128,7 @@ const SHOWS: Show[] = [
     tier: "Broadway",
     genre: "Musical",
     venue: 'Imperial Theatre',
-    currentlyRunning: false, // closed 2026-06-21
+    closedOn: "2026-06-21",
     faceValue: 129,
     poster: {
       bg: "linear-gradient(180deg, #1a1a1f 0%, #0b0b0e 100%)",
@@ -170,7 +174,7 @@ const SHOWS: Show[] = [
     tier: "Broadway",
     genre: "Musical",
     venue: 'Vivian Beaumont Theater',
-    currentlyRunning: false, // closed 2026-08-16
+    closedOn: "2026-08-16",
     faceValue: 109,
     poster: {
       bg: "#c8102e",
@@ -186,7 +190,7 @@ const SHOWS: Show[] = [
     tier: "Broadway",
     genre: "Play",
     venue: 'Winter Garden Theatre',
-    currentlyRunning: false, // closed 2026-08-09
+    closedOn: "2026-08-09",
     faceValue: 139,
     poster: {
       bg: "#efe9dc",
@@ -247,7 +251,7 @@ const SHOWS: Show[] = [
     tier: "Broadway",
     genre: "Musical",
     venue: "Al Hirschfeld Theatre",
-    currentlyRunning: false, // closed 2026-08-30
+    closedOn: "2026-08-30",
     faceValue: 99,
     poster: {
       bg: "radial-gradient(circle at 50% 30%, #9d1923 0%, #2c0508 72%)",
@@ -338,7 +342,7 @@ const SHOWS: Show[] = [
     tier: "Broadway",
     genre: "Musical",
     venue: "Broadhurst Theatre",
-    currentlyRunning: false, // closed 2026-08-08
+    closedOn: "2026-08-08",
     faceValue: 99,
     poster: {
       bg: "linear-gradient(145deg, #5e278b 0%, #171447 100%)",
@@ -429,7 +433,7 @@ const SHOWS: Show[] = [
     tier: "Broadway",
     genre: "Play",
     venue: "Hudson Theatre",
-    currentlyRunning: false, // closed 2026-08-09
+    closedOn: "2026-08-09",
     faceValue: 89,
     poster: {
       bg: "#f3db35",
@@ -460,7 +464,7 @@ const SHOWS: Show[] = [
     tier: "Broadway",
     genre: "Play",
     venue: "Ethel Barrymore Theatre",
-    currentlyRunning: false, // closed 2026-07-26
+    closedOn: "2026-07-26",
     faceValue: 89,
     poster: {
       bg: "linear-gradient(160deg, #6d3f25 0%, #28180f 100%)",
@@ -491,7 +495,7 @@ const SHOWS: Show[] = [
     tier: "Broadway",
     genre: "Musical",
     venue: "St. James Theatre",
-    currentlyRunning: false, // closed 2026-09-20
+    closedOn: "2026-09-20",
     faceValue: 79,
     poster: {
       bg: "linear-gradient(180deg, #78b8d5 0%, #173d65 100%)",
@@ -507,7 +511,7 @@ const SHOWS: Show[] = [
     tier: "Broadway",
     genre: "Play",
     venue: "Booth Theatre",
-    currentlyRunning: false, // closed 2026-07-19
+    closedOn: "2026-07-19",
     faceValue: 89,
     poster: {
       bg: "linear-gradient(180deg, #f1efe8 0%, #d3cec1 100%)",
@@ -720,7 +724,7 @@ const SHOWS: Show[] = [
     tier: "Off-Broadway",
     genre: "Musical",
     venue: "New World Stages — Stage 3",
-    currentlyRunning: false, // closed 2026-10-11
+    closedOn: "2026-10-11",
     faceValue: 79,
     poster: {
       bg: "#f2d43c",
@@ -752,7 +756,7 @@ const SHOWS: Show[] = [
     tier: "Off-Broadway",
     genre: "Play",
     venue: "Housing Works Bookstore",
-    currentlyRunning: false, // closed 2026-08-09
+    closedOn: "2026-08-09",
     faceValue: 89,
     poster: {
       bg: "linear-gradient(180deg, #efe4cf 0%, #ddcba6 100%)",
@@ -799,7 +803,7 @@ const SHOWS: Show[] = [
     tier: "Off-Broadway",
     genre: "Play",
     venue: "Cherry Lane Theatre",
-    currentlyRunning: false, // closed 2026-09-20
+    closedOn: "2026-09-20",
     faceValue: 69,
     poster: {
       bg: "linear-gradient(180deg, #2c2440 0%, #191430 100%)",
@@ -815,7 +819,7 @@ const SHOWS: Show[] = [
     tier: "Off-Broadway",
     genre: "Play",
     venue: "Mitzi E. Newhouse Theater",
-    currentlyRunning: false, // closed 2026-08-30
+    closedOn: "2026-08-30",
     faceValue: 99,
     poster: {
       bg: "linear-gradient(180deg, #46215c 0%, #2a1138 100%)",
@@ -831,7 +835,7 @@ const SHOWS: Show[] = [
     tier: "Off-Broadway",
     genre: "Musical",
     venue: "Lucille Lortel Theatre",
-    currentlyRunning: false, // closed 2026-09-25
+    closedOn: "2026-09-25",
     faceValue: 89,
     poster: {
       bg: "#e9dcc8",
@@ -848,7 +852,7 @@ const SHOWS: Show[] = [
     tier: "Off-Broadway",
     genre: "Play",
     venue: "Linda Gross Theater",
-    currentlyRunning: false, // closed 2026-08-15
+    closedOn: "2026-08-15",
     faceValue: 69,
     poster: {
       bg: "linear-gradient(180deg, #5b6770 0%, #333d44 100%)",
@@ -864,7 +868,7 @@ const SHOWS: Show[] = [
     tier: "Off-Broadway",
     genre: "Musical",
     venue: "Perelman Performing Arts Center",
-    currentlyRunning: false, // closed 2026-08-02
+    closedOn: "2026-08-02",
     faceValue: 99,
     poster: {
       bg: "linear-gradient(170deg, #64152e 0%, #37081a 100%)",
@@ -881,7 +885,7 @@ const SHOWS: Show[] = [
     tier: "Off-Broadway",
     genre: "Musical",
     venue: "Laura Pels Theatre",
-    currentlyRunning: false, // closed 2026-08-22
+    closedOn: "2026-08-22",
     faceValue: 89,
     poster: {
       bg: "linear-gradient(180deg, #1d2c5e 0%, #0e1636 100%)",
@@ -897,7 +901,7 @@ const SHOWS: Show[] = [
     tier: "Off-Broadway",
     genre: "Play",
     venue: "Delacorte Theater",
-    currentlyRunning: false, // closed 2026-08-23
+    closedOn: "2026-08-23",
     faceValue: 0,
     poster: {
       bg: "linear-gradient(180deg, #1f4a33 0%, #0e2c1c 100%)",
@@ -913,7 +917,7 @@ const SHOWS: Show[] = [
     tier: "Off-Broadway",
     genre: "Musical",
     venue: "Playwrights Horizons",
-    currentlyRunning: false, // closed 2026-08-09
+    closedOn: "2026-08-09",
     faceValue: 59,
     poster: {
       bg: "linear-gradient(160deg, #b8541f 0%, #7a2f12 100%)",
@@ -930,7 +934,7 @@ const SHOWS: Show[] = [
     tier: "Off-Broadway",
     genre: "Play",
     venue: "Pershing Square Signature Center",
-    currentlyRunning: false, // closed 2026-10-04
+    closedOn: "2026-10-04",
     faceValue: 59,
     poster: {
       bg: "#101418",
@@ -946,10 +950,29 @@ export function allShows(): Show[] {
   return SHOWS;
 }
 
-export function currentBroadwayShows(): Show[] {
-  return SHOWS.filter(
-    (show) => show.tier === "Broadway" && show.currentlyRunning !== false,
-  );
+export function isRunning(show: Show): boolean {
+  return show.closedOn === undefined;
+}
+
+const closingFormat = new Intl.DateTimeFormat("en-US", {
+  timeZone: "UTC",
+  month: "long",
+  day: "numeric",
+  year: "numeric",
+});
+
+/** "October 11, 2026", or null for a running show. */
+export function closingLabel(show: Show): string | null {
+  return show.closedOn
+    ? closingFormat.format(new Date(`${show.closedOn}T12:00:00Z`))
+    : null;
+}
+
+const RUNNING_SHOWS = SHOWS.filter(isRunning);
+
+/** The current slate: every production that has not closed. */
+export function runningShows(): Show[] {
+  return RUNNING_SHOWS;
 }
 
 export function getShow(slug: string): Show | undefined {
