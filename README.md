@@ -3,8 +3,14 @@
 [![CI](https://github.com/CharlieNey/matinee/actions/workflows/ci.yml/badge.svg)](https://github.com/CharlieNey/matinee/actions/workflows/ci.yml)
 [![Production health](https://github.com/CharlieNey/matinee/actions/workflows/production-health.yml/badge.svg)](https://github.com/CharlieNey/matinee/actions/workflows/production-health.yml)
 
-**Matinee** — the live board for Broadway rush, lotteries, and cheap seats,
-with a built-in show diary. Live at **[matinee.nyc](https://matinee.nyc)**.
+**The live board for Broadway rush, lotteries and cheap seats, with a show
+diary.** Live at **[matinee.nyc](https://matinee.nyc)**.
+
+Broadway runs dozens of official ways in for $10 to $60: digital lotteries,
+box-office rush, student rush, standing room, the TKTS booth. They live on
+half a dozen platforms and box offices, and open and close at odd hours. Matinee puts
+them on one board with live countdowns in New York time, tells you which
+official seller each show uses, and links out to it. It never sells tickets.
 
 Matinee began in July 2026 as a design study of the Theatr iOS app, a
 face-value ticket resale app I use, and grew into its own product around a
@@ -14,16 +20,9 @@ the official seller; Matinee is the index, never the checkout. (The study's
 reference screenshots are Theatr's copyrighted material and are not
 distributed with this repo.)
 
-Presents as a centered 430px phone experience by default, with a responsive
-web layout available from the desktop layout switch. Catalog and program data
-are curated facts; personal follows, diary entries, and collections persist in
-versioned browser storage. Diary photos use IndexedDB instead of consuming the
-small `localStorage` quota. Deadline push notifications are the hosted backend
-feature.
-
 ## Screenshots
 
-Phone layout, from the live site.
+Phone layout. A desktop layout is one toggle away on wide screens.
 
 <p>
   <img src="docs/screenshots/01-discover.png" width="23%" alt="Discover: rush banner and the show catalog" />
@@ -32,7 +31,61 @@ Phone layout, from the live site.
   <img src="docs/screenshots/04-district-map.png" width="23%" alt="The District: every Broadway house on one map" />
 </p>
 
-## Getting started
+## What's in it
+
+| Route | Screen |
+|---|---|
+| `/` | Discover: the running catalog, each card answering "cheapest way in" ("Lottery **$40**"), with circuit, rush-and-lottery, on-TKTS-today and cheapest filters |
+| `/rush` | Rush & Lottery: every program grouped by open now, later today and coming up, with live countdowns and deep links to the entry pages |
+| `/shows/[slug]` | A show as an answer sheet: official seller with an all-in fee estimate, every way to save with claim windows, today's TKTS row, and Follow for deadline pushes |
+| `/district` | Every Broadway house on one map, colored by owner and ticketing platform, with live halos where a window is open |
+| `/trip` | Trip mode: a day-by-day plan of rush, lottery and TKTS moves for a visit |
+| `/notify` | Shows you follow and the deadline-push opt-in |
+| `/profile` | Diary timeline, lottery record (entries, wins, saved vs face value) and collection |
+| `/log/[slug]` | Log a show: date, seat, sentiment, thoughts, tags, photo |
+| `/wrapped` | A shareable season recap from the diary and lottery log |
+| `/about` | Why the data is hand-curated, who sells which theater, open data endpoints |
+
+## How it works
+
+**[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** is the five-minute version:
+data model, how program windows are computed, storage, push, CI and the hourly
+production health check, and what was deliberately not built.
+
+In one paragraph: there is no API for any of this, so shows, programs and the
+41 theaters are curated TypeScript data (`src/lib/shows.ts`,
+`src/lib/programs.ts`, `src/lib/theaters.ts`) with a verification date on every
+row. A pure schedule engine turns each program's weekly windows into
+"open, closes in 23 min" in New York time. Personal data (diary, follows,
+lottery log) stays in versioned browser storage; there are no accounts.
+Supabase holds only push subscriptions. GitHub Actions runs the push evaluator
+every 15 minutes and calls `/api/health` hourly, which fails if any program
+row is more than 14 days unverified.
+
+Stack: Next.js 16 (App Router), React 19, TypeScript, Tailwind v4, Motion,
+Supabase, `web-push`, Vercel, Vitest, Playwright. `DESIGN.md` is the design
+system; `PLAN.md` is the product log, phase by phase.
+
+## What was hard
+
+- **No single source of truth for Broadway tickets.** Ticketing splits by
+  theater owner and most of it has no public API, so the catalog is curated by
+  hand and the app tells you where each show's official box office is.
+  Background in `RESEARCH.md` and `DATA.md`.
+- **Programs that open and close on schedules.** A lottery can open at
+  midnight and close a day later; Hamilton's runs Friday to Thursday; a rush
+  line ends when tickets run out. The engine models weekly windows with day
+  offsets in New York wall-clock time, correct across daylight saving.
+- **Stale data is the failure mode.** Every program carries a verified date. A
+  row that can't be re-confirmed keeps its old date and reads as unverified,
+  and `/api/health` turns the hourly check red.
+- **A local-first diary that never loses data.** Entries live in versioned
+  `localStorage`, photos in IndexedDB, with validated import and export.
+  Unreadable storage is backed up rather than overwritten.
+- **Static pages under a strict CSP.** A static Content-Security-Policy plus
+  Subresource Integrity keeps every page statically rendered and cacheable.
+
+## Running it
 
 ```bash
 npm install
@@ -41,158 +94,55 @@ npm run check      # lint + types + unit tests + production build
 npm run test:e2e   # Playwright journeys; run `npm run build` first
 ```
 
-Diary export, validated import/restore, and reset controls live in Profile →
-Settings. To reset all prototype state manually, clear the `matinee-state-v1`
-key in localStorage and the `matinee-diary` IndexedDB database (plus the legacy
-`theatr-state-v1` key, which is still read as a migration fallback).
+Push notifications need the Supabase and VAPID settings in `.env.example`
+(setup below). To reset local
+state, use Profile → Settings, or clear the `matinee-state-v1` and
+`matinee-lottery-log-v1` keys in `localStorage` and the `matinee-diary`
+IndexedDB database.
 
-## Screens
+## Quality and operations
 
-| Route | Screen |
-|---|---|
-| `/` | Discover, the home — rush banner, the full catalog as a browse grid where every card answers "cheapest way in" ("Digital lottery **$40**"), circuit / rush & lottery / on-TKTS-today / cheapest filters with faceted counts, plus Interested / Attended / For you shelves |
-| `/shows/[slug]` | The show as an answer sheet — official-ticketer card with all-in fee estimate, "Ways to save" (rush/lottery programs, claim windows, platform tips, TKTS row), and a **Follow** push CTA |
-| `/notify` | Your Watches — deadline-push opt-in and the shows you follow, each with what its windows are doing next ("Digital lottery opens 12:01 AM") |
-| `/rush` | Rush & Lottery — curated program feed grouped by Open now / Later today / Coming up, live countdowns, deep links to entry pages |
-| `/district` | The district map — every Broadway house colored by owner→ticketer, live program halos, TKTS booth landmark |
-| `/trip` | Trip mode — day-by-day rush/lottery/TKTS plan for a visit window |
-| `/profile` | Espresso identity header (edit profile, settings, share), Activity / Record / Collection tabs; Record is the lottery log as stats — entries, wins, streak, saved vs face |
-| `/wrapped` | Season Wrapped — shareable recap generated from the diary and lottery log |
-| `/log/[slug]` | Create or edit a diary entry — performance date, optional seat, sentiment, thoughts, tags, photo, sharing visibility, and private note |
+- **CI** (`.github/workflows/ci.yml`): lint, TypeScript, Vitest (schedule
+  engine, data integrity, persistence, TKTS parsing, the health endpoint),
+  `npm audit`, production build, Playwright in Chromium and WebKit, and an axe
+  accessibility scan.
+- **Production health** (`production-health.yml`): hourly `GET /api/health`,
+  which returns 503 if the database or TKTS is down or any program is more than
+  14 days unverified.
+- **Data refresh**: re-check each program against the show's own site and TDF,
+  update the row and its `lastVerified`, and leave the old date on anything
+  you couldn't confirm. `npm test` catches broken slugs, duplicate programs,
+  bad times and programs left on closed shows.
 
-## Architecture
+## Deadline pushes: setup
 
-- **Next.js 16** (App Router, Turbopack) + **React 19** + **Tailwind v4** +
-  [`motion`](https://motion.dev) + [`lucide-react`](https://lucide.dev).
-- **`DESIGN.md` is the design source of truth** — palette, type scale, radii,
-  motion rules, and component specs, which began from the original design
-  study and have since diverged. Tokens are wired as Tailwind `@theme` variables in
-  `src/app/globals.css` (`bg-vermilion`, `text-ink-soft`, `rounded-card`,
-  `text-display`, …). Read it before building any new screen.
-- **`src/lib/shows.ts`** — the show catalog (title, tier, genre, venue, face
-  value, poster palette). **`src/lib/programs.ts`** — the curated
-  rush/lottery dataset and its status engine. **`src/lib/data.ts`** — follow
-  seeds, activity feed, and collection seeds.
-- **`src/lib/store.tsx`** — client context store: follows, bookmarks, editable
-  diary entries, profile edits. Metadata persists as a validated, versioned
-  `localStorage` document; photos live in IndexedDB and migrate there from old
-  state automatically. Profile settings can export, validate and restore, or
-  clear the diary. Shows serialize as slugs and rehydrate via `getShow` so
-  stale data cannot render broken. Marketplace-era blobs still migrate.
-- **`src/components/`** — the component kit: `Sheet` (bottom sheet), `Toast`
-  (with undo actions and live announcements), responsive `Poster`, four-slot
-  `TabBar` (Discover · Log · Rush · Profile), `ShowCard`
-  (catalog card with the cheapest-way-in line), `LogScreen`, `Toggle`,
-  `ShowPicker`, etc.
-- **Motion** is deliberately iOS-quiet (DESIGN.md §7): 200–300ms ease-out
-  sheets and page transitions, staggered card reveals, one-shot count-ups.
-  `prefers-reduced-motion` is respected globally.
-- **Production foundation** — a static Content Security Policy and SRI preserve
-  static rendering; structured client/server errors land in Vercel Logs;
-  `/api/health` checks catalog freshness, Supabase, and TKTS; public mutation
-  routes use durable Supabase rate limits.
-
-## What was hard
-
-- **No single source of truth for Broadway tickets.** Ticketing splits by theater
-  owner and most of it has no public API, so the show and program catalog is
-  curated by hand (`src/lib/shows.ts`, `src/lib/programs.ts`), and the app tells
-  you where each show's official box office is. Background in `PLAN.md` and
-  `DATA.md`.
-- **Programs that open and close on schedules.** A lottery can open at midnight
-  and close a day later, and a rush line can end when supplies run out.
-  The status engine in `src/lib/programs.ts` models weekday windows with day
-  offsets in New York time, and `src/lib/programs.test.ts` covers it.
-- **Stale data is the failure mode.** Every program carries a verified date, and
-  `/api/health` returns 503 if any program is more than 14 days old, so the
-  hourly production-health workflow flags a stale catalog.
-- **Local-first diary without losing data.** Entries live in versioned
-  `localStorage`, photos in IndexedDB, with validated import and export. Unreadable
-  storage is backed up rather than overwritten (`src/lib/persistence.ts`).
-- **Static pages with a strict CSP.** A static Content Security Policy plus SRI
-  keeps pages statically rendered; see `next.config.ts`.
-
-## Quality and delivery
-
-`.github/workflows/ci.yml` runs lint, TypeScript, Vitest, a production build,
-the production dependency audit, Playwright journeys in Chromium/WebKit, and
-automated serious/critical accessibility checks. Vercel's Git integration can
-attach a preview deployment to every pull request; `main` remains the production
-branch. Failed browser runs upload their traces and screenshots.
-
-`production-health.yml` checks `/api/health` hourly. Configure the existing
-`APP_URL` Actions secret, and apply every Supabase migration before deploying a
-release that depends on it. The endpoint intentionally returns 503 when the
-database, TKTS, or the 14-day program-freshness contract is unhealthy.
-
-## Notifications (deadline pushes)
-
-The "Deadline pushes" card on `/notify` subscribes the browser to web push:
-when a rush/lottery program for a show you follow opens, or enters its final
-hour, you get a notification that deep-links to the entry page. Moving
-parts:
-
-- `src/app/manifest.ts` + `public/sw.js` — PWA manifest and service worker
-  (iOS delivers push only after Add to Home Screen, 16.4+).
-- `src/app/api/push` — subscription storage (Supabase, server-side secret
-  key only; RLS on with no public policies) with durable per-IP rate limits.
-- `src/app/api/notify/run` — the evaluator: computes due events from the
-  program status engine (`src/lib/pushEvents.ts`), dedupes per occurrence
-  via `notification_log`, sends via `web-push`, prunes dead endpoints, and
-  expires notification logs after 45 days.
-- `.github/workflows/notify-cron.yml` — the scheduler (~every 15 min;
-  Vercel Hobby cron is daily-only). Each run doubles as the keepalive that
-  stops the free-tier Supabase project from pausing.
-
-One-time setup:
-
-1. Create a free Supabase project and run the files in
-   `supabase/migrations/` (in filename order) in the SQL editor.
-2. Copy `.env.example` → `.env.local` and fill it in (`npx web-push
+1. Create a Supabase project and run `supabase/migrations/` in filename order.
+2. Copy `.env.example` to `.env.local` and fill it in (`npx web-push
    generate-vapid-keys` for the key pair). Set the same variables in Vercel.
-3. Add `APP_URL` (deployed origin) and `CRON_SECRET` as GitHub Actions
-   secrets so the workflow can call the evaluator.
-4. Smoke test: toggle on at `/notify`, use **Send a test push** to verify the
-   full VAPID → Supabase → service-worker path on that device, then
+3. Add `APP_URL` (the deployed origin) and `CRON_SECRET` as GitHub Actions
+   secrets so `notify-cron.yml` can call the evaluator.
+4. Smoke test: turn alerts on at `/notify`, use **Send a test push**, then
    `curl -X POST -H "Authorization: Bearer $CRON_SECRET" <origin>/api/notify/run`
-   — the JSON summary reports events, sends, dedupes, and pruned endpoints.
+   and read the JSON summary (events, sends, dedupes, pruned endpoints).
 
-The desktop, installed-iPhone, and 10-second backup-recording steps are in
+iOS delivers web push only after Add to Home Screen (16.4+). The desktop,
+installed-iPhone and backup-recording steps are in
 [`docs/notification-demo.md`](docs/notification-demo.md).
 
 ## Poster art
 
-`public/posters/` holds real key art fetched from the shows' official sites
-and Playbill covers (`src/lib/posters.json` maps slug → file; provenance in
-the git history). Next Image serves responsive AVIF/WebP variants; the
-`Poster` component falls back to a generated typographic tile for any show
-without an image.
+`public/posters/` holds key art from the shows' official sites and Playbill
+covers (`src/lib/posters.json` maps slug to file). Next Image serves AVIF/WebP
+variants; shows without art get a generated typographic tile.
 
-> ⚠️ The poster images are copyrighted marketing material, included here as
-> non-commercial portfolio reference with attribution — they are **not**
+> ⚠️ The poster images are copyrighted marketing material, included as
+> non-commercial portfolio reference with attribution. They are **not**
 > covered by this repo's MIT license (see LICENSE). Replace or license them
-> before any commercial use, and takedown requests are honored immediately.
-
-## Prototype controls
-
-- **Diary**: the Log tab (or `/log/[slug]`) records the actual performance
-  date and optional seat; entries can be edited, deleted with Undo, exported,
-  imported with merge/replace validation, or cleared from Profile settings.
-  Photos are downscaled client-side (≤900px JPEG) and stored in IndexedDB.
-- **Lottery record**: tap "I entered" on any program card on `/rush`, "I
-  won" on an entered one → the profile Record tab and Season Wrapped fill
-  in; wins generate shareable cards.
-
-## Reference material
-
-- `DESIGN.md` — the derived design language.
-- `PLAN.md` — working product plan, from the design study to its own product.
-- The design-study screenshots live in a local `reference/` folder that is
-  gitignored, because they're Theatr's copyrighted material.
+> before any commercial use; takedown requests are honored immediately.
 
 ## License
 
 Code and original documentation are [MIT](LICENSE). Poster artwork and show
-marketing assets are **not** — they belong to their productions and are
+marketing assets are **not**; they belong to their productions and are
 included only as non-commercial portfolio reference (see the scope note in
-LICENSE and the Colophon on [/about](https://matinee.nyc/about)).
+LICENSE and the colophon on [/about](https://matinee.nyc/about)).
