@@ -81,6 +81,38 @@ describe("/api/notify/run", () => {
     expect((await response.json()).source).toBe("unknown");
   });
 
+  it("honors ?at= only on the local in-process store", async () => {
+    const request = (url: string) =>
+      POST(
+        new Request(url, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${SECRET}` },
+        }),
+      );
+    const response = await request(
+      "https://matinee.test/api/notify/run?at=2026-11-21T14:55:00Z",
+    );
+    // 9:55 AM Saturday has rush openings due; the heartbeat stays real time.
+    expect((await response.json()).events).toBeGreaterThan(0);
+    const lastRunAt = (await store.pipelineStatus()).lastRunAt!;
+    expect(Math.abs(lastRunAt.getTime() - Date.now())).toBeLessThan(60_000);
+
+    const remote = {
+      ...store,
+      kind: "supabase",
+      startRun: vi.fn(async () => {}),
+      finishRun: vi.fn(async () => {}),
+      expire: vi.fn(async () => ({ logs: 0, runs: 0 })),
+      listSubscriptions: vi.fn(async () => []),
+    };
+    vi.mocked(getPushStore).mockReturnValue(
+      remote as unknown as MemoryPushStore,
+    );
+    await request("https://matinee.test/api/notify/run?at=2020-01-01T00:00:00Z");
+    const startedAt = (remote.startRun.mock.calls[0] as unknown[])[2] as Date;
+    expect(startedAt.getFullYear()).toBeGreaterThan(2020);
+  });
+
   it("is 503 without a store or VAPID keys, and 500 when the run fails", async () => {
     const auth = { Authorization: `Bearer ${SECRET}` };
     vi.mocked(getPushStore).mockReturnValueOnce(null);

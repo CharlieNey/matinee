@@ -46,11 +46,21 @@ async function run(request: Request) {
     return Response.json({ error: "VAPID keys missing" }, { status: 503 });
   }
 
+  // Local demos only: ?at=<ISO> runs the in-process store at another instant
+  // ("9:55 AM Saturday"). Ignored for Supabase, so never in production.
+  const at =
+    store.kind === "memory"
+      ? new URL(request.url).searchParams.get("at")
+      : null;
+  const pinned = at && !Number.isNaN(Date.parse(at)) ? new Date(at) : null;
+
   try {
     const summary = await runNotifications({
       store,
       send: webPushSender(vapid),
       source: schedulerSource(request),
+      // The heartbeat keeps real time, so health never sees a future run.
+      ...(pinned ? { now: () => pinned, recordAt: () => new Date() } : {}),
     });
     return Response.json(summary, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {

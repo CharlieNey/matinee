@@ -69,6 +69,15 @@ describe("opening alerts", () => {
     expect(due(et("09:00"), [MIDNIGHT_LOTTERY])).toEqual([]);
   });
 
+  it("previews the exact alert in the test push, and says when it is due", () => {
+    const sample = nextOpeningAlert("oh-mary", et("16:00", "2026-11-19"), [MIDNIGHT_LOTTERY]);
+    expect(renderTestAlert(sample, et("16:00", "2026-11-19"))).toMatchObject({
+      title: "Test: Oh, Mary! lottery is open until 3:00 PM",
+      body: "$49 on Telecharge. Preview of the alert due 8:00 AM Friday.",
+      url: "/shows/oh-mary#ways-to-save",
+    });
+  });
+
   it("names the day when a window closes on another day", () => {
     const [alert] = due(et("17:02"), [OVERNIGHT_LOTTERY]);
     expect(renderAlert([alert], et("17:02")).title).toBe(
@@ -198,6 +207,7 @@ describe("the live catalog", () => {
     expect(sample).not.toBeNull();
     const message = renderTestAlert(sample, et("12:00"));
     expect(message.title).toMatch(/^Test: Hadestown /);
+    expect(message.body).toMatch(/Preview of the alert due \d/);
     expect(message.url).toBe("/shows/hadestown#ways-to-save");
     expect(renderTestAlert(null, et("12:00")).url).toBe("/notify");
   });

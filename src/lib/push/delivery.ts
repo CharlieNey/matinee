@@ -39,6 +39,11 @@ export type RunOptions = {
   source: string;
   /** Injected clock; read once at the start so the run sees one instant. */
   now?: () => Date;
+  /**
+   * Clock for what the run records (heartbeat, ledger). Defaults to `now`.
+   * Only a local demo that evaluates another instant sets it apart.
+   */
+  recordAt?: () => Date;
   events?: (now: Date) => PushEvent[];
   runId?: string;
 };
@@ -65,6 +70,7 @@ const errorText = (error: unknown) =>
 export async function runNotifications(options: RunOptions): Promise<RunSummary> {
   const { store, send, source } = options;
   const now = (options.now ?? (() => new Date()))();
+  const at = options.recordAt?.() ?? now;
   const runId = options.runId ?? randomUUID();
   const summary: RunSummary = {
     runId,
@@ -80,9 +86,9 @@ export async function runNotifications(options: RunOptions): Promise<RunSummary>
     expired: { logs: 0, runs: 0 },
   };
 
-  await store.startRun(runId, source, now);
+  await store.startRun(runId, source, at);
   try {
-    summary.expired = await store.expire(now, {
+    summary.expired = await store.expire(at, {
       logDays: LOG_RETENTION_DAYS,
       runDays: RUN_RETENTION_DAYS,
     });
@@ -91,11 +97,11 @@ export async function runNotifications(options: RunOptions): Promise<RunSummary>
     summary.events = events.length;
     if (events.length > 0) await deliver(events);
 
-    await store.finishRun(runId, { ok: true, summary, error: null }, now);
+    await store.finishRun(runId, { ok: true, summary, error: null }, at);
     return summary;
   } catch (error) {
     await store
-      .finishRun(runId, { ok: false, summary, error: errorText(error) }, now)
+      .finishRun(runId, { ok: false, summary, error: errorText(error) }, at)
       .catch(() => {});
     throw error;
   }
@@ -128,7 +134,7 @@ export async function runNotifications(options: RunOptions): Promise<RunSummary>
     if (pairs.length === 0) return;
 
     // Claim before sending: only pairs this run wins are sent.
-    const claimed = await store.claim(runId, pairs, CLAIM_LEASE_SECONDS, now);
+    const claimed = await store.claim(runId, pairs, CLAIM_LEASE_SECONDS, at);
     summary.deduped = pairs.length - claimed.length;
 
     // One notification per (subscription, group): same show, same minute.
@@ -196,7 +202,7 @@ export async function runNotifications(options: RunOptions): Promise<RunSummary>
       }
     });
 
-    await store.settle(runId, { sent, failed, released }, now);
+    await store.settle(runId, { sent, failed, released }, at);
     if (gone.size) {
       summary.pruned = await store.pruneSubscriptions([...gone]);
     }

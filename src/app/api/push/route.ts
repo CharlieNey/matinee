@@ -195,10 +195,12 @@ export async function PUT(request: Request) {
   }
 
   const now = new Date();
+  // The soonest alert across the shows this device follows.
   const sample =
     subscription.slugs
       .map((slug) => nextOpeningAlert(slug, now))
-      .find((alert) => alert !== null) ?? null;
+      .filter((alert) => alert !== null)
+      .sort((a, b) => a.sendFrom.getTime() - b.sendFrom.getTime())[0] ?? null;
   const message = renderTestAlert(sample, now);
   try {
     await webPushSender(vapid)(subscription, {

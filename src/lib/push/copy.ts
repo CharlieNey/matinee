@@ -1,6 +1,6 @@
 import { etDayKey, formatMinutes, Program } from "../programs";
 import { getShow } from "../shows";
-import type { PushEvent } from "./events";
+import { nextOpeningAlert, type PushEvent } from "./events";
 
 /**
  * Notification text. Rules (docs/NOTIFICATIONS.md): the show first, clock
@@ -178,26 +178,41 @@ export function renderAlert(events: PushEvent[], now: Date): PushMessage {
 }
 
 /**
- * The test push: a real alert for a followed show, rendered as it will look
- * when its window opens, so the demo shows the actual format and deep link.
+ * The test push: the exact alert a followed show will get next, as it will
+ * read when it goes out, plus when that is. Shows the real format and the
+ * real deep link without waiting for a window.
  */
 export function renderTestAlert(
   sample: PushEvent | null,
   now: Date,
 ): PushMessage {
+  const tag = `matinee-test-${now.getTime()}`;
   if (!sample) {
     return {
       title: "Matinee test alert",
       body: "Alerts work on this device. Follow a show to get its rush and lottery windows.",
       url: "/notify",
-      tag: `matinee-test-${now.getTime()}`,
+      tag,
     };
   }
-  // Rendered against the real clock, so a window days away names its day.
-  const message = renderAlert([sample], now);
+  const message = renderAlert([sample], sample.sendFrom);
   return {
     ...message,
     title: `Test: ${message.title}`,
-    tag: `matinee-test-${now.getTime()}`,
+    body: `${message.body} Preview of the alert due ${clock(sample.sendFrom, now)}.`,
+    tag,
   };
+}
+
+/**
+ * When this show's next alert will buzz, for the Follow card: "9:55 AM
+ * Saturday" and "rush". Null when nothing is scheduled within a week.
+ */
+export function nextAlertSummary(
+  slug: string,
+  now: Date,
+): { at: string; kind: string } | null {
+  const alert = nextOpeningAlert(slug, now);
+  if (!alert) return null;
+  return { at: clock(alert.sendFrom, now), kind: KIND_WORDS[alert.program.kind] };
 }
