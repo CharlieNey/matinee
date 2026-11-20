@@ -20,7 +20,7 @@ export function ShowCard({
   show: Show;
   /** Shared-element morph name — callers dedupe per page (see Discover). */
   posterName?: string;
-  /** On today's TKTS board (live, real-time — never demo time). */
+  /** On today’s TKTS board (live TDF data). */
   onTktsToday?: boolean;
 }) {
   const closed = closingLabel(show);

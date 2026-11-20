@@ -128,7 +128,7 @@ export default function DiscoverPage() {
   const [cheapest, setCheapest] = useState(false);
   const [sheet, setSheet] = useState<null | "circuit">(null);
 
-  // Shows on today's TKTS board — live external data, never demo time.
+  // Shows on today’s TKTS board, judged by TDF’s own Updated stamp.
   const tktsToday = useMemo(() => {
     const slugs = new Set<string>();
     if (!tkts) return slugs;

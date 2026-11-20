@@ -4,7 +4,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { ExternalLink, Ticket } from "lucide-react";
 import { Sheet } from "@/components/Sheet";
-import { useDemoTime } from "@/lib/demoTime";
 import {
   bestDiscount,
   boardIsToday,
@@ -21,23 +20,12 @@ import {
 import { useTkts } from "@/lib/useTkts";
 
 /*
- * TKTS live board surfaces (Phase 13). All of these run on REAL time — the
- * board is external data the demo time machine cannot simulate, so when the
- * demo clock is active they say so instead of pretending.
+ * TKTS live board surfaces (Phase 13). The board is external data, so every
+ * surface trusts TDF's own "Updated" stamp, never Matinee's fetch time.
  */
 
 function timesSquare(data: TktsData | null): TktsBooth | null {
   return data?.booths.find((booth) => booth.key === "times-square") ?? null;
-}
-
-function DemoClockNote() {
-  const { offsetMs } = useDemoTime();
-  if (offsetMs === null) return null;
-  return (
-    <p className="mt-1.5 text-label text-ink-faint">
-      Live TDF data — real time, unaffected by the demo clock.
-    </p>
-  );
 }
 
 function Attribution({ withDuffy }: { withDuffy?: boolean }) {
@@ -235,7 +223,6 @@ export function TktsRushSection() {
           </div>
         )}
         <Attribution withDuffy={summary !== null} />
-        <DemoClockNote />
       </div>
     </section>
   );
@@ -349,7 +336,6 @@ export function TktsTripCard({ isToday }: { isToday: boolean }) {
           aria-hidden="true"
         />
       </a>
-      {(live || summaryLive) && <DemoClockNote />}
     </div>
   );
 }
@@ -403,7 +389,6 @@ export function TktsBoardSheet({
           </p>
         )}
         <Attribution withDuffy={summary !== null} />
-        <DemoClockNote />
       </div>
     </Sheet>
   );
