@@ -40,7 +40,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const show = getShow(slug);
-  if (!show) return {};
+  if (!show) return { title: "Show not found" };
   const cheapest = cheapestProgram(slug);
   const closed = closingLabel(show);
   const description = closed
