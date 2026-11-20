@@ -1,0 +1,149 @@
+{
+  "base": "http://localhost:3417",
+  "startedAt": "2026-11-20T20:59:06.628Z",
+  "steps": [
+    {
+      "name": "followed Chicago; card offers to turn alerts on",
+      "at": "2026-11-20T20:59:08.135Z"
+    },
+    {
+      "name": "subscribed",
+      "at": "2026-11-20T20:59:11.006Z",
+      "pushService": "fcm.googleapis.com",
+      "caption": "Alerts on. Next one 9:55 AM Saturday, for the rush. Manage"
+    },
+    {
+      "name": "test push",
+      "at": "2026-11-20T20:59:12.326Z",
+      "resultLine": "Delivered to this device: “Test: Chicago rush opens at 10:00 AM”. No banner? Allow notifications for this browser in your system settings.",
+      "displayed": {
+        "title": "Test: Chicago rush opens at 10:00 AM",
+        "body": "$49 at the box office, first come, first served. Preview of the alert due 9:55 AM Saturday.",
+        "tag": "matinee-test-1795208352042",
+        "url": "/shows/chicago#ways-to-save"
+      }
+    },
+    {
+      "name": "scheduler run at Sat 9:55 AM ET",
+      "at": "2026-11-20T20:59:12.441Z",
+      "status": 200,
+      "summary": {
+        "source": "local-proof",
+        "events": 25,
+        "subscriptions": 1,
+        "pairs": 1,
+        "deduped": 0,
+        "sent": 1,
+        "failed": 0,
+        "released": 0,
+        "pruned": 0,
+        "expired": {
+          "logs": 0,
+          "runs": 0
+        }
+      }
+    },
+    {
+      "name": "notification displayed by the service worker",
+      "at": "2026-11-20T20:59:12.443Z",
+      "alert": {
+        "title": "Chicago rush opens at 10:00 AM",
+        "body": "$49 at the box office, first come, first served.",
+        "tag": "chicago|opening|2026-11-21T15:00:00.000Z",
+        "url": "/shows/chicago#ways-to-save"
+      }
+    },
+    {
+      "name": "scheduler run again at 9:55 (doubled run)",
+      "at": "2026-11-20T20:59:12.471Z",
+      "status": 200,
+      "summary": {
+        "source": "local-proof",
+        "events": 25,
+        "subscriptions": 1,
+        "pairs": 1,
+        "deduped": 1,
+        "sent": 0,
+        "failed": 0,
+        "released": 0,
+        "pruned": 0,
+        "expired": {
+          "logs": 0,
+          "runs": 0
+        }
+      }
+    },
+    {
+      "name": "scheduler run at 9:58",
+      "at": "2026-11-20T20:59:12.497Z",
+      "status": 200,
+      "summary": {
+        "source": "local-proof",
+        "events": 25,
+        "subscriptions": 1,
+        "pairs": 1,
+        "deduped": 1,
+        "sent": 0,
+        "failed": 0,
+        "released": 0,
+        "pruned": 0,
+        "expired": {
+          "logs": 0,
+          "runs": 0
+        }
+      }
+    },
+    {
+      "name": "scheduler run at 10:30 (too late for a heads-up)",
+      "at": "2026-11-20T20:59:12.521Z",
+      "status": 200,
+      "summary": {
+        "source": "local-proof",
+        "events": 1,
+        "subscriptions": 0,
+        "pairs": 0,
+        "deduped": 0,
+        "sent": 0,
+        "failed": 0,
+        "released": 0,
+        "pruned": 0,
+        "expired": {
+          "logs": 0,
+          "runs": 0
+        }
+      }
+    },
+    {
+      "name": "Chicago notifications on the device",
+      "at": "2026-11-20T20:59:12.523Z",
+      "count": 1
+    },
+    {
+      "name": "opened the notification's URL",
+      "at": "2026-11-20T20:59:14.426Z",
+      "url": "/shows/chicago#ways-to-save",
+      "scrollY": 470
+    },
+    {
+      "name": "health",
+      "at": "2026-11-20T20:59:14.432Z",
+      "services": {
+        "database": "local",
+        "rateLimit": "ok",
+        "scheduler": "ok",
+        "tkts": "ok"
+      },
+      "push": {
+        "overdueAfterMinutes": 20,
+        "lastRunAt": "2026-11-20T20:59:12.498Z",
+        "lastRunSource": "local-proof",
+        "lastRunError": null,
+        "lastOkRunAt": "2026-11-20T20:59:12.498Z",
+        "lastSentAt": "2026-11-20T20:59:12.337Z",
+        "subscriptions": 1
+      }
+    }
+  ],
+  "consoleErrors": [],
+  "finishedAt": "2026-11-20T20:59:14.432Z"
+}
