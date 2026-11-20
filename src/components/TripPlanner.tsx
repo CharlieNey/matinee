@@ -302,7 +302,7 @@ export function TripPlanner() {
           )}
         </div>
         <p className="mt-1 text-body text-ink-soft">
-          The best 3–5 moves for your dates, ranked so saved shows rise to the top.
+          The best 3–5 moves for your dates, ranked so shows you’re interested in rise to the top.
         </p>
 
         {recommendations.length > 0 ? (

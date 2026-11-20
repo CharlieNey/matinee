@@ -339,7 +339,8 @@ export function TktsTripCard({ isToday }: { isToday: boolean }) {
                       ? `avg ${Math.round(summary!.averageDiscount)}% off · `
                       : ""
                   }live via Duffy Dashboard`
-                : "Same-day discounts under the red steps, typically 3–8 PM"}
+                : // Booth hours per TDF's TKTS Live page, checked 2026-11-20.
+                  "Same-day discounts under the red steps, 3–8 PM (from 11 AM Wed, Thu and weekends)"}
           </span>
         </span>
         <ExternalLink

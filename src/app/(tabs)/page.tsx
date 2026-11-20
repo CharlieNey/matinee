@@ -378,7 +378,9 @@ export default function DiscoverPage() {
           <SectionHead title="For you" />
           {reason && (
             <p className="mt-1 text-caption text-ink-soft">
-              Because you {savedShows[0] ? "saved" : "attended"} {reason.title}
+              {savedShows[0]
+                ? `Because you’re interested in ${reason.title}`
+                : `Because you attended ${reason.title}`}
             </p>
           )}
           <PosterShelf shows={forYou} claimName={claimFor(3)} />
