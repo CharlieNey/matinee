@@ -8,6 +8,15 @@ import { useWebGL } from "@/lib/useWebGL";
 
 const POSTER_SRC: Record<string, string> = posterImages;
 
+/**
+ * The shader samples a texture, not an <img>, so it bypasses next/image.
+ * Route it through the optimizer anyway: a 640px AVIF/WebP is plenty behind
+ * fluted glass and a cream wash, where the raw poster JPEG runs ~550 KB.
+ */
+function optimizedTexture(src: string): string {
+  return `/_next/image?url=${encodeURIComponent(src)}&w=640&q=75`;
+}
+
 /** Poster `bg` is often a CSS linear-gradient(); shaders want plain colors. */
 function hexStops(value: string): string[] {
   return value.match(/#[0-9a-fA-F]{3,8}/g) ?? [];
@@ -48,7 +57,7 @@ export function HeroBackdrop({ show }: { show: Show }) {
     <div aria-hidden className="absolute inset-0 overflow-hidden">
       {src ? (
         <FlutedGlass
-          image={src}
+          image={optimizedTexture(src)}
           fit="cover"
           colorBack={surface}
           shape="lines"

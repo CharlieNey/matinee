@@ -16,12 +16,15 @@ export function ShowCard({
   show,
   posterName,
   onTktsToday = false,
+  priority = false,
 }: {
   show: Show;
   /** Shared-element morph name — callers dedupe per page (see Discover). */
   posterName?: string;
   /** On today’s TKTS board (live TDF data). */
   onTktsToday?: boolean;
+  /** Eager-load the poster: set for cards in the first visible row (LCP). */
+  priority?: boolean;
 }) {
   const closed = closingLabel(show);
   const program = cheapestProgram(show.slug);
@@ -38,6 +41,7 @@ export function ShowCard({
           className="w-full web:transition-transform web:duration-200 web:ease-out web:group-hover:scale-[1.03]"
           name={posterName}
           sizes="(min-width: 1024px) 272px, (min-width: 768px) 33vw, 50vw"
+          priority={priority}
         />
       </div>
       <div className="p-4">

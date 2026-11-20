@@ -362,6 +362,7 @@ export default function DiscoverPage() {
                       show={show}
                       posterName={claimFor(1)(show.slug)}
                       onTktsToday={tktsToday.has(show.slug)}
+                      priority={i < 2}
                     />
                   </motion.div>
                 ))}
