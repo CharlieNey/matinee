@@ -920,7 +920,6 @@ export function programsLastVerified(): string {
   return latest;
 }
 
-/** Stable identity for a program — (show, kind, platform) is unique. */
 /** "45 min", "2 hr", "5 hr", "1 hr 30 min". */
 export function formatMinutes(minutes: number): string {
   if (minutes < 60) return `${minutes} min`;
@@ -929,6 +928,7 @@ export function formatMinutes(minutes: number): string {
   return remainder ? `${hours} hr ${remainder} min` : `${hours} hr`;
 }
 
+/** Stable identity for a program — (show, kind, platform) is unique. */
 export function programKey(item: Program): string {
   return `${item.showSlug}/${item.kind}/${item.platform}`;
 }
@@ -1005,9 +1005,20 @@ export function programPlatformLabel(platform: ProgramPlatform): string {
   return PLATFORM_LABELS[platform];
 }
 
+/** Days a row may go unchecked before it reads as unverified (and /api/health fails). */
+export const STALE_AFTER_DAYS = 14;
+
+/**
+ * True once noon New York time on lastVerified is more than STALE_AFTER_DAYS
+ * old. Noon is resolved in the zone, so the boundary holds across DST.
+ */
 export function isProgramStale(item: Program, now: Date): boolean {
-  const verifiedAt = new Date(`${item.lastVerified}T12:00:00-04:00`);
-  return now.getTime() - verifiedAt.getTime() > 14 * 24 * 60 * 60 * 1000;
+  const [year, month, day] = item.lastVerified.split("-").map(Number);
+  const verifiedAt = zonedDate({ year, month, day }, "12:00");
+  return (
+    now.getTime() - verifiedAt.getTime() >
+    STALE_AFTER_DAYS * 24 * 60 * 60 * 1000
+  );
 }
 
 /** Interpret one curated weekly schedule at a caller-supplied instant. */
