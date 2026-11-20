@@ -86,7 +86,7 @@ const TIMEZONE = "America/New_York" as const;
  * rows that could not be re-verified pin their older date explicitly so the
  * per-row staleness note (and /api/health) stays honest.
  */
-const LAST_VERIFIED = "2026-11-11";
+const LAST_VERIFIED = "2026-11-20";
 const MONDAY_TO_FRIDAY: readonly Weekday[] = [1, 2, 3, 4, 5];
 const MONDAY_TO_SATURDAY: readonly Weekday[] = [1, 2, 3, 4, 5, 6];
 const TUESDAY_TO_SATURDAY: readonly Weekday[] = [2, 3, 4, 5, 6];
@@ -199,12 +199,10 @@ function luckySeatLottery(
       MONDAY_TO_FRIDAY,
     ),
     {
-      notes: "Winners are selected after entries close.",
-      claimWindow: {
-        minutes: 60,
-        channel: "email",
-        notifiedAround: "within a few hours of entries closing",
-      },
+      // No claim length: no source states one (2026-11-20); Other Desert
+      // Cities' official page says only "a limited window".
+      notes:
+        "Winners are selected after entries close and have a limited window to buy.",
       tips: [
         "Lucky Seat occasionally switches winners to box-office pickup — bring the ID you entered with.",
       ],
@@ -334,13 +332,18 @@ function todayTixRush(
 }
 
 /**
- * Source: Playbill’s Broadway rush, lottery, and standing-room roundup dated
- * 2026-11-09, cross-checked 2026-11-11 against official show sites where they
- * publish policies (Hamilton, Wicked, Hadestown, The Outsiders, Oh, Mary!,
- * Harry Potter). Two running productions (Two Strangers, closing 2026-11-29,
- * and Stranger Things: The First Shadow) list no program and are
- * intentionally absent. Programs of closed shows are removed rather than
- * kept: the feed, banner, trip planner and push cron read every program.
+ * Sources, re-checked 2026-11-20: each show's official site where it publishes
+ * a policy, TDF show pages, Lincoln Center Theater, TodayTix show pages,
+ * BroadwayWorld's rush list ("Updated November 2026") and New York Theatre
+ * Guide's guide. Playbill's roundups were read only as search-result snippets:
+ * playbill.com's robots.txt disallows Anthropic's agents, so it is not fetched.
+ * Broadway Direct, Telecharge and Lucky Seat are linked to, never fetched.
+ *
+ * A row keeps an older lastVerified when a fact on it could not be confirmed
+ * (each says why), so it reads as unverified rather than fresh. Two Strangers
+ * (closing 2026-11-29) is deliberately absent. Programs of closed shows are
+ * removed rather than kept: the feed, banner, trip planner and push cron read
+ * every program.
  */
 const PROGRAMS: readonly Program[] = [
   telechargeLottery("860", 59),
@@ -366,36 +369,48 @@ const PROGRAMS: readonly Program[] = [
     sundayOpensAt: "10:00",
   }),
 
-  program(
-    "aladdin",
-    "digital-lottery",
-    "official-site",
-    45,
-    2,
-    "https://www.aladdinthemusical.com/lottery",
-    dailyWindow(
-      "9 AM–3 PM the day before a performance",
-      "09:00",
-      "15:00",
-    ),
-    {
-      notes: "Winners have 60 minutes to purchase.",
-      claimWindow: {
-        minutes: 60,
-        channel: "email",
-        notifiedAround: "shortly after 3 PM",
+  // Unverified 2026-11-20: $45 (Playbill snippet, BroadwayWorld's price
+  // field) against $35 (TDF, BroadwayWorld's text, broadway.org). The official
+  // site's robots.txt is unreadable (403), so it was not fetched.
+  {
+    ...program(
+      "aladdin",
+      "digital-lottery",
+      "official-site",
+      45,
+      2,
+      "https://www.aladdinthemusical.com/lottery",
+      dailyWindow(
+        "9 AM–3 PM the day before a performance",
+        "09:00",
+        "15:00",
+      ),
+      {
+        notes: "Winners have 60 minutes to purchase.",
+        claimWindow: {
+          minutes: 60,
+          channel: "email",
+          notifiedAround: "shortly after 3 PM",
+        },
       },
-    },
-  ),
+    ),
+    lastVerified: "2026-11-11",
+  },
 
-  luckySeatLottery(
-    "the-book-of-mormon",
-    49,
-    "https://www.luckyseat.com/shows/thebookofmormon-newyork",
-  ),
+  {
+    // Unverified 2026-11-20: sources give three entry deadlines (9:30, 10 and
+    // 11 AM) and the official site no longer mentions Lucky Seat.
+    ...luckySeatLottery(
+      "the-book-of-mormon",
+      49,
+      "https://www.luckyseat.com/shows/thebookofmormon-newyork",
+    ),
+    lastVerified: "2026-11-11",
+  },
+  // TodayTix show page, 2026-11-20: "Rush tickets from $49" (was $53).
   todayTixRush(
     "the-book-of-mormon",
-    53,
+    49,
     "https://www.todaytix.com/nyc/shows/127-the-book-of-mormon-on-broadway",
   ),
 
@@ -407,8 +422,16 @@ const PROGRAMS: readonly Program[] = [
     "Gerald Schoenfeld Theatre",
   ),
 
-  boxOfficeProgram("chicago", "rush", 49, "Ambassador Theatre"),
-  boxOfficeProgram("chicago", "sro", 39, "Ambassador Theatre"),
+  boxOfficeProgram("chicago", "rush", 49, "Ambassador Theatre", 2, {
+    notes:
+      "Subject to availability. Not offered for Saturday evening performances.",
+  }),
+  {
+    // Unverified 2026-11-20: $39 (Playbill snippet, NYTG) against $27 (TDF,
+    // BroadwayWorld's text). The official site lists neither.
+    ...boxOfficeProgram("chicago", "sro", 39, "Ambassador Theatre"),
+    lastVerified: "2026-11-11",
+  },
 
   telechargeLottery("galileo", 45),
   boxOfficeProgram("galileo", "rush", 45, "Shubert Theatre", 2, {
@@ -425,11 +448,17 @@ const PROGRAMS: readonly Program[] = [
     "Broadway Theatre",
   ),
 
-  luckySeatLottery(
-    "hadestown",
-    49,
-    "https://www.luckyseat.com/shows/hadestown-newyork",
-  ),
+  {
+    // Unverified 2026-11-20: $49 and Lucky Seat confirmed on hadestown.com,
+    // but sources disagree on the deadline (TDF: 10:30 AM day of; BWW: 9:30 AM
+    // day of; NYTG: 9:30 AM the day before).
+    ...luckySeatLottery(
+      "hadestown",
+      49,
+      "https://www.luckyseat.com/shows/hadestown-newyork",
+    ),
+    lastVerified: "2026-11-11",
+  },
   program(
     "hadestown",
     "sro",
@@ -477,7 +506,7 @@ const PROGRAMS: readonly Program[] = [
     "todaytix",
     40,
     2,
-    "https://www.todaytix.com/x/nyc/shows/8728-harry-potter-and-the-cursed-child",
+    "https://www.todaytix.com/nyc/shows/8728-harry-potter-and-the-cursed-child",
     {
       timezone: TIMEZONE,
       summary: "Monday 12:01 AM–Friday 1 PM for the following week",
@@ -487,16 +516,14 @@ const PROGRAMS: readonly Program[] = [
     },
     {
       name: "Friday Forty",
-      notes: "40 tickets are offered each week.",
-      claimWindow: {
-        minutes: 60,
-        channel: "app",
-        notifiedAround: "Friday afternoon",
-      },
+      // The show states when winners hear but not how long they have to buy.
+      notes:
+        "40 tickets are offered each week. Winners hear between 1 and 5 PM Friday.",
     },
   ),
 
   telechargeLottery("inter-alia", 45),
+  boxOfficeProgram("inter-alia", "rush", 45, "Music Box Theatre"),
 
   boxOfficeProgram("just-in-time", "rush", 40, "Circle in the Square Theatre"),
 
@@ -521,10 +548,14 @@ const PROGRAMS: readonly Program[] = [
 
   // $20.64 is real, not a typo: the show is set in the year 2064 and the
   // production prices its lottery as a nod to it.
-  telechargeLottery("maybe-happy-ending", 20.64),
+  // maybehappyending.com/faqs (2026-11-20): "offers a digital lottery and in
+  // person rush tickets", so the digital rush is gone; standing room is $42.
+  {
+    ...telechargeLottery("maybe-happy-ending", 20.64),
+    notes: "Select performances only. Winners are drawn at 10 AM and 3 PM.",
+  },
   boxOfficeProgram("maybe-happy-ending", "rush", 49, "Belasco Theatre"),
-  telechargeDigitalRush("maybe-happy-ending"),
-  boxOfficeProgram("maybe-happy-ending", "sro", 49, "Belasco Theatre"),
+  boxOfficeProgram("maybe-happy-ending", "sro", 42, "Belasco Theatre"),
 
   broadwayDirectLottery(
     "mj-the-musical",
@@ -539,7 +570,8 @@ const PROGRAMS: readonly Program[] = [
   telechargeLottery("oh-mary", 47),
   boxOfficeProgram("oh-mary", "rush", 43, "Lyceum Theatre"),
 
-  telechargeLottery("operation-mincemeat"),
+  // TDF and NYTG, 2026-11-20: $39 (was $49); the show's site gives no price.
+  telechargeLottery("operation-mincemeat", 39),
   boxOfficeProgram("operation-mincemeat", "rush", 49, "John Golden Theatre"),
 
   luckySeatLottery(
@@ -556,7 +588,17 @@ const PROGRAMS: readonly Program[] = [
 
   telechargeLottery("the-outsiders"),
   boxOfficeProgram("the-outsiders", "rush", 45, "Bernard B. Jacobs Theatre"),
-  boxOfficeProgram("the-outsiders", "sro", 39, "Bernard B. Jacobs Theatre"),
+  {
+    // Unverified 2026-11-20: the show's site no longer mentions standing
+    // room; NYTG and forum reports give $45 and $37.
+    ...boxOfficeProgram(
+      "the-outsiders",
+      "sro",
+      39,
+      "Bernard B. Jacobs Theatre",
+    ),
+    lastVerified: "2026-11-11",
+  },
 
   todayTixRush(
     "paranormal-activity",
@@ -565,28 +607,33 @@ const PROGRAMS: readonly Program[] = [
   ),
   boxOfficeProgram("paranormal-activity", "rush", 40, "August Wilson Theatre"),
 
-  program(
-    "rocky-horror-show",
-    "digital-lottery",
-    "todaytix",
-    30,
-    2,
-    "https://www.todaytix.com/nyc/shows/4390",
-    dailyWindow(
-      "5 PM the day before–9 AM the day of the performance",
-      "17:00",
-      "09:00",
-      MONDAY_TO_SATURDAY,
-    ),
-    {
-      notes: "Winners have one hour to claim tickets.",
-      claimWindow: {
-        minutes: 60,
-        channel: "app",
-        notifiedAround: "after the 9 AM drawing",
+  // Unverified 2026-11-20: $30 on TodayTix is confirmed, the entry window and
+  // claim time are not. The old /shows/4390 link 404s.
+  {
+    ...program(
+      "rocky-horror-show",
+      "digital-lottery",
+      "todaytix",
+      30,
+      2,
+      "https://www.todaytix.com/nyc/shows/43905-the-rocky-horror-show-on-broadway",
+      dailyWindow(
+        "5 PM the day before–9 AM the day of the performance",
+        "17:00",
+        "09:00",
+        MONDAY_TO_SATURDAY,
+      ),
+      {
+        notes: "Winners have one hour to claim tickets.",
+        claimWindow: {
+          minutes: 60,
+          channel: "app",
+          notifiedAround: "after the 9 AM drawing",
+        },
       },
-    },
-  ),
+    ),
+    lastVerified: "2026-11-11",
+  },
 
   broadwayDirectLottery(
     "schmigadoon",
@@ -606,8 +653,22 @@ const PROGRAMS: readonly Program[] = [
     "09:00",
     "18:00",
   ),
-  boxOfficeProgram("six", "student-rush", 35, "Lena Horne Theatre"),
   boxOfficeProgram("six", "sro", 49, "Lena Horne Theatre"),
+
+  // broadway.strangerthingsonstage.com/ticket-info (2026-11-20).
+  broadwayDirectLottery(
+    "stranger-things-first-shadow",
+    45,
+    "https://lottery.broadwaydirect.com/show/st-nyc/",
+    "07:00",
+    "14:00",
+  ),
+  boxOfficeProgram(
+    "stranger-things-first-shadow",
+    "rush",
+    40,
+    "Marquis Theatre",
+  ),
 
   telechargeLottery("wanted", 35),
 
@@ -622,25 +683,25 @@ const PROGRAMS: readonly Program[] = [
 
   /*
    * Off-Broadway programs (Phase 12), first verified 2026-07-16 against the
-   * shows' sites and the NYTG Off-Broadway guide; re-checked 2026-11-11
-   * against Playbill's Off-Broadway roundup dated 2026-11-09 and the shows'
-   * own sites. Only rows we could confirm — shows without a verified program
-   * correctly render "No verified program listed" on their pages.
+   * shows' sites and the NYTG Off-Broadway guide; last re-checked 2026-11-20
+   * against the shows' own sites and TodayTix. Only rows we could confirm —
+   * shows without a verified program correctly render "No verified program
+   * listed" on their pages.
    */
   {
-    // littleshopnyc.com (fetched 2026-11-11): "$45 tickets two days before
-    // the performance", entry 12:00 AM–3:00 PM, limit 2. Playbill's
-    // 2026-11-09 roundup lists $40; the show's own site wins. Claim window
-    // follows the Telecharge default (Playbill 2026-11-09).
+    // littleshopnyc.com (2026-11-20): "$45 tickets two days before the
+    // performance", entry 12:00 AM–3:00 PM, limit 2. Some roundups list $40
+    // or "the day before"; the show's own site wins. Draw times and claim
+    // window follow the Telecharge default.
     ...telechargeLottery("little-shop-of-horrors", 45),
     schedule: dailyWindow(
       "Midnight–3 PM two days before a performance",
       "00:00",
       "15:00",
     ),
-    lastVerified: "2026-11-11",
   },
-  // Entered on the show's own site (Playbill 2026-11-09; broadwaygoeswrong.com).
+  // Entered on the show's own site (broadwaygoeswrong.com/tickets.php,
+  // 2026-11-20: "opens at 12AM & closes at 3PM two days prior").
   program(
     "the-play-that-goes-wrong",
     "digital-lottery",
@@ -662,14 +723,19 @@ const PROGRAMS: readonly Program[] = [
       },
     },
   ),
-  boxOfficeProgram(
-    "perfect-crime",
-    "student-rush",
-    35,
-    "The Theater Center",
-    2,
-    { sundayOpensAt: "11:00" },
-  ),
+  {
+    // Unverified 2026-11-20: no source links a student ID to the $35 price;
+    // TodayTix now lists a $35 rush with no window shown.
+    ...boxOfficeProgram(
+      "perfect-crime",
+      "student-rush",
+      35,
+      "The Theater Center",
+      2,
+      { sundayOpensAt: "11:00" },
+    ),
+    lastVerified: "2026-11-11",
+  },
 ];
 
 const KIND_LABELS: Record<ProgramKind, string> = {
