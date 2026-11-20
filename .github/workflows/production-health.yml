@@ -12,8 +12,11 @@ jobs:
   health:
     runs-on: ubuntu-latest
     steps:
-      - name: Check catalog, database, and TKTS
+      - name: Check catalog, database, rate limiter, push scheduler, and TKTS
         run: |
-          curl -fsS "${{ secrets.APP_URL }}/api/health" \
-            | tee health.json \
-            | jq -e '.ok == true'
+          # No -f: a 503 still carries the JSON that says what failed.
+          curl -sS "${{ secrets.APP_URL }}/api/health" -o health.json
+          jq -e '.ok == true' health.json
+      - name: Show what failed
+        if: failure()
+        run: jq '{services, push, catalog}' health.json || cat health.json

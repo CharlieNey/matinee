@@ -1,9 +1,11 @@
 name: Notify cron
 
-# Drives deadline pushes: Vercel Hobby cron is daily-only, so GitHub Actions
-# is the scheduler. Each run also keeps the free-tier Supabase project awake.
-# Schedules can lag a few minutes under load — copy treats times as "soon",
-# never to-the-minute.
+# Backup push scheduler. The primary is Supabase Cron, every minute
+# (supabase/scheduler/enable.sql); see docs/NOTIFICATIONS.md for why.
+# Runs are idempotent, so this can run alongside it. GitHub disables
+# scheduled workflows after 60 days without a commit (it did on
+# 2026-09-15), delays them under load, and may drop them, which is why it
+# is no longer the only caller.
 on:
   schedule:
     - cron: "*/15 * * * *"
@@ -17,4 +19,5 @@ jobs:
         run: |
           curl -fsS -X POST \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "X-Matinee-Scheduler: github-actions" \
             "${{ secrets.APP_URL }}/api/notify/run"
