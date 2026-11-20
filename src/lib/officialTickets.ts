@@ -209,10 +209,6 @@ const OFFICIAL_TICKETS: readonly OfficialTicketLink[] = [
   },
 ];
 
-export function allOfficialTicketLinks(): readonly OfficialTicketLink[] {
-  return OFFICIAL_TICKETS;
-}
-
 export function officialTicketsForShow(
   showSlug: string,
 ): OfficialTicketLink | undefined {

@@ -95,17 +95,3 @@ export function recommendedSlots(
   return picks;
 }
 
-
-/** Grouping for the day view: when does this window open, NYC time? */
-export function daypartOf(opensAt: Date): "morning" | "afternoon" | "evening" {
-  const hour = Number(
-    new Intl.DateTimeFormat("en-US", {
-      timeZone: "America/New_York",
-      hourCycle: "h23",
-      hour: "2-digit",
-    }).format(opensAt),
-  );
-  if (hour < 12) return "morning";
-  if (hour < 17) return "afternoon";
-  return "evening";
-}
