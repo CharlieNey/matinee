@@ -110,7 +110,8 @@ function profile(value: unknown): PersistedProfile | null {
   if (!item) return null;
   const name = repairedText(item.name, TEXT_LIMITS.name);
   const handle = repairedText(item.handle, TEXT_LIMITS.handle);
-  if (!name || handle === null) return null;
+  // An empty name is a first-run profile, not a broken one.
+  if (name === null || handle === null) return null;
   return { name, handle, bio: repairedText(item.bio, TEXT_LIMITS.bio) };
 }
 

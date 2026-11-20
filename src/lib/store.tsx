@@ -9,13 +9,7 @@ import {
   useRef,
   useState,
 } from "react";
-import {
-  Follow,
-  attendedSeed,
-  initialRanking,
-  initialFollows,
-  profile as initialProfile,
-} from "./data";
+import { emptyProfile, Follow } from "./data";
 import {
   clearDiaryPhotos,
   deleteDiaryPhoto,
@@ -79,8 +73,8 @@ type AppState = {
   hydrated: boolean;
   persistenceError: boolean;
 
-  /* Attended — diary + directly-marked shows + pre-app history, deduped,
-     minus anything removed on the Collection page */
+  /* Attended — diary + directly-marked shows, deduped, minus anything
+     removed on the Collection page */
   attended: Show[];
   addAttended: (slug: string) => void;
   removeAttended: (slug: string) => void;
@@ -102,26 +96,11 @@ function makeId(prefix: string): string {
 }
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
-  const [follows, setFollows] = useState<Follow[]>(initialFollows);
-  // timeline shows start bookmarked, matching the reference screenshots
-  const [saved, setSaved] = useState<Set<string>>(
-    () =>
-      new Set([
-        "heathers",
-        "the-outsiders",
-        "chess",
-        "two-strangers",
-        "operation-mincemeat",
-        "little-shop-of-horrors",
-      ]),
-  );
-  const [profile, setProfile] = useState<ProfileInfo>({
-    name: initialProfile.name,
-    handle: initialProfile.handle,
-    bio: initialProfile.bio,
-  });
+  const [follows, setFollows] = useState<Follow[]>([]);
+  const [saved, setSaved] = useState<Set<string>>(() => new Set());
+  const [profile, setProfile] = useState<ProfileInfo>(emptyProfile);
   const [diary, setDiary] = useState<DiaryEntry[]>([]);
-  const [ranking, setRankingState] = useState<string[]>(initialRanking);
+  const [ranking, setRankingState] = useState<string[]>([]);
   // Shows added to / removed from Attended via the Collection page, kept apart
   // from the diary so the rich log flow stays the source of truth for entries.
   const [attendedExtra, setAttendedExtra] = useState<Set<string>>(
@@ -188,7 +167,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           setRankingState([...new Set(data.ranking)]);
           setAttendedExtra(new Set(data.attendedExtra));
           setAttendedHidden(new Set(data.attendedHidden));
-          setProfile(data.profile);
+          // The retired demo persona was persisted for early visitors.
+          setProfile(
+            data.profile.name === "John Doe" && data.profile.handle === "@johndoe"
+              ? { ...data.profile, name: "", handle: "" }
+              : data.profile,
+          );
           setDiary(nextDiary);
         }
       } catch {
@@ -396,19 +380,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
-  // Diary first (newest logs), then directly-marked shows (newest add first),
-  // then the seed history — deduped, with anything removed filtered out.
+  // Diary first (newest logs), then directly-marked shows (newest add
+  // first), deduped, with anything removed filtered out.
   const attended = useMemo(() => {
     const extraShows = [...attendedExtra]
       .reverse()
       .flatMap((slug) => getShow(slug) ?? []);
     const seen = new Set<string>();
     const list: Show[] = [];
-    for (const s of [
-      ...diary.map((entry) => entry.show),
-      ...extraShows,
-      ...attendedSeed,
-    ]) {
+    for (const s of [...diary.map((entry) => entry.show), ...extraShows]) {
       if (attendedHidden.has(s.slug) || seen.has(s.slug)) continue;
       seen.add(s.slug);
       list.push(s);

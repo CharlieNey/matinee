@@ -6,7 +6,6 @@ import { AnimatePresence, motion } from "motion/react";
 import {
   Armchair,
   BellPlus,
-  Calendar,
   Download,
   EyeOff,
   Plus,
@@ -19,13 +18,12 @@ import {
   Trash2,
   Trophy,
   Upload,
+  UserRound,
   Zap,
 } from "lucide-react";
-import { AttendedTicket } from "@/components/AttendedTicket";
 import { CollectionEditorSheet } from "@/components/CollectionEditorSheet";
 import { EmptyState } from "@/components/EmptyState";
 import { EntryHeatmap } from "@/components/EntryHeatmap";
-import { InsetShowRow } from "@/components/InsetShowRow";
 import { Poster } from "@/components/Poster";
 import { RankSheet } from "@/components/RankSheet";
 import { ShareButton } from "@/components/ShareButton";
@@ -33,15 +31,9 @@ import { Sheet } from "@/components/Sheet";
 import { FollowSpot } from "@/components/FollowSpot";
 import { useToast } from "@/components/Toast";
 import {
-  ActivityEntry,
-  activityFeed,
-  profile as profileData,
-} from "@/lib/data";
-import {
   LotteryEntry,
   onLotteryLogChange,
   readLotteryLog,
-  seedLotteryLogIfEmpty,
 } from "@/lib/entries";
 import {
   allPrograms,
@@ -270,103 +262,49 @@ function DiaryCard({ entry }: { entry: DiaryEntry }) {
   );
 }
 
-type TimelineItem =
-  | { kind: "diary"; entry: DiaryEntry }
-  | { kind: "static"; entry: ActivityEntry };
-
 function ActivityTimeline() {
   const { diary } = useApp();
 
+  if (diary.length === 0) {
+    return (
+      <div className="pt-10">
+        <EmptyState
+          text="Log a show you’ve seen and your diary starts here…"
+          actionLabel="Find a show"
+          actionHref="/"
+        />
+      </div>
+    );
+  }
+
   // The editable performance day, not publish time, determines diary order.
-  const sortedDiary = [...diary].sort(
+  const sorted = [...diary].sort(
     (a, b) =>
       b.performanceDate.localeCompare(a.performanceDate) ||
       b.loggedAt.localeCompare(a.loggedAt),
   );
-  const items: TimelineItem[] = [
-    ...sortedDiary.map((entry): TimelineItem => ({ kind: "diary", entry })),
-    ...activityFeed.map((entry): TimelineItem => ({ kind: "static", entry })),
-  ];
 
   return (
     <ol className="pt-6">
-      {items.map((item, i) => {
-        const last = i === items.length - 1;
-        const key = item.kind === "diary" ? item.entry.id : `static-${i}`;
-        return (
-          <li key={key} className="relative pl-9 pb-9">
-            {!last && (
-              <span className="absolute left-[4px] top-4 bottom-[-8px] w-[1.5px] bg-line" />
-            )}
-            {item.kind === "diary" ? (
-              <>
-                <span className="absolute left-0 top-1.5 size-2.5 rounded-full bg-espresso-raised" />
-                <h2 className="text-heading">
-                  {performanceDate(item.entry.performanceDate).toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                  })}
-                </h2>
-                <p className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-body text-ink-soft">
-                  Marked as attended
-                  <SentimentChip sentiment={item.entry.sentiment} />
-                </p>
-                <DiaryCard entry={item.entry} />
-              </>
-            ) : item.entry.kind === "milestone" ? (
-              <>
-                <span className="absolute left-0 top-1 size-2.5 rounded-full bg-espresso-raised" />
-                <p className="text-body text-ink-soft">{item.entry.text}</p>
-              </>
-            ) : (
-              <>
-                {item.entry.yearMarker && (
-                  <p className="mb-4 -mt-1 text-body text-ink-faint">
-                    {item.entry.yearMarker}
-                  </p>
-                )}
-                <span
-                  className={`absolute left-0 size-2.5 rounded-full bg-espresso-raised ${
-                    item.entry.yearMarker ? "top-10" : "top-1.5"
-                  }`}
-                />
-                <h2 className="text-heading">{item.entry.date}</h2>
-                <p className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-body text-ink-soft">
-                  {item.entry.action}
-                  {item.entry.recommend && (
-                    <span className="flex items-center gap-1.5 text-[15px] font-semibold text-gold-ink">
-                      <ThumbsUp
-                        className="size-4"
-                        strokeWidth={2}
-                        fill="currentColor"
-                      />
-                      Recommend it
-                    </span>
-                  )}
-                </p>
-                {item.entry.thoughts && (
-                  <p className="mt-3 text-body italic text-ink-soft">
-                    “{item.entry.thoughts}”
-                  </p>
-                )}
-                {item.entry.action === "Marked as attended" ? (
-                  // Attended → a torn ticket, matching the diary keepsake
-                  // (DESIGN.md §344: torn = attended). Interested stays flat.
-                  item.entry.shows.map((show) => (
-                    <AttendedTicket key={show.slug} show={show} />
-                  ))
-                ) : (
-                  <div className="mt-4 flex flex-col gap-2.5">
-                    {item.entry.shows.map((show) => (
-                      <InsetShowRow key={show.slug} show={show} />
-                    ))}
-                  </div>
-                )}
-              </>
-            )}
-          </li>
-        );
-      })}
+      {sorted.map((entry, i) => (
+        <li key={entry.id} className="relative pl-9 pb-9">
+          {i < sorted.length - 1 && (
+            <span className="absolute left-[4px] top-4 bottom-[-8px] w-[1.5px] bg-line" />
+          )}
+          <span className="absolute left-0 top-1.5 size-2.5 rounded-full bg-espresso-raised" />
+          <h2 className="text-heading">
+            {performanceDate(entry.performanceDate).toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+            })}
+          </h2>
+          <p className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-body text-ink-soft">
+            Marked as attended
+            <SentimentChip sentiment={entry.sentiment} />
+          </p>
+          <DiaryCard entry={entry} />
+        </li>
+      ))}
     </ol>
   );
 }
@@ -631,9 +569,6 @@ export default function ProfilePage() {
   // The identity card is a live theater record, never social-proof theater.
   const [log, setLog] = useState<LotteryEntry[]>([]);
   useEffect(() => {
-    // Fresh visitors start with a seeded entry streak so the record reads
-    // as lived-in (once ever; real logs are never overwritten).
-    seedLotteryLogIfEmpty(new Date());
     const sync = () => setLog(readLotteryLog());
     sync();
     return onLotteryLogChange(sync);
@@ -666,7 +601,7 @@ export default function ProfilePage() {
 
   const saveProfile = () => {
     updateProfile({
-      name: draftName.trim() || profile.name,
+      name: draftName.trim(),
       bio: draftBio.trim() || null,
     });
     setSheet(null);
@@ -769,7 +704,10 @@ export default function ProfilePage() {
       const url = `${window.location.origin}/p#${fragment}`;
       if (typeof navigator.share === "function") {
         try {
-          await navigator.share({ title: `${profile.name} on Matinee`, url });
+          await navigator.share({
+            title: profile.name ? `${profile.name} on Matinee` : "My Matinee diary",
+            url,
+          });
           return;
         } catch {
           // Cancelled or unsupported — fall through to clipboard.
@@ -840,11 +778,23 @@ export default function ProfilePage() {
             aria-label="Edit profile photo"
             className="flex size-[88px] shrink-0 items-center justify-center rounded-full bg-espresso-raised text-[40px] font-semibold transition-transform duration-150 active:scale-[0.97]"
           >
-            {profile.name[0]}
+            {profile.name ? (
+              profile.name[0]
+            ) : (
+              <UserRound className="size-10" strokeWidth={1.6} aria-hidden="true" />
+            )}
           </button>
           <div className="min-w-0">
             <h1 className="truncate font-display text-[28px] font-bold tracking-normal">
-              {profile.name}
+              {profile.name || (
+                <button
+                  type="button"
+                  onClick={openEdit}
+                  className="text-white/70 underline decoration-white/30 underline-offset-4 transition-opacity active:opacity-70"
+                >
+                  Add your name
+                </button>
+              )}
             </h1>
             <p className="mt-1 text-body text-white/60">Your theater record</p>
           </div>
@@ -920,11 +870,6 @@ export default function ProfilePage() {
         >
           {profile.bio ?? "Add a few words about yourself"}
         </button>
-
-        <p className="mt-4 flex items-center gap-2.5 text-body text-white/80">
-          <Calendar className="size-5" strokeWidth={1.8} />
-          Joined {profileData.joined}
-        </p>
 
         <div className="mt-6 grid grid-cols-2 gap-3">
           <HeaderPill

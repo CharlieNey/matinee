@@ -77,9 +77,11 @@ export default function SharedProfilePage() {
           Shared theater diary
         </p>
         <h1 className="mt-2 text-[28px] font-extrabold tracking-tight">
-          {profile.name}
+          {profile.name || "A theatergoer"}
         </h1>
-        <p className="mt-0.5 text-body text-white/60">{profile.handle}</p>
+        {profile.handle && (
+          <p className="mt-0.5 text-body text-white/60">{profile.handle}</p>
+        )}
         {profile.bio && (
           <p className="mt-3 text-body text-white/80">{profile.bio}</p>
         )}

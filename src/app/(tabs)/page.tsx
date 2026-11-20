@@ -369,11 +369,15 @@ export default function DiscoverPage() {
             </div>
           )}
 
-          <SectionHead
-            title="Attended"
-            detail={`${attended.length} logged`}
-          />
-          <PosterShelf shows={attended} claimName={claimFor(2)} />
+          {attended.length > 0 && (
+            <>
+              <SectionHead
+                title="Attended"
+                detail={`${attended.length} logged`}
+              />
+              <PosterShelf shows={attended} claimName={claimFor(2)} />
+            </>
+          )}
 
           <SectionHead title="For you" />
           {reason && (
