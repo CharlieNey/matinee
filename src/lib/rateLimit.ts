@@ -25,8 +25,9 @@ export async function rateLimitResponse(
     p_limit: limit,
   });
   if (error) {
-    // Availability wins if a migration is rolling out; the error remains
-    // visible in Vercel logs and the health check will flag the database.
+    // Fails open so a missing table can't block subscriptions. Nothing else
+    // notices: the error is only in Vercel logs, and /api/health reads
+    // push_subscriptions, not this table, so it stays green.
     console.error("rate limit storage failed:", error.message);
     return null;
   }
