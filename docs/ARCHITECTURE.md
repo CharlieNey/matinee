@@ -1,9 +1,10 @@
 # Architecture
 
 Matinee is a live board of Broadway rush, lottery and standing-room programs,
-plus a personal show diary. It is a Next.js 16 app on Vercel with almost no
-backend: the catalog is curated data compiled into the build, personal data
-stays in the browser, and a small Supabase database exists only for web push.
+plus a personal show diary and push alerts before each window opens. It is a
+Next.js 16 app on Vercel with almost no backend: the catalog is curated data
+compiled into the build, personal data stays in the browser, and a small
+Supabase database exists only for web push.
 
 ```
                  build time                              runtime
@@ -16,8 +17,9 @@ stays in the browser, and a small Supabase database exists only for web push.
   tdf.org TKTS Live ──▶ /api/tkts ─────▶│                                       │
   (fetched, cached 30 min)              └───────────────┬───────────────────────┘
                                                         │ subscribe / sync
-  GitHub Actions ─ every 15 min ─▶ /api/notify/run ──▶ Supabase ──▶ web push
-  GitHub Actions ─ hourly ───────▶ /api/health
+  Supabase Cron ── every minute ─▶ /api/notify/run ◀─▶ Supabase ──▶ web push
+  GitHub Actions ─ every 15 min ─▶   (backup caller; runs are idempotent)
+  GitHub Actions ─ hourly ───────▶ /api/health  (catalog, DB, limiter, scheduler)
 ```
 
 ## Data model
@@ -99,7 +101,7 @@ Two details carry the correctness:
   `closesDayOffset` handles week-long ones.
 
 The rush feed, the Discover banner, the District map's live halos, Trip mode
-and the push evaluator all call the same function, so they cannot disagree.
+and the push alerts all expand the same occurrences, so they cannot disagree.
 Client surfaces get `now` from `useNow`, which is null during server render and
 first paint, then ticks every 30 seconds. That keeps static HTML free of
 time-dependent markup and avoids hydration mismatches.
@@ -138,7 +140,7 @@ stale upstream board reads as stale.
 | Diary, follows, Interested, ranking, profile | `localStorage` key `matinee-state-v1` | No accounts. A versioned, validated document (`src/lib/persistence.ts`); unreadable data is backed up, never overwritten |
 | Diary photos | IndexedDB `matinee-diary` | Too big for `localStorage`'s quota; downscaled to 900px JPEG first |
 | Lottery log ("I entered", "I won") | `localStorage` key `matinee-lottery-log-v1` | Feeds Record stats and Wrapped; synced to the push subscription for claim-window alerts |
-| Push subscriptions, send log, rate limits | Supabase Postgres | The only state a server must hold |
+| Push subscriptions, delivery ledger, run heartbeat, rate limits | Supabase Postgres | The only state a server must hold |
 
 Import and restore treat backups as untrusted input and validate every field.
 The `theatr-*` keys are read once as a fallback from before the July 2026
@@ -146,26 +148,51 @@ rename, so early visitors' diaries migrate instead of vanishing.
 
 ## Push notifications
 
-1. On `/notify` the browser subscribes with VAPID keys; `/api/push` stores the
-   endpoint and the followed show slugs in `push_subscriptions`. The lottery
-   log syncs into the same row.
-2. GitHub Actions (`notify-cron.yml`) calls `/api/notify/run` every 15 minutes
-   with a bearer secret (checked in constant time). Vercel Hobby cron is
-   daily-only, which is why the scheduler lives in Actions.
-3. The evaluator runs `duePushEvents(now)` (`src/lib/pushEvents.ts`): for each
-   program, a window that just opened, one entering its final hour, and, for
-   lotteries with a known claim window, a "watch for winners" alert sent only
-   to people whose lottery log shows they entered.
-4. Each event has a stable key (`program | kind | occurrence start`).
-   `notification_log` has a primary key on `(endpoint, event_key)`, so a late
-   or doubled cron run cannot send twice.
-5. `web-push` sends; 404 and 410 responses prune dead endpoints; logs expire
-   after 45 days.
+The full spec is [NOTIFICATIONS.md](NOTIFICATIONS.md); this is the shape.
 
-Tables have row-level security on with no public policies; only the server's
-secret key can touch them. Public mutation routes check the origin and use a
-Postgres rate limiter (`consume_api_rate_limit`) so limits survive serverless
-instance churn. iOS delivers web push only to a Home Screen install (16.4+).
+1. **Subscribe.** Tapping Follow on a show asks for notification permission
+   right then, and only if the browser never has. `PushProvider` holds the
+   device's subscription above every page, so a follow anywhere reaches
+   `/api/push` at once, and every visit re-syncs the row (followed slugs and
+   lottery-log days). Endpoints must belong to a known push service, so the
+   server can't be aimed at an arbitrary URL. iOS delivers web push only to a
+   Home Screen install (16.4+), and the UI says so.
+2. **Decide.** `duePushEvents(now)` (`src/lib/push/events.ts`) is pure. Each
+   program occurrence yields alerts: an opening (5 minutes ahead; 8 AM if it
+   opened in quiet hours), a lottery last call (skipped for people who logged
+   an entry), and a claim watch (only for them). Each alert has a send
+   window `[from, until)`. A run sends what is inside it, which gives
+   catch-up after missed runs and a hard bound on lateness.
+3. **Claim, then send.** `runNotifications` (`src/lib/push/delivery.ts`)
+   inserts every applicable `(endpoint, alert)` into `notification_log` as
+   `claimed` before sending. The primary key lets one run win, so a doubled,
+   late or overlapping run sends nothing twice. Outcomes settle the row:
+   sent; failed (other 4xx, not retried); released (429/5xx/network,
+   retried next minute while still in the window); or the subscription is
+   pruned (404/410). A run that dies mid-send leaves claims with a 5-minute
+   lease. A run that sends and dies before recording it can cause one repeat,
+   and the repeat carries the same `tag` and `Topic`, so the device replaces
+   rather than stacks. `TTL` ends when the alert stops being useful.
+4. **Every database step is a Postgres function**
+   (`supabase/migrations/20261120120000_push_delivery_ledger.sql`). The app
+   calls them through `PushStore`. One contract suite runs the in-memory
+   store and the real migrations in PGlite side by side, including grants and
+   compatibility with the previous route.
+5. **Schedule.** Supabase Cron (`pg_cron` + `pg_net`, turned on by
+   `supabase/scheduler/enable.sql`) POSTs `/api/notify/run` every minute with
+   the bearer secret from Vault. The GitHub workflow remains a backup. Vercel
+   Hobby cron runs only daily, and GitHub's schedules stop after 60 days
+   without a commit (they did on 2026-09-15), which is why GitHub is no
+   longer the primary.
+6. **Observe.** Each run writes a `push_runs` row. `/api/health` reports the
+   last run, the last good run and the last push sent. It returns 503 when no
+   run has succeeded in 20 minutes or when the rate limiter
+   (`consume_api_rate_limit`) doesn't answer.
+
+Tables have row-level security on with no public policies, and the functions
+are executable by the server key only. Public mutation routes check the
+origin and use the Postgres rate limiter, so limits survive serverless
+instance churn.
 
 ## Security and rendering
 
@@ -181,13 +208,17 @@ land in Vercel logs as structured JSON.
   Vitest, `npm audit` for production dependencies, a production build, then
   Playwright journeys in Chromium and WebKit (the diary flow, plus an axe
   scan of Discover that fails on serious or critical violations).
-- **`production-health.yml`** hourly: `curl /api/health | jq -e '.ok'`.
-- **`notify-cron.yml`** every 15 minutes: the push evaluator, which also keeps
-  the free-tier Supabase project from pausing.
+- **`production-health.yml`** hourly: `/api/health` must return `ok: true`.
+  A failing run prints which service failed.
+- **Supabase Cron** every minute: the push evaluator. Each run writes to the
+  database, which also keeps the free-tier project from pausing.
+- **`notify-cron.yml`** every 15 minutes: the backup caller.
 - Vercel deploys `main` to production and previews pull requests.
 
 GitHub disables scheduled workflows in a public repository after 60 days
-without a commit, so a quiet repo silently stops both crons.
+without a commit. The push scheduler no longer depends on that, but the
+hourly health check still does. A second uptime monitor at another vendor
+covers it.
 
 ## Deliberately not built
 
