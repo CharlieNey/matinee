@@ -39,6 +39,15 @@ function memoryStorage(key = STORAGE_KEY, raw: string | null = null) {
 }
 
 describe("persisted state migrations", () => {
+  it("keeps a first-run profile that has no name yet", () => {
+    const parsed = parsePersistedState({
+      ...baseState,
+      profile: { name: "", handle: "", bio: null },
+    });
+    expect(parsed.state.profile).toEqual({ name: "", handle: "", bio: null });
+    expect(parsed.state.diary).toHaveLength(1);
+  });
+
   it("repairs oversized free text without losing the profile or diary", () => {
     const parsed = parsePersistedState({
       ...baseState,
