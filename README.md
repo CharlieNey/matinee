@@ -1,4 +1,4 @@
-# Matinee (web prototype)
+# Matinee
 
 [![CI](https://github.com/CharlieNey/matinee/actions/workflows/ci.yml/badge.svg)](https://github.com/CharlieNey/matinee/actions/workflows/ci.yml)
 [![Production health](https://github.com/CharlieNey/matinee/actions/workflows/production-health.yml/badge.svg)](https://github.com/CharlieNey/matinee/actions/workflows/production-health.yml)
@@ -20,6 +20,17 @@ are curated facts; personal follows, diary entries, and collections persist in
 versioned browser storage. Diary photos use IndexedDB instead of consuming the
 small `localStorage` quota. Deadline push notifications are the hosted backend
 feature.
+
+## Screenshots
+
+Phone layout, from the live site.
+
+<p>
+  <img src="docs/screenshots/01-discover.png" width="23%" alt="Discover: rush banner and the show catalog" />
+  <img src="docs/screenshots/02-rush.png" width="23%" alt="Rush and Lottery: programs open now, with countdowns" />
+  <img src="docs/screenshots/03-show-detail.png" width="23%" alt="Show page: official ticketer and ways to save" />
+  <img src="docs/screenshots/04-district-map.png" width="23%" alt="The District: every Broadway house on one map" />
+</p>
 
 ## Getting started
 
@@ -80,6 +91,26 @@ key in localStorage and the `matinee-diary` IndexedDB database (plus the legacy
   static rendering; structured client/server errors land in Vercel Logs;
   `/api/health` checks catalog freshness, Supabase, and TKTS; public mutation
   routes use durable Supabase rate limits.
+
+## What was hard
+
+- **No single source of truth for Broadway tickets.** Ticketing splits by theater
+  owner and most of it has no public API, so the show and program catalog is
+  curated by hand (`src/lib/shows.ts`, `src/lib/programs.ts`), and the app tells
+  you where each show's official box office is. Background in `PLAN.md` and
+  `DATA.md`.
+- **Programs that open and close on schedules.** A lottery can open at midnight
+  and close a day later, and a rush line can end when supplies run out.
+  The status engine in `src/lib/programs.ts` models weekday windows with day
+  offsets in New York time, and `src/lib/programs.test.ts` covers it.
+- **Stale data is the failure mode.** Every program carries a verified date, and
+  `/api/health` returns 503 if any program is more than 14 days old, so the
+  hourly production-health workflow flags a stale catalog.
+- **Local-first diary without losing data.** Entries live in versioned
+  `localStorage`, photos in IndexedDB, with validated import and export. Unreadable
+  storage is backed up rather than overwritten (`src/lib/persistence.ts`).
+- **Static pages with a strict CSP.** A static Content Security Policy plus SRI
+  keeps pages statically rendered; see `next.config.ts`.
 
 ## Quality and delivery
 

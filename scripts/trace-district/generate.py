@@ -286,5 +286,7 @@ export const TKTS_BOOTH: TheaterGeo = {{
   footprint: "{tkts_fp}",
 }};
 """
-open("/Users/charlie/personal_projects/theatr-project/src/lib/districtGeometry.ts", "w").write(out)
+import pathlib
+OUT = pathlib.Path(__file__).resolve().parents[2] / "src" / "lib" / "districtGeometry.ts"
+OUT.write_text(out)
 print("wrote districtGeometry.ts")
