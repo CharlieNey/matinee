@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { PGlite } from "@electric-sql/pglite";
-import { afterAll, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { RpcCaller, RpcPushStore } from "./rpcStore";
 import { MemoryPushStore, PushStore } from "./store";
 
@@ -28,6 +28,13 @@ const SUPABASE_SHIMS = `
     values (url, body, headers, timeout_milliseconds) returning id;
   $$;
 `;
+
+/**
+ * Booting PGlite and applying every migration costs about five CPU-seconds.
+ * On a machine busy with other work that runs past Vitest's 10 s hook
+ * default (seen 2026-11-21 at load average 40), so these hooks get 30 s.
+ */
+const DATABASE_HOOK_TIMEOUT = 30_000;
 
 async function freshDatabase(): Promise<PGlite> {
   const db = await PGlite.create();
@@ -77,9 +84,11 @@ async function subscribe(store: PushStore, endpoint: string, slugs: string[]) {
   );
 }
 
+// Each PGlite is a full WASM Postgres; close it after its test rather than
+// keeping a dozen resident until the file ends.
 const openDatabases: PGlite[] = [];
-afterAll(async () => {
-  await Promise.all(openDatabases.map((db) => db.close()));
+afterEach(async () => {
+  await Promise.all(openDatabases.splice(0).map((db) => db.close()));
 });
 
 const implementations: Array<[string, () => Promise<PushStore>]> = [
@@ -98,7 +107,7 @@ describe.each(implementations)("push store contract: %s", (_name, make) => {
   let store: PushStore;
   beforeEach(async () => {
     store = await make();
-  });
+  }, DATABASE_HOOK_TIMEOUT);
 
   it("creates, updates and deletes subscriptions; null keeps stored follows", async () => {
     await subscribe(store, ALICE, ["hadestown"]);
@@ -268,7 +277,7 @@ describe("migration SQL beyond the store contract", () => {
   beforeEach(async () => {
     db = await freshDatabase();
     openDatabases.push(db);
-  });
+  }, DATABASE_HOOK_TIMEOUT);
 
   it("keeps the pre-ledger route working: a plain insert is a sent row", async () => {
     await db.query(

@@ -1,8 +1,16 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
+// Start each test with empty storage, once. An init script runs on every
+// document load, and Next falls back to a full page load whenever a
+// client-side navigation's fetch fails (fetch-server-response.js). Clearing
+// on every load then deleted the entry the journey had just published, so
+// the Edit page said "That diary entry isn't here anymore": the old WebKit
+// flake on the edit step. sessionStorage survives reloads in the same tab.
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
+    if (sessionStorage.getItem("e2e-storage-reset")) return;
+    sessionStorage.setItem("e2e-storage-reset", "1");
     localStorage.clear();
     indexedDB.deleteDatabase("matinee-diary");
   });
