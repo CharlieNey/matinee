@@ -6,7 +6,8 @@ import { runningShows, Show } from "./shows";
  * RESEARCH.md), positions are hand-placed on the stylized district grid in
  * DistrictMap — street number + an x on a 0–1000 scale, NOT geography.
  * (An OSM-traced version was built and shelved 2026-07-16 — see PLAN.md
- * Phase 6 refinement; regeneration scripts in scripts/trace-district/.)
+ * Phase 6 refinement. Its scripts were deleted 2026-11-21 and live in git
+ * history before that date.)
  * ID enrichment (Wikidata QID → IBDB/Playbill venue IDs) is seeded from
  * Wikidata (CC0) and hand-audited — it has documented errors (DATA.md): the
  * Gershwin capacity (listed 15,408; actually ~1,933) is corrected here.

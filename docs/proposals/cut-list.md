@@ -77,7 +77,8 @@ The core is not on this list: Discover, Rush, show pages, TKTS, alerts.
   sells which house), and the most visual page.
 - **Recommendation: keep.** Separately: delete `scripts/trace-district/`
   unless you plan to bring back the traced map.
-- **Decision:** keep the map? yes / no. Delete the trace scripts? yes / no
+- **Decision (2026-11-21):** map kept. `scripts/trace-district/` deleted;
+  it is in git history if the traced map comes back.
 
 ## 5. Profile (`/profile`)
 
