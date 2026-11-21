@@ -18,7 +18,13 @@ import {
   programKindLabel,
   programPlatformLabel,
 } from "@/lib/programs";
-import { buildTripPlan, recommendedSlots, TripDay, TripSlot } from "@/lib/trip";
+import {
+  buildTripPlan,
+  recommendedSlots,
+  TripDay,
+  TripSlot,
+  tripWindowLabel,
+} from "@/lib/trip";
 import { useApp } from "@/lib/store";
 import { useNow } from "@/lib/useNow";
 
@@ -41,18 +47,6 @@ const shortDay = new Intl.DateTimeFormat("en-US", {
   month: "short",
   day: "numeric",
 });
-const clock = new Intl.DateTimeFormat("en-US", {
-  timeZone: "America/New_York",
-  hour: "numeric",
-  minute: "2-digit",
-});
-
-function windowLabel(slot: TripSlot): string {
-  const opens = clock.format(slot.opensAt).replace(":00", "");
-  if (slot.whileSuppliesLast) return `from ${opens}`;
-  const closes = clock.format(slot.closesAt).replace(":00", "");
-  return `${opens}–${closes}`;
-}
 
 function isAdvanceEntry(slot: TripSlot): boolean {
   return slot.program.kind === "digital-lottery";
@@ -107,7 +101,7 @@ function SlotRow({
       </span>
       <span className="shrink-0 text-right">
         <span className="block text-caption font-semibold text-ink">
-          {closed ? "Closed · " : ""}{windowLabel(slot)}
+          {closed ? "Closed · " : ""}{tripWindowLabel(slot)}
         </span>
         <span className="mt-0.5 block text-caption text-ink-soft">
           {program.price === 0 ? "Free" : `$${program.price}`}
@@ -148,7 +142,7 @@ function PlanAction({
         <Poster show={slot.show} className="size-12 shrink-0 rounded-thumb" />
         <span className="min-w-0 flex-1">
           <span className="flex items-center gap-1.5 text-label font-semibold text-ink-soft">
-            {action} · {shortDay.format(day.date)} · {windowLabel(slot)}
+            {action} · {shortDay.format(day.date)} · {tripWindowLabel(slot)}
             {interested && (
               <Bookmark
                 className="size-3 shrink-0 text-gold-ink"

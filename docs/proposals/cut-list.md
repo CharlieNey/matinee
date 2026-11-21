@@ -57,7 +57,8 @@ The core is not on this list: Discover, Rush, show pages, TKTS, alerts.
   what do I enter and when?", which is the visitor most likely to need
   Matinee. It also shows off the schedule engine.
 - **Recommendation: keep, and fix the multi-day label.**
-- **Decision:** keep? yes / no
+- **Decision (2026-11-21):** kept. The label now names the closing day
+  ("10 AM–Thu 12 PM"), with a unit test.
 
 ## 4. District map (`/district`)
 
