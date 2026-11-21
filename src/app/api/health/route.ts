@@ -2,6 +2,7 @@ import {
   allPrograms,
   isProgramStale,
   programsLastVerified,
+  programsOldestVerified,
 } from "@/lib/programs";
 import { getPushStore } from "@/lib/push/server";
 import type { PipelineStatus } from "@/lib/push/store";
@@ -87,6 +88,7 @@ export async function GET() {
         shows: allShows().length,
         programs: allPrograms().length,
         lastVerified: programsLastVerified(),
+        oldestVerified: programsOldestVerified(),
         stalePrograms: stalePrograms.length,
       },
       services: { database, rateLimit, scheduler, tkts },

@@ -920,6 +920,18 @@ export function programsLastVerified(): string {
   return latest;
 }
 
+/**
+ * Oldest lastVerified across the catalog. A trust line that quotes only the
+ * newest date overstates freshness when some rows could not be re-checked.
+ */
+export function programsOldestVerified(): string {
+  let oldest = LAST_VERIFIED;
+  for (const item of PROGRAMS) {
+    if (item.lastVerified < oldest) oldest = item.lastVerified;
+  }
+  return oldest;
+}
+
 /** "45 min", "2 hr", "5 hr", "1 hr 30 min". */
 export function formatMinutes(minutes: number): string {
   if (minutes < 60) return `${minutes} min`;

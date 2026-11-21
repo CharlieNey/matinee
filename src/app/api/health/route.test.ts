@@ -93,6 +93,7 @@ describe("GET /api/health", () => {
     });
     expect(body.catalog.stalePrograms).toBe(0);
     expect(body.catalog.lastVerified).toBe(programsLastVerified());
+    expect(body.catalog.oldestVerified).toBe(oldestCheck);
     expect(response.headers.get("Cache-Control")).toBe("no-store");
   });
 

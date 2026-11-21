@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Check, ChevronDown, ExternalLink, Trophy } from "lucide-react";
 import { WinCardSheet } from "@/components/WinCardSheet";
+import { formatCheckedDate, reportProblemHref } from "@/lib/contact";
 import { allInForPlatform, allInLabel } from "@/lib/fees";
 import { useEnteredToday } from "@/lib/entries";
 import {
@@ -210,11 +211,18 @@ function ProgramRow({
               </p>
             )}
             {allIn && <p className="text-ink-faint">{allInLabel(allIn)}</p>}
-            {stale && (
-              <p className="text-ink-faint">
-                Details are due for verification — confirm on the entry site.
-              </p>
-            )}
+            <p className="text-ink-faint">
+              Checked {formatCheckedDate(program.lastVerified)}
+              {stale && " · due for re-checking, so confirm on the entry site"}
+              {" · "}
+              <a
+                href={reportProblemHref(show, program)}
+                className="underline underline-offset-2 transition-opacity active:opacity-60"
+              >
+                Report a problem
+                <span className="sr-only"> with this listing</span>
+              </a>
+            </p>
             <div className="flex flex-wrap items-center gap-2 pt-2">
               <a
                 href={program.entryUrl}

@@ -1,5 +1,10 @@
 import { RushFeed } from "@/components/RushFeed";
-import { allPrograms, programsLastVerified } from "@/lib/programs";
+import { formatCheckedRange } from "@/lib/contact";
+import {
+  allPrograms,
+  programsLastVerified,
+  programsOldestVerified,
+} from "@/lib/programs";
 import { runningShows } from "@/lib/shows";
 
 export const metadata = {
@@ -21,10 +26,9 @@ export default function RushPage() {
       <p className="mt-2 text-caption text-ink-faint">
         {productionCount} productions checked · {programShowCount} with
         programs · verified{" "}
-        {new Date(`${programsLastVerified()}T12:00:00`).toLocaleDateString(
-          "en-US",
-          { month: "long", day: "numeric" },
-        )}
+        {/* Oldest to newest: quoting only the newest date would overstate
+            how fresh the rows that couldn't be re-checked are. */}
+        {formatCheckedRange(programsOldestVerified(), programsLastVerified())}
       </p>
       <RushFeed />
     </main>

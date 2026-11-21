@@ -8,6 +8,7 @@ import { OfficialTicketsCard } from "@/components/OfficialTicketsCard";
 import { Poster } from "@/components/Poster";
 import { ShowPrograms } from "@/components/ShowPrograms";
 import { FollowShowCard } from "@/components/FollowShowCard";
+import { reportProblemHref } from "@/lib/contact";
 import { officialTicketsForShow } from "@/lib/officialTickets";
 import {
   cheapestProgram,
@@ -170,6 +171,16 @@ export default async function ShowPage({
           </Link>
         </section>
       )}
+
+      <p className="mt-9 px-4 text-caption text-ink-faint web:px-6">
+        Something out of date?{" "}
+        <a
+          href={reportProblemHref(show)}
+          className="underline underline-offset-2 transition-opacity active:opacity-60"
+        >
+          Report a problem with this listing
+        </a>
+      </p>
     </main>
   );
 }
