@@ -1,7 +1,7 @@
 # Notifications
 
 Written 2026-11-20, before the build. It is the spec the code is held to.
-Going live needs the hosted steps in the go-live checklist (rate-limit and
+Going live needs the hosted steps in `docs/GO-LIVE.md` (rate-limit and
 ledger migrations, scheduler switch-on); until then production still runs the
 old path, whose GitHub cron has been disabled since 2026-09-15.
 
