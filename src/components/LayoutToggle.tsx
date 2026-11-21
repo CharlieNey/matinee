@@ -47,13 +47,19 @@ export function LayoutToggle() {
     }
   };
 
+  // The pressed look keys off html[data-layout], which the pre-paint script
+  // sets, so the first paint is already right. Keyed off React state, it
+  // faded in for 150 ms after every hydration, and an axe scan landing in
+  // that window read white text on a pale button (the WebKit a11y flake).
   const segment = (target: Mode, label: string, Icon: typeof Monitor) => (
     <button
       type="button"
       aria-pressed={mode === target}
       onClick={() => apply(target)}
       className={`flex h-9 items-center gap-1.5 rounded-full px-3.5 text-caption font-semibold transition-colors duration-150 ${
-        mode === target ? "bg-espresso text-white" : "text-ink-soft"
+        target === "mobile"
+          ? "text-ink-soft mobile:bg-espresso mobile:text-white"
+          : "text-ink-soft web:bg-espresso web:text-white"
       }`}
     >
       <Icon className="size-4" strokeWidth={2} />
