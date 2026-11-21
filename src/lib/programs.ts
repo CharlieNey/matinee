@@ -371,7 +371,8 @@ const PROGRAMS: readonly Program[] = [
 
   // Unverified 2026-11-20: $45 (Playbill snippet, BroadwayWorld's price
   // field) against $35 (TDF, BroadwayWorld's text, broadway.org). The official
-  // site's robots.txt is unreadable (403), so it was not fetched.
+  // site's robots.txt is unreadable (403), so it was not fetched. Retried
+  // 2026-11-21: TDF still says $35, with the same window and 60 minutes.
   {
     ...program(
       "aladdin",
@@ -399,7 +400,8 @@ const PROGRAMS: readonly Program[] = [
 
   {
     // Unverified 2026-11-20: sources give three entry deadlines (9:30, 10 and
-    // 11 AM) and the official site no longer mentions Lucky Seat.
+    // 11 AM) and the official site no longer mentions Lucky Seat. Retried
+    // 2026-11-21: the site still lists only the $15 monthly lottery.
     ...luckySeatLottery(
       "the-book-of-mormon",
       49,
@@ -428,7 +430,8 @@ const PROGRAMS: readonly Program[] = [
   }),
   {
     // Unverified 2026-11-20: $39 (Playbill snippet, NYTG) against $27 (TDF,
-    // BroadwayWorld's text). The official site lists neither.
+    // BroadwayWorld's text). The official site lists neither. Retried
+    // 2026-11-21: TDF still says $27 "when the performance is sold out".
     ...boxOfficeProgram("chicago", "sro", 39, "Ambassador Theatre"),
     lastVerified: "2026-11-11",
   },
@@ -451,7 +454,9 @@ const PROGRAMS: readonly Program[] = [
   {
     // Unverified 2026-11-20: $49 and Lucky Seat confirmed on hadestown.com,
     // but sources disagree on the deadline (TDF: 10:30 AM day of; BWW: 9:30 AM
-    // day of; NYTG: 9:30 AM the day before).
+    // day of; NYTG: 9:30 AM the day before). Retried 2026-11-21: the official
+    // tickets page still gives no deadline; TDF now says $47.50, entries close
+    // 10:30 AM day of, drawing from 11 AM.
     ...luckySeatLottery(
       "hadestown",
       49,
@@ -588,17 +593,11 @@ const PROGRAMS: readonly Program[] = [
 
   telechargeLottery("the-outsiders"),
   boxOfficeProgram("the-outsiders", "rush", 45, "Bernard B. Jacobs Theatre"),
-  {
-    // Unverified 2026-11-20: the show's site no longer mentions standing
-    // room; NYTG and forum reports give $45 and $37.
-    ...boxOfficeProgram(
-      "the-outsiders",
-      "sro",
-      39,
-      "Bernard B. Jacobs Theatre",
-    ),
-    lastVerified: "2026-11-11",
-  },
+  // No standing room: re-checked 2026-11-21, the official FAQ
+  // (outsidersmusical.com, "Does THE OUTSIDERS offer rush, lottery, or
+  // standing room tickets?") lists the lottery, a $30 Under 30 rush and the
+  // $45 rush only. The $39 row from July was removed. The Under 30 rush isn't
+  // modeled: a second box-office rush per show breaks programKey uniqueness.
 
   todayTixRush(
     "paranormal-activity",
@@ -607,8 +606,10 @@ const PROGRAMS: readonly Program[] = [
   ),
   boxOfficeProgram("paranormal-activity", "rush", 40, "August Wilson Theatre"),
 
-  // Unverified 2026-11-20: $30 on TodayTix is confirmed, the entry window and
-  // claim time are not. The old /shows/4390 link 404s.
+  // Verified 2026-11-21 from the TodayTix show page's performance data:
+  // "$30 Lottery tickets", maxTickets 2, open 17:00 the day before until
+  // 09:00 the day of, for each performance listed. The claim time isn't
+  // published, so the row doesn't state one (it used to say one hour).
   {
     ...program(
       "rocky-horror-show",
@@ -623,16 +624,9 @@ const PROGRAMS: readonly Program[] = [
         "09:00",
         MONDAY_TO_SATURDAY,
       ),
-      {
-        notes: "Winners have one hour to claim tickets.",
-        claimWindow: {
-          minutes: 60,
-          channel: "app",
-          notifiedAround: "after the 9 AM drawing",
-        },
-      },
+      { notes: "Winners buy in the TodayTix app." },
     ),
-    lastVerified: "2026-11-11",
+    lastVerified: "2026-11-21",
   },
 
   broadwayDirectLottery(
@@ -723,18 +717,27 @@ const PROGRAMS: readonly Program[] = [
       },
     },
   ),
+  // Verified 2026-11-21. The official FAQ (perfect-crime.com): "Rush tickets
+  // are available at the Box Office on the day of the performance" and "are
+  // also available on TodayTix", linking the TodayTix page, which reads
+  // "Unlock Rush for $35 tickets". No source ties a student ID to the price,
+  // so the old $35 box-office student rush is gone; the box-office rush has
+  // no published price, so it isn't listed. Days come from TodayTix's
+  // calendar: dark Wednesdays.
   {
-    // Unverified 2026-11-20: no source links a student ID to the $35 price;
-    // TodayTix now lists a $35 rush with no window shown.
-    ...boxOfficeProgram(
+    ...todayTixRush(
       "perfect-crime",
-      "student-rush",
       35,
-      "The Theater Center",
-      2,
-      { sundayOpensAt: "11:00" },
+      "https://www.todaytix.com/nyc/shows/1299-perfect-crime",
     ),
-    lastVerified: "2026-11-11",
+    lastVerified: "2026-11-21",
+    schedule: dailyWindow(
+      "Unlocks in the TodayTix app at 9 AM",
+      "09:00",
+      "20:00",
+      [0, 1, 2, 4, 5, 6],
+      true,
+    ),
   },
 ];
 
