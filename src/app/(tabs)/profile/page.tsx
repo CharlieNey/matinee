@@ -584,6 +584,7 @@ export default function ProfilePage() {
     return sum + Math.max(0, face - program.price);
   }, 0);
   const streak = now ? entryStreak(log, now) : 0;
+  const hasRecap = attended.length > 0 || log.length > 0;
 
   const [draftName, setDraftName] = useState(profile.name);
   const [draftBio, setDraftBio] = useState(profile.bio ?? "");
@@ -871,17 +872,22 @@ export default function ProfilePage() {
           {profile.bio ?? "Add a few words about yourself"}
         </button>
 
-        <div className="mt-6 grid grid-cols-2 gap-3">
+        {/* The season recap appears once there is something to recap. */}
+        <div
+          className={`mt-6 grid gap-3 ${hasRecap ? "grid-cols-2" : "grid-cols-1"}`}
+        >
           <HeaderPill
             icon={<BellPlus className="size-5" strokeWidth={1.8} />}
             label="Following"
             href="/notify"
           />
-          <HeaderPill
-            icon={<Trophy className="size-5" strokeWidth={1.8} />}
-            label="Wrapped"
-            href="/wrapped"
-          />
+          {hasRecap && (
+            <HeaderPill
+              icon={<Trophy className="size-5" strokeWidth={1.8} />}
+              label="Wrapped"
+              href="/wrapped"
+            />
+          )}
         </div>
         </div>
       </header>

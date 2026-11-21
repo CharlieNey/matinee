@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { MeshGradient } from "@paper-design/shaders-react";
 import { useReducedMotion } from "motion/react";
+import { EmptyState } from "@/components/EmptyState";
 import { Poster } from "@/components/Poster";
 import { ShareButton } from "@/components/ShareButton";
 import { useToast } from "@/components/Toast";
@@ -156,6 +157,10 @@ export function WrappedScreen() {
     ];
 
     return {
+      // Nothing to recap until a show is logged or an entry is recorded this
+      // season; a first-time visitor would otherwise get "0 / 0 / 0" and a
+      // Share button.
+      empty: showsSeen === 0 && seasonLog.length === 0,
       stats,
       months,
       monthCounts,
@@ -165,6 +170,18 @@ export function WrappedScreen() {
 
   if (!now) return null;
   const season = seasonLabel(now);
+
+  if (data.empty) {
+    return (
+      <div className="pt-6">
+        <EmptyState
+          text={`Log a show or tap “I entered” on a rush or lottery, and your ${season} recap builds here…`}
+          actionLabel="See today's windows"
+          actionHref="/rush"
+        />
+      </div>
+    );
+  }
 
   const handleShare = async () => {
     const blob = await renderWrappedCard({

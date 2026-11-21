@@ -40,7 +40,8 @@ The core is not on this list: Discover, Rush, show pages, TKTS, alerts.
   only once a show is logged or an entry is recorded, and give `/wrapped` an
   empty state. About 30 minutes. If you'd rather carry less, delete it
   (about 370 lines plus the card renderer).
-- **Decision:** hide behind data? yes / no. Or delete? yes / no
+- **Decision (2026-11-21):** hidden behind data. The pill shows once a show
+  is logged or an entry is recorded, and `/wrapped` has an empty state.
 
 ## 3. Trip mode (`/trip`)
 
