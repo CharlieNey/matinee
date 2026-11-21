@@ -13,13 +13,13 @@ half a dozen platforms and box offices, and open and close at odd hours. Matinee
 them on one board with live countdowns in New York time, tells you which
 official seller each show uses, and links out to it. It never sells tickets.
 
-Matinee began in July 2026 as a design study of the Theatr iOS app, a
-face-value ticket resale app I use, and grew into its own product around a
-different problem: curated rush/lottery programs, official-ticketer clarity,
-and the TKTS board. It has no marketplace. Every purchase deep-links out to
-the official seller; Matinee is the index, never the checkout. (The study's
-reference screenshots are Theatr's copyrighted material and are not
-distributed with this repo.)
+Matinee began in July 2026 as a UI clone of the Theatr iOS app, built from
+screenshots to learn how the app was designed. Within two days I removed the
+resale marketplace and rebuilt it around a different problem: a curated, live
+board of rush, lottery and cheap-seat programs that links out to official
+sellers. The original design language is still visible in `DESIGN.md`; the
+product is not the same. (The reference screenshots are Theatr's copyrighted
+material and are not distributed with this repo.)
 
 ## Screenshots
 

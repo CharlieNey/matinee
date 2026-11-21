@@ -1,6 +1,6 @@
 # Matinee Design Language
 
-Began as a design study of the Theatr iOS app (reference screenshots kept locally in `reference/theatr-screens/`, captured 2026-07-15) and has since diverged; see §12.
+Began in July 2026 as a UI clone of the Theatr iOS app, built from screenshots to learn how the app was designed (reference screenshots kept locally in `reference/theatr-screens/`, captured 2026-07-15). Within two days the resale marketplace was removed and the product rebuilt around official rush, lottery and cheap-seat programs; the design language has since diverged too, see §12.
 This file is the source of truth for every screen we build. When in doubt, match the screenshots;
 when the screenshots are silent, follow the rules here.
 
