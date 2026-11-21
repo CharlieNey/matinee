@@ -549,6 +549,9 @@ export function DistrictMap() {
                       href={official.url}
                       target="_blank"
                       rel="noopener noreferrer"
+                      data-seller-link="district"
+                      data-show={selectedEntry.show.slug}
+                      data-platform={official.provider}
                       className="mt-4 flex h-12 items-center justify-between rounded-full bg-cream px-4 text-body font-semibold transition-transform duration-150 active:scale-[0.98]"
                     >
                       Buy at {official.provider}

@@ -120,6 +120,13 @@ hourly `production-health.yml` workflow turns red. A refresh that cannot
 confirm a fact keeps that row's older date, with a comment saying why, rather
 than bumping it.
 
+Every expanded row shows "Checked <date>" and a "Report a problem" link, and
+each show page ends with "Report a problem with this listing". Both open a
+prefilled email (`src/lib/contact.ts`: show, program key, price, platform,
+check date, page URL) to `CONTACT_EMAIL`, the app's only contact address.
+Rush's header names the oldest-to-newest check range, and `/api/health`
+reports `catalog.oldestVerified` beside `lastVerified`.
+
 `src/lib/catalog.test.ts` checks the data's integrity on every CI run: no
 program on a closed or unknown show, unique keys, valid times, prices and https
 links, and every running Broadway show seated in a known house.
@@ -198,7 +205,29 @@ instance churn.
 
 A static Content-Security-Policy (`next.config.ts`) with Subresource Integrity
 keeps pages statically rendered and cacheable: no per-request nonce, no
-third-party origins, `frame-ancestors 'none'`. Uncaught server errors
+third-party origins, `frame-ancestors 'none'`. The one optional exception is
+usage analytics: when `NEXT_PUBLIC_POSTHOG_KEY` is set at build time, the
+PostHog API host joins `connect-src`.
+
+## Usage analytics (off by default)
+
+`src/lib/analytics.ts` loads nothing unless `NEXT_PUBLIC_POSTHOG_KEY` is set.
+With a key, the bundled posthog-js is imported on first use and runs in
+PostHog's cookieless mode (`cookieless_mode: "always"`, `person_profiles:
+"never"`): no cookies or storage, no autocapture, no pageviews, no session
+recording, no feature-flag or remote-config call, no remote scripts. Five
+events exist:
+
+| Event | Where |
+|---|---|
+| `seller_click` | Any link marked `data-seller-link` (program rows, official tickets, trip, district, TKTS), via one listener in `AnalyticsEvents.tsx` |
+| `show_followed` | `FollowShowCard` |
+| `push_opt_in` | `PushProvider.enable`, after the subscription is saved |
+| `push_opened` | `public/sw.js` adds `?via=push` to the tap URL; the page counts it and strips the flag |
+| `push_sent` | `/api/notify/run`, one per delivered notification, via the capture API (`src/lib/analyticsServer.ts`, 2 s timeout, never throws) |
+
+The About page gains a "What we count" section only when analytics is on.
+ Uncaught server errors
 (`src/instrumentation.ts`) and client errors (posted to `/api/client-errors`)
 land in Vercel logs as structured JSON.
 

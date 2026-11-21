@@ -1,4 +1,5 @@
 import { timingSafeEqual } from "node:crypto";
+import { captureServerEvents, ServerEvent } from "@/lib/analyticsServer";
 import { runNotifications } from "@/lib/push/delivery";
 import { vapidFromEnv, webPushSender } from "@/lib/push/sender";
 import { getPushStore } from "@/lib/push/server";
@@ -55,13 +56,25 @@ async function run(request: Request) {
   const pinned = at && !Number.isNaN(Date.parse(at)) ? new Date(at) : null;
 
   try {
+    const delivered: ServerEvent[] = [];
     const summary = await runNotifications({
       store,
       send: webPushSender(vapid),
       source: schedulerSource(request),
       // The heartbeat keeps real time, so health never sees a future run.
       ...(pinned ? { now: () => pinned, recordAt: () => new Date() } : {}),
+      onSent: (events) =>
+        delivered.push({
+          event: "push_sent",
+          properties: {
+            show: events[0].slug,
+            kinds: [...new Set(events.map((event) => event.kind))].join(","),
+            alerts: events.length,
+          },
+        }),
     });
+    // Off unless NEXT_PUBLIC_POSTHOG_KEY is set; bounded by a 2 s timeout.
+    await captureServerEvents(delivered);
     return Response.json(summary, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     console.error("notify run failed:", error);

@@ -297,3 +297,27 @@ describe("heartbeat", () => {
     });
   });
 });
+
+describe("the onSent reporting hook", () => {
+  it("reports each delivered notification once, and a throwing hook changes nothing", async () => {
+    const store = await storeWith({ [ALICE]: [RUSH.showSlug], [BOB]: [RUSH.showSlug] });
+    const rec = recorder();
+    const reported: string[] = [];
+    let calls = 0;
+    const summary = await runNotifications({
+      store,
+      send: rec.send,
+      source: "test",
+      now: () => et("09:55"),
+      events: (now) => duePushEvents(now, [RUSH]),
+      onSent: (events) => {
+        calls += 1;
+        reported.push(...events.map((event) => event.slug));
+        if (calls === 1) throw new Error("analytics down");
+      },
+    });
+    expect(summary.sent).toBe(2);
+    expect(summary.failed + summary.released).toBe(0);
+    expect(reported).toEqual([RUSH.showSlug, RUSH.showSlug]);
+  });
+});

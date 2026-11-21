@@ -46,6 +46,8 @@ export type RunOptions = {
   recordAt?: () => Date;
   events?: (now: Date) => PushEvent[];
   runId?: string;
+  /** Called once per delivered notification (usage analytics). */
+  onSent?: (events: readonly PushEvent[]) => void;
 };
 
 async function inPool<T>(
@@ -180,6 +182,11 @@ export async function runNotifications(options: RunOptions): Promise<RunSummary>
         });
         summary.sent += 1;
         sent.push(...pairsOf);
+        try {
+          options.onSent?.(item.events);
+        } catch {
+          // A reporting hook must never turn a delivered push into a retry.
+        }
       } catch (error) {
         const outcome = classifySendError(error);
         if (outcome === "gone") {

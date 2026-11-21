@@ -228,6 +228,9 @@ function ProgramRow({
                 href={program.entryUrl}
                 target="_blank"
                 rel="noreferrer"
+                data-seller-link="program"
+                data-show={program.showSlug}
+                data-platform={program.platform}
                 className="flex h-10 items-center gap-1.5 rounded-full bg-espresso px-4 text-caption font-semibold text-white transition-transform duration-150 active:scale-[0.97]"
               >
                 {program.platform === "box-office"

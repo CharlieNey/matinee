@@ -77,6 +77,9 @@ function SlotRow({
       aria-disabled={closed || undefined}
       target="_blank"
       rel="noreferrer"
+      data-seller-link="trip"
+      data-show={program.showSlug}
+      data-platform={program.platform}
       className={`flex items-center gap-3 rounded-card bg-paper p-3 transition-transform duration-150 active:scale-[0.985] ${closed ? "opacity-60" : ""}`}
     >
       <Poster show={slot.show} className="size-12 shrink-0 rounded-thumb" />
@@ -134,6 +137,9 @@ function PlanAction({
         href={slot.program.entryUrl}
         target="_blank"
         rel="noreferrer"
+        data-seller-link="trip"
+        data-show={slot.program.showSlug}
+        data-platform={slot.program.platform}
         className="flex items-center gap-3.5 rounded-card bg-paper p-3.5 transition-transform duration-150 active:scale-[0.985]"
       >
         <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-espresso text-caption font-semibold text-white">

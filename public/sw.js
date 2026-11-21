@@ -50,6 +50,8 @@ self.addEventListener("notificationclick", (event) => {
   } catch {
     url = new URL("/rush", self.location.origin);
   }
+  // The landing page counts the open (only if analytics is on) and strips it.
+  url.searchParams.set("via", "push");
   event.waitUntil(
     (async () => {
       // Reuse an open Matinee tab or installed window before opening another.

@@ -252,6 +252,9 @@ export function TktsShowRow({ slug }: { slug: string }) {
         href={row.url}
         target="_blank"
         rel="noopener noreferrer"
+        data-seller-link="tkts"
+        data-show={row.showSlug}
+        data-platform="tkts"
         className="mt-3 flex items-center gap-3 rounded-card bg-paper p-3.5 transition-transform duration-150 active:scale-[0.985]"
       >
         <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-inset text-vermilion">

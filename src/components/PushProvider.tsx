@@ -9,6 +9,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { track } from "@/lib/analytics";
 import { onLotteryLogChange, readLotteryLog } from "@/lib/entries";
 import { useApp } from "@/lib/store";
 
@@ -266,6 +267,7 @@ export function PushProvider({ children }: { children: React.ReactNode }) {
       }
       writeWanted(true);
       setSubscription(sub);
+      track("push_opt_in", { follows: slugsRef.current.length });
       return true;
     } catch {
       setError("subscribe-failed");

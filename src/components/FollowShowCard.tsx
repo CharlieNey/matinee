@@ -4,6 +4,7 @@ import Link from "next/link";
 import { BellOff, BellPlus, BellRing } from "lucide-react";
 import { usePushAlerts } from "@/components/PushProvider";
 import { useToast } from "@/components/Toast";
+import { track } from "@/lib/analytics";
 import { nextAlertSummary } from "@/lib/push/copy";
 import { useApp } from "@/lib/store";
 import { Show } from "@/lib/shows";
@@ -40,6 +41,7 @@ export function FollowShowCard({ show }: { show: Show }) {
       return;
     }
     toggleFollow(show);
+    track("show_followed", { show: show.slug });
     const ask =
       push.support === "ready" &&
       push.permission === "default" &&

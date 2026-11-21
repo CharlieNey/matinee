@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { BackHeader } from "@/components/BackHeader";
+import { analyticsEnabled } from "@/lib/analytics";
 import { allPrograms, cheapestProgram } from "@/lib/programs";
 import { runningShows } from "@/lib/shows";
 import { allTheaters } from "@/lib/theaters";
@@ -167,6 +168,18 @@ export default function AboutPage() {
             before you plan a night around a row.
           </p>
         </Section>
+
+        {analyticsEnabled && (
+          <Section title="What we count">
+            <p>
+              Matinee counts a few anonymous events with PostHog: taps through
+              to an official seller, follows, alert sign-ups, and alerts sent
+              and opened. It runs in PostHog&apos;s cookieless mode, so
+              nothing is stored on your device, there is no profile of you,
+              and nothing records your screen.
+            </p>
+          </Section>
+        )}
 
         <Section title="Sources & credits">
           <p>
