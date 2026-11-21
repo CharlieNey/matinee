@@ -52,7 +52,6 @@ function PosterShelf({
           href={`/shows/${show.slug}`}
           className="card-enter w-[104px] shrink-0 transition-transform duration-150 active:scale-[0.96]"
           style={{ "--stagger": `${Math.min(i * 30, 240)}ms` } as React.CSSProperties}
-          aria-label={show.title}
         >
           <Poster
             show={show}
