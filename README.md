@@ -184,9 +184,11 @@ installed-iPhone and backup-recording steps are in
 
 ## Poster art
 
-`public/posters/` holds key art from the shows' official sites and Playbill
-covers (`src/lib/posters.json` maps slug to file). Next Image serves AVIF/WebP
-variants; shows without art get a generated typographic tile.
+`public/posters/` holds key art from the shows' official sites
+(`src/lib/posters.json` maps slug to file). Next Image serves AVIF/WebP
+variants; shows without art get a generated typographic tile. No Playbill
+covers are used: the two that were (Operation Mincemeat, Ragtime) were
+replaced by the generated tile in November 2026.
 
 > ⚠️ The poster images are copyrighted marketing material, included as
 > non-commercial portfolio reference with attribution. They are **not**

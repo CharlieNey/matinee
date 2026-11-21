@@ -19,7 +19,6 @@ const POSTER_POSITION: Record<string, string> = {
   "the-outsiders": "0% center",
   "heathers": "70% center",
   "the-lost-boys": "80% center",
-  "operation-mincemeat": "center 65%",
   "two-strangers": "0% center",
   "maybe-happy-ending": "0% center",
   "death-of-a-salesman": "0% center",
