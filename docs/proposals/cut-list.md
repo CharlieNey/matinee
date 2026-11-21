@@ -1,8 +1,8 @@
 # Cut list: whole features (2026-11-20)
 
-Nothing here has been removed. Each feature has its cost, what a visitor
-would lose, and one recommendation. Answer yes or no on each **Decision**
-line. Line counts are from `wc -l` on this branch.
+Charlie's answer (2026-11-21): apply the recommendations. Each
+**Decision** line below says what was done, in its own commit. Line counts
+are from `wc -l` on this branch before the changes.
 
 The core is not on this list: Discover, Rush, show pages, TKTS, alerts.
 
@@ -22,7 +22,7 @@ The core is not on this list: Discover, Rush, show pages, TKTS, alerts.
   back after a show. An interviewer loses the one flow that writes and
   restores data.
 - **Recommendation: keep.**
-- **Decision:** keep? yes / no
+- **Decision (2026-11-21):** kept.
 
 ## 2. Season recap (`/wrapped`)
 
@@ -99,4 +99,7 @@ The core is not on this list: Discover, Rush, show pages, TKTS, alerts.
 - **Recommendation: keep.** Split the page by tab (1–2 hours, no behavior
   change). Optionally cut Ranking (about 330 lines) if you want the profile
   smaller.
-- **Decision:** keep? yes / no. Split by tab? yes / no. Cut Ranking? yes / no
+- **Decision (2026-11-21):** kept, and split with no behavior change.
+  `profile/page.tsx` is now 234 lines: tab bar, edit sheet and collection
+  editors. Each tab, the identity header and the settings/backup sheets live
+  in `profile/_components/`. Ranking kept.
