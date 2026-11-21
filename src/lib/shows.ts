@@ -940,7 +940,7 @@ const SHOWS: Show[] = [
       bg: "#101418",
       fg: "#5fe0c8",
       style: "condensed",
-      caption: "Previews Begin July 22",
+      caption: "Signature Theatre",
       captionColor: "#5b6a72",
     },
   },

@@ -69,13 +69,12 @@ export default function AboutPage() {
             box-office face value across the same shows is ${medianFace}.
           </p>
           <p>
-            The catch is the interface. Those programs live on four or five
-            separate platforms, open and close at odd hours, and the
-            community&apos;s best tool is a volunteer-run static page whose
-            own disclaimer says it can&apos;t guarantee freshness. Even
-            TodayTix&apos;s official advice is to &quot;note what time Rush
-            opens, set an alert&quot; — yourself. This app is that alert, plus
-            the map, plus the board.
+            The catch is timing. Those programs live on four or five
+            separate platforms and open and close at odd hours. The free
+            lists are good, and TodayTix sends an alert when each of its own
+            lotteries opens, but nothing shows what is open right now across
+            every seller. Matinee is that board, plus a push when a window
+            you follow opens, plus the map.
           </p>
         </Section>
 
