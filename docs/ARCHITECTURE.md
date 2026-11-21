@@ -10,7 +10,7 @@ Supabase database exists only for web push.
                  build time                              runtime
   ┌────────────────────────────────┐   ┌───────────────────────────────────────┐
   │ src/lib/shows.ts     (58 shows) │   │ Browser                               │
-  │ src/lib/programs.ts  (programs) │──▶│  static pages + client components     │
+  │ src/lib/programCatalog.ts       │──▶│  static pages + client components     │
   │ src/lib/theaters.ts  (41 houses)│   │  localStorage: diary, follows, log    │
   └────────────────────────────────┘   │  IndexedDB: diary photos              │
                                         │  service worker: push display         │
@@ -29,7 +29,7 @@ genre, venue, face value, poster palette, and `closedOn` once a production
 closes. Closed shows stay in the catalog so diary entries and shared links
 keep resolving, but they leave the browse grid and lose their programs.
 
-**Program** (`src/lib/programs.ts`): one way in to one show.
+**Program** (types and schedule engine in `src/lib/programs.ts`, rows in `src/lib/programCatalog.ts`): one way in to one show.
 
 ```ts
 type Program = {

@@ -15,7 +15,7 @@ what may and may not be fetched.
 2. Extract the policy: schema.org `offers` where a site publishes them
    (DATA.md found these on some show sites), otherwise a small structured
    extraction step given the page text and the current row.
-3. Diff against `src/lib/programs.ts` and open a pull request: each proposed
+3. Diff against `src/lib/programCatalog.ts` and open a pull request: each proposed
    edit carries its source URL and the quoted sentence; `lastVerified` moves
    only on rows whose facts matched; rows with no allowed source are listed
    as needing a person.

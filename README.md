@@ -55,7 +55,7 @@ production health check, and what was deliberately not built.
 
 In one paragraph: there is no API for any of this, so shows, programs and the
 41 theaters are curated TypeScript data (`src/lib/shows.ts`,
-`src/lib/programs.ts`, `src/lib/theaters.ts`) with a verification date on every
+`src/lib/programCatalog.ts`, `src/lib/theaters.ts`) with a verification date on every
 row. A pure schedule engine turns each program's weekly windows into
 "open, closes in 23 min" in New York time. Personal data (diary, follows,
 lottery log) stays in versioned browser storage; there are no accounts.
