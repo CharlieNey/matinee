@@ -1,0 +1,42 @@
+# Deploys Matinee to Vercel with a token from Charlie's personal Vercel account (repo secret
+# VERCEL_TOKEN, made 2026-11-27, expires after a year: make a new one in Vercel, Account Settings,
+# Tokens, then `gh secret set VERCEL_TOKEN -R CharlieNey/matinee`).
+#
+# Vercel's own GitHub integration is off for this project on purpose: a GitHub account can be
+# linked to only one Vercel account, and Charlie's is linked to his work one. A push to main goes
+# to production (matinee.nyc). Run it by hand on another branch for a preview, which sits behind
+# a Vercel login.
+name: Deploy to Vercel
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: vercel-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  VERCEL_ORG_ID: team_9Y9MMkxRFGw6wWUKgu1SNmho
+  VERCEL_PROJECT_ID: prj_TWNh12AMCRoIGsUUD9No0YZpyxal
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Deploy (Vercel builds it with the project's own settings and environment variables)
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          if [ "$GITHUB_REF" = "refs/heads/main" ]; then target="--prod"; else target=""; fi
+          npx --yes vercel@66.6.0 deploy $target --yes --token "$VERCEL_TOKEN" > deploy-url.txt
+          echo "Deployed: $(tail -n 1 deploy-url.txt)" | tee -a "$GITHUB_STEP_SUMMARY"
