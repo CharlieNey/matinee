@@ -1,71 +1,70 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
-import { BellOff, Send } from "lucide-react";
+import { useState } from "react";
+import { Send } from "lucide-react";
+import { TestPushResult, usePushAlerts } from "@/components/PushProvider";
 import { Toggle } from "@/components/Toggle";
-import { useToast } from "@/components/Toast";
-import { usePush } from "@/lib/usePush";
 import { useApp } from "@/lib/store";
 
-/* iOS Safari only delivers web push after Add to Home Screen; watching
- * display-mode clears the hint if the installed app is opened. */
-function subscribeDisplayMode(onChange: () => void) {
-  const media = window.matchMedia("(display-mode: standalone)");
-  media.addEventListener("change", onChange);
-  return () => media.removeEventListener("change", onChange);
+function testResultLine(result: TestPushResult | "sending"): string {
+  if (result === "sending") return "Sending…";
+  switch (result.status) {
+    case "delivered":
+      return `Delivered to this device: “${result.title}”. No banner? Allow notifications for this browser in your system settings.`;
+    case "sent-not-shown":
+      return `Sent “${result.title}”, but this device hasn’t shown it yet. Check that notifications for this browser are allowed in system settings and that Focus is off.`;
+    case "failed":
+      return result.reason === "rate-limited"
+        ? "That’s three tests in ten minutes. Try again shortly."
+        : result.reason === "expired"
+          ? "This device’s subscription expired. Turn alerts off and on again."
+          : "The test couldn’t be sent. Try again in a minute.";
+  }
 }
-
-function readNeedsInstall(): boolean {
-  return (
-    /iPad|iPhone|iPod/.test(navigator.userAgent) &&
-    !window.matchMedia("(display-mode: standalone)").matches
-  );
-}
-
-const readServerNeedsInstall = () => false;
 
 /**
- * Web-push opt-in for rush/lottery deadlines. Covers the shows the user
- * follows and always explains its state, including unsupported previews.
+ * The device switch for alerts. Every state says what is true: unsupported
+ * browsers, a blocked permission and an iPhone tab before Add to Home Screen
+ * each get their own words, never a dead toggle.
  */
 export function NotifyPushCard() {
   const { follows } = useApp();
-  const toast = useToast();
-  // A paused follow remains in the user's list, but must not reach the push
-  // subscription. This is the source of truth used by every re-sync.
-  const slugs = follows
-    .filter((follow) => follow.enabled)
-    .map((follow) => follow.show.slug);
-  const { status, reason, subscribe, unsubscribe, sendTest } = usePush(slugs);
+  const push = usePushAlerts();
+  const [test, setTest] = useState<TestPushResult | "sending" | null>(null);
+  const followed = follows.filter((follow) => follow.enabled).length;
 
-  const needsInstall = useSyncExternalStore(
-    subscribeDisplayMode,
-    readNeedsInstall,
-    readServerNeedsInstall,
-  );
+  const unavailable =
+    push.support === "not-configured" || push.support === "unsupported";
+  const showToggle =
+    push.support === "ready" && push.permission !== "denied";
 
-  const caption =
-    needsInstall
-      ? "On iPhone, add Matinee to your Home Screen first. Apple only allows web push from installed apps."
-      : status === "unavailable"
-        ? reason === "not-configured"
-          ? "Deadline alerts aren’t connected in this preview. You can still follow shows and use their live schedules below."
-          : reason === "registration-failed"
-            ? "This browser supports notifications, but Matinee couldn’t start its notification service. Reload or try another browser."
-            : "This browser can’t receive web push. You can still follow shows and check every deadline in Matinee."
-        : status === "error"
-          ? reason === "backend-unavailable"
-            ? "Your browser is ready, but Matinee couldn’t save the subscription. Try connecting again."
-            : "Matinee couldn’t finish turning alerts on. Check the browser permission and try again."
-          : status === "denied"
-      ? "Notifications are blocked for this site — allow them in your browser settings first."
-            : status === "on"
-              ? slugs.length > 0
-                ? `Ready for ${slugs.length} followed show${slugs.length === 1 ? "" : "s"}. We’ll alert you when a window opens or is about to close.`
-                : "Alerts are on. Follow a show below and we’ll add its deadlines."
-              : "Turn this on once and Matinee will watch the odd-hour lottery and rush deadlines for you.";
-
-  const unavailable = status === "unavailable" || status === "error";
+  const caption = (() => {
+    switch (push.support) {
+      case "checking":
+        return "Checking this browser…";
+      case "not-configured":
+        return "Alerts aren’t connected in this build. Following still works, and every window stays live on the show pages.";
+      case "unsupported":
+        return "This browser can’t receive web push. Following still works, and every window stays live on the show pages.";
+      case "needs-install":
+        return null;
+    }
+    if (push.permission === "denied") {
+      return "Notifications are blocked for this site. Allow them in your browser’s site settings, then come back here.";
+    }
+    if (push.error === "save-failed") {
+      return "Your browser is ready, but Matinee couldn’t save the subscription. Try again.";
+    }
+    if (push.error === "subscribe-failed" || push.error === "registration-failed") {
+      return "Matinee couldn’t start alerts in this browser. Reload, or try another browser.";
+    }
+    if (push.subscribed) {
+      return followed > 0
+        ? `On for ${followed} followed show${followed === 1 ? "" : "s"} on this device.`
+        : "On for this device. Follow a show below and its windows are covered.";
+    }
+    return "A push 5 minutes before a followed show’s rush opens, when its lottery opens, and an hour before the lottery closes. Nothing between 10 PM and 8 AM.";
+  })();
 
   return (
     <div className="mt-3.5 rounded-card bg-paper p-5">
@@ -73,24 +72,40 @@ export function NotifyPushCard() {
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <h2 className="text-title">Deadline alerts</h2>
-            {unavailable && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-inset px-2 py-1 text-label font-semibold text-ink-soft">
-                <BellOff className="size-3" strokeWidth={2} aria-hidden="true" />
-                {status === "error" ? "Needs attention" : "Unavailable here"}
+            {(unavailable || push.support === "needs-install") && (
+              <span className="rounded-full bg-inset px-2 py-1 text-label font-semibold text-ink-soft">
+                {push.support === "needs-install"
+                  ? "Needs Home Screen"
+                  : "Unavailable here"}
               </span>
             )}
           </div>
-          <p className="mt-1 text-body text-ink-soft">{caption}</p>
+          {caption && (
+            <p className="mt-1 text-body text-ink-soft" aria-live="polite">
+              {caption}
+            </p>
+          )}
+          {push.support === "needs-install" && (
+            <div className="mt-1 text-body text-ink-soft">
+              <p>Apple delivers web push only to apps on the Home Screen (iOS 16.4 or later).</p>
+              <ol className="mt-2 list-decimal space-y-1 pl-5">
+                <li>Tap Share in Safari’s toolbar.</li>
+                <li>Choose Add to Home Screen.</li>
+                <li>Open Matinee from the new icon and turn alerts on here.</li>
+              </ol>
+            </div>
+          )}
         </div>
-        {!unavailable && !needsInstall && (
+        {showToggle && (
           <Toggle
-            on={status === "on"}
+            on={push.subscribed}
             onChange={(next) => {
-              if (status === "loading" || status === "denied") return;
-              if (next) subscribe();
-              else unsubscribe();
+              if (push.busy) return;
+              setTest(null);
+              if (next) void push.enable();
+              else void push.disable();
             }}
-            label="Rush and lottery deadline notifications"
+            label="Rush and lottery deadline alerts on this device"
           />
         )}
       </div>
@@ -99,30 +114,34 @@ export function NotifyPushCard() {
           <b className="font-semibold text-ink">Lottery → rush → TKTS.</b>{" "}
           Alerts cover the first two; the live board is always waiting as your fallback.
         </p>
-        {status === "error" && !needsInstall && (
+        {push.support === "ready" && push.error === "save-failed" && (
           <button
             type="button"
-            onClick={subscribe}
+            onClick={() => void push.enable()}
+            disabled={push.busy}
             className="mt-3 h-10 rounded-full bg-espresso px-4 text-caption font-semibold text-white transition-transform active:scale-[0.97]"
           >
-            Try connecting again
+            Try again
           </button>
         )}
-        {status === "on" && (
-          <button
-            type="button"
-            onClick={() => {
-              sendTest()
-                .then(() => toast({ message: "Test push sent" }))
-                .catch(() =>
-                  toast({ message: "Test push couldn’t be delivered" }),
-                );
-            }}
-            className="mt-3 inline-flex h-10 items-center gap-2 rounded-full bg-inset px-4 text-caption font-semibold text-ink transition-transform active:scale-[0.97]"
-          >
-            <Send className="size-4" strokeWidth={1.9} aria-hidden="true" />
-            Send a test push
-          </button>
+        {push.subscribed && (
+          <>
+            <button
+              type="button"
+              disabled={test === "sending"}
+              onClick={() => {
+                setTest("sending");
+                void push.sendTest().then(setTest);
+              }}
+              className="mt-3 inline-flex h-10 items-center gap-2 rounded-full bg-inset px-4 text-caption font-semibold text-ink transition-transform active:scale-[0.97] disabled:opacity-60"
+            >
+              <Send className="size-4" strokeWidth={1.9} aria-hidden="true" />
+              Send a test push
+            </button>
+            <p className="mt-2 min-h-[1lh] text-caption text-ink-soft" aria-live="polite">
+              {test ? testResultLine(test) : ""}
+            </p>
+          </>
         )}
       </div>
     </div>

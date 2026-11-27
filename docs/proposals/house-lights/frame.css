@@ -1,0 +1,70 @@
+/* House Lights style frames for Matinee. Throwaway static HTML for judging by
+   eye; not the build. Fonts are the app's own (assets/). */
+@font-face { font-family: "Bodoni Moda"; src: url("../../../assets/BodoniModa-Bold.ttf"); font-weight: 700; }
+@font-face { font-family: "Schibsted Grotesk"; src: url("../../../assets/SchibstedGrotesk-Medium.ttf"); font-weight: 500; }
+
+:root {
+  --black: #0a0807;   /* the house at blackout */
+  --card: #16110e;    /* a program page in the dark */
+  --line: #2a221d;
+  --ivory: #f6e8d5;   /* lit type */
+  --ivory-dim: #b9a58f;
+  --text: #ddcdbb;
+  --text-2: #a8978a;
+  --plot: #6f6358;    /* light-plot drawing lines */
+  --crimson: #a61e33; /* Matinee's one accent, as a fill only */
+  --gilt: #c9a227;
+  --amber: 255 196 150;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--black); }
+body {
+  width: 390px; min-height: 844px; position: relative; overflow: hidden;
+  color: var(--text); font: 500 15px/1.4 "Schibsted Grotesk", system-ui, sans-serif;
+}
+.mono { font-family: ui-monospace, Menlo, monospace; }
+
+/* light */
+.stage { position: absolute; inset: 0; pointer-events: none; }
+.beam {
+  -webkit-mask-image: radial-gradient(80% 40% at 50% 10%, #000 30%, transparent 85%);
+  filter: blur(14px);
+}
+.beam::before {
+  content: ""; position: absolute; inset: 0;
+  clip-path: polygon(48% 4%, 52% 4%, 86% 30%, 14% 30%);
+  background: linear-gradient(rgb(var(--amber) / .16), rgb(var(--amber) / 0) 92%);
+}
+.pool { background: radial-gradient(260px 170px at 50% 160px, rgb(var(--amber) / .26), rgb(var(--amber) / .08) 55%, transparent 78%); }
+.legs { background: linear-gradient(90deg, #040303 0, transparent 22px, transparent calc(100% - 22px), #040303 100%); }
+.grain {
+  opacity: .45; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .08 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* the pipe: a light plot drawn across the top */
+.pipe { position: absolute; left: 14px; right: 14px; top: 10px; height: 46px; }
+.pipe svg { width: 100%; height: 100%; overflow: visible; }
+
+.content { position: relative; padding: 70px 16px 110px; }
+.cue { display: flex; gap: 10px; align-items: center; font-size: 11.5px; letter-spacing: .06em; color: var(--text-2); text-transform: uppercase; }
+.cue b { color: rgb(var(--amber)); border: 1px solid rgb(var(--amber) / .55); padding: 2px 6px 1px; font-weight: 700; letter-spacing: .08em; }
+.display {
+  font-family: "Bodoni Moda", Didot, serif; font-weight: 700; line-height: .95;
+  background: radial-gradient(220px 140px at 50% 55%, #fff6e8, var(--ivory) 45%, var(--ivory-dim) 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.eyebrow { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--text-2); }
+.row-head { display: flex; justify-content: space-between; align-items: baseline; margin-top: 26px; }
+.row-head span { font-size: 13px; color: var(--text-2); }
+.price { font-weight: 700; color: var(--ivory); }
+
+.tabbar {
+  position: fixed; left: 0; right: 0; bottom: 0; height: 82px; z-index: 2;
+  display: grid; grid-template-columns: repeat(4, 1fr); padding-top: 12px;
+  background: #0d0a09; border-top: 1px solid var(--line);
+  font-size: 11.5px; text-align: center; color: var(--plot);
+}
+.tabbar .on { color: var(--ivory); }
+.tabbar i { display: block; width: 22px; height: 22px; margin: 0 auto 5px; border: 1.6px solid currentColor; border-radius: 7px; }
+.tabbar .on i { box-shadow: 0 0 14px rgb(var(--amber) / .5); }

@@ -1,18 +1,20 @@
 "use client";
 
 import { MotionConfig } from "motion/react";
-import { DemoTimeProvider } from "@/lib/demoTime";
 import { AppProvider } from "@/lib/store";
+import { AnalyticsEvents } from "./AnalyticsEvents";
+import { PushProvider } from "./PushProvider";
 import { ToastProvider } from "./Toast";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <MotionConfig reducedMotion="user">
-      <DemoTimeProvider>
-        <AppProvider>
+      <AppProvider>
+        <PushProvider>
           <ToastProvider>{children}</ToastProvider>
-        </AppProvider>
-      </DemoTimeProvider>
+          <AnalyticsEvents />
+        </PushProvider>
+      </AppProvider>
     </MotionConfig>
   );
 }

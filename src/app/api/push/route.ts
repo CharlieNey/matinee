@@ -1,19 +1,21 @@
-import webpush from "web-push";
+import { renderTestAlert } from "@/lib/push/copy";
+import { isPushServiceEndpoint } from "@/lib/push/endpoints";
+import { nextOpeningAlert } from "@/lib/push/events";
+import {
+  classifySendError,
+  vapidFromEnv,
+  webPushSender,
+} from "@/lib/push/sender";
+import { getPushStore } from "@/lib/push/server";
+import type { LotteryLogEntry } from "@/lib/push/store";
 import { rateLimitResponse, rejectCrossOrigin } from "@/lib/rateLimit";
 import { getShow } from "@/lib/shows";
-import { pushBackendConfigured, supabaseAdmin } from "@/lib/supabaseAdmin";
 
 // web-push signs payloads with Node crypto.
 export const runtime = "nodejs";
 
-type SubscribeBody = {
-  subscription?: {
-    endpoint?: unknown;
-    keys?: { p256dh?: unknown; auth?: unknown };
-  };
-  slugs?: unknown;
-  entries?: unknown;
-};
+const notConfigured = () =>
+  Response.json({ error: "Push is not configured" }, { status: 503 });
 
 async function readObjectBody(
   request: Request,
@@ -21,24 +23,16 @@ async function readObjectBody(
   | { ok: true; value: Record<string, unknown> }
   | { ok: false; response: Response }
 > {
-  const contentLength = Number(request.headers.get("content-length") ?? 0);
-  if (contentLength > 100_000) {
-    return {
-      ok: false,
-      response: Response.json({ error: "Payload too large" }, { status: 413 }),
-    };
+  const tooLarge = () => ({
+    ok: false as const,
+    response: Response.json({ error: "Payload too large" }, { status: 413 }),
+  });
+  if (Number(request.headers.get("content-length") ?? 0) > 100_000) {
+    return tooLarge();
   }
   try {
     const text = await request.text();
-    if (text.length > 100_000) {
-      return {
-        ok: false,
-        response: Response.json(
-          { error: "Payload too large" },
-          { status: 413 },
-        ),
-      };
-    }
+    if (text.length > 100_000) return tooLarge();
     const value: unknown = JSON.parse(text);
     if (typeof value !== "object" || value === null || Array.isArray(value)) {
       throw new Error("Body must be an object");
@@ -52,12 +46,13 @@ async function readObjectBody(
   }
 }
 
-/** Validate the synced lottery-log entries: {key, day} pairs, capped. */
-function sanitizeEntries(raw: unknown): { key: string; day: string }[] {
+/** The synced lottery log: {key, day} pairs, capped. Absent means "keep". */
+function sanitizeEntries(raw: unknown): LotteryLogEntry[] | null {
+  if (raw === undefined) return null;
   if (!Array.isArray(raw)) return [];
   return raw
     .filter(
-      (item): item is { key: string; day: string } =>
+      (item): item is LotteryLogEntry =>
         typeof item === "object" &&
         item !== null &&
         typeof (item as { key?: unknown }).key === "string" &&
@@ -69,27 +64,44 @@ function sanitizeEntries(raw: unknown): { key: string; day: string }[] {
     .slice(-200);
 }
 
-/** Create or update a subscription (also used to re-sync followed shows). */
+/** Followed show slugs, known shows only. Absent means "keep". */
+function sanitizeSlugs(raw: unknown): string[] | null {
+  if (raw === undefined) return null;
+  if (!Array.isArray(raw)) return [];
+  return [
+    ...new Set(
+      raw.filter((s): s is string => typeof s === "string" && !!getShow(s)),
+    ),
+  ].slice(0, 100);
+}
+
+/**
+ * Create or update a subscription: the endpoint, its keys, followed shows and
+ * lottery-log days. Also takes `previousEndpoint` from the service worker's
+ * pushsubscriptionchange, which moves the old row's follows across.
+ */
 export async function POST(request: Request) {
-  if (!pushBackendConfigured()) {
-    return Response.json({ error: "Push is not configured" }, { status: 503 });
-  }
+  const store = getPushStore();
+  if (!store) return notConfigured();
   const crossOrigin = rejectCrossOrigin(request);
   if (crossOrigin) return crossOrigin;
-  const limited = await rateLimitResponse(request, "push-subscribe", 30, 60);
+  const limited = await rateLimitResponse(request, store, "push-subscribe", 30, 60);
   if (limited) return limited;
   const parsed = await readObjectBody(request);
   if (!parsed.ok) return parsed.response;
-  const body = parsed.value as SubscribeBody;
+  const body = parsed.value as {
+    subscription?: { endpoint?: unknown; keys?: { p256dh?: unknown; auth?: unknown } };
+    slugs?: unknown;
+    entries?: unknown;
+    previousEndpoint?: unknown;
+  };
 
   const endpoint = body.subscription?.endpoint;
   const p256dh = body.subscription?.keys?.p256dh;
   const auth = body.subscription?.keys?.auth;
-  // Length caps: real values are ~200/87/22 chars — reject anything bloated.
+  // Real keys are ~87 and ~22 characters.
   if (
-    typeof endpoint !== "string" ||
-    !endpoint.startsWith("https://") ||
-    endpoint.length > 1000 ||
+    !isPushServiceEndpoint(endpoint) ||
     typeof p256dh !== "string" ||
     p256dh.length > 256 ||
     typeof auth !== "string" ||
@@ -97,140 +109,112 @@ export async function POST(request: Request) {
   ) {
     return Response.json({ error: "Invalid subscription" }, { status: 400 });
   }
+  const previousEndpoint =
+    body.previousEndpoint === undefined || body.previousEndpoint === null
+      ? null
+      : isPushServiceEndpoint(body.previousEndpoint)
+        ? body.previousEndpoint
+        : undefined;
+  if (previousEndpoint === undefined) {
+    return Response.json({ error: "Invalid previous endpoint" }, { status: 400 });
+  }
 
-  const slugs = Array.isArray(body.slugs)
-    ? body.slugs
-        .filter((s): s is string => typeof s === "string")
-        .filter((s) => getShow(s))
-        .slice(0, 100)
-    : [];
-
-  const { error } = await supabaseAdmin()
-    .from("push_subscriptions")
-    .upsert(
+  try {
+    await store.saveSubscription(
       {
         endpoint,
         p256dh,
         auth,
-        slugs,
+        slugs: sanitizeSlugs(body.slugs),
         entries: sanitizeEntries(body.entries),
-        updated_at: new Date().toISOString(),
+        previousEndpoint,
       },
-      { onConflict: "endpoint" },
+      new Date(),
     );
-  if (error) {
-    console.error("push subscribe failed:", error.message);
+  } catch (error) {
+    console.error("push subscribe failed:", error);
     return Response.json({ error: "Storage failed" }, { status: 500 });
   }
-
   return Response.json({ ok: true });
 }
 
 export async function DELETE(request: Request) {
-  if (!pushBackendConfigured()) {
-    return Response.json({ error: "Push is not configured" }, { status: 503 });
-  }
-
+  const store = getPushStore();
+  if (!store) return notConfigured();
   const crossOrigin = rejectCrossOrigin(request);
   if (crossOrigin) return crossOrigin;
-  const limited = await rateLimitResponse(request, "push-delete", 30, 60);
+  const limited = await rateLimitResponse(request, store, "push-delete", 30, 60);
   if (limited) return limited;
   const parsed = await readObjectBody(request);
   if (!parsed.ok) return parsed.response;
-  const body = parsed.value;
-  if (typeof body.endpoint !== "string") {
+  if (typeof parsed.value.endpoint !== "string") {
     return Response.json({ error: "Invalid endpoint" }, { status: 400 });
   }
-
-  const { error } = await supabaseAdmin()
-    .from("push_subscriptions")
-    .delete()
-    .eq("endpoint", body.endpoint);
-  if (error) {
-    console.error("push unsubscribe failed:", error.message);
+  try {
+    await store.deleteSubscription(parsed.value.endpoint);
+  } catch (error) {
+    console.error("push unsubscribe failed:", error);
     return Response.json({ error: "Storage failed" }, { status: 500 });
   }
-
   return Response.json({ ok: true });
 }
 
 /**
- * Send an immediate end-to-end test to the caller's stored subscription.
- * The endpoint is a high-entropy capability URL already shared by this browser
- * and the push backend; cross-origin JSON calls are preflighted, so this stays
- * self-service without adding a demo-only account system.
+ * Send a test to the caller's stored subscription: a real alert for one of
+ * its followed shows, as it will read when that window opens, deep link
+ * included. The endpoint is a high-entropy capability URL only this browser
+ * and the push backend know; cross-origin JSON calls are preflighted.
  */
 export async function PUT(request: Request) {
-  if (!pushBackendConfigured()) {
-    return Response.json({ error: "Push is not configured" }, { status: 503 });
-  }
-
-  const vapidPublic = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-  const vapidPrivate = process.env.VAPID_PRIVATE_KEY;
-  if (!vapidPublic || !vapidPrivate) {
+  const store = getPushStore();
+  if (!store) return notConfigured();
+  const vapid = vapidFromEnv();
+  if (!vapid) {
     return Response.json({ error: "VAPID keys missing" }, { status: 503 });
   }
   const crossOrigin = rejectCrossOrigin(request);
   if (crossOrigin) return crossOrigin;
-  const limited = await rateLimitResponse(request, "push-test", 3, 600);
+  const limited = await rateLimitResponse(request, store, "push-test", 3, 600);
   if (limited) return limited;
   const parsed = await readObjectBody(request);
   if (!parsed.ok) return parsed.response;
-  const body = parsed.value;
-  if (
-    typeof body.endpoint !== "string" ||
-    !body.endpoint.startsWith("https://") ||
-    body.endpoint.length > 1000
-  ) {
+  const endpoint = parsed.value.endpoint;
+  if (!isPushServiceEndpoint(endpoint)) {
     return Response.json({ error: "Invalid endpoint" }, { status: 400 });
   }
 
-  const { data: subscription, error } = await supabaseAdmin()
-    .from("push_subscriptions")
-    .select("endpoint,p256dh,auth")
-    .eq("endpoint", body.endpoint)
-    .maybeSingle<{
-      endpoint: string;
-      p256dh: string;
-      auth: string;
-    }>();
-  if (error) {
-    console.error("loading test subscription failed:", error.message);
+  let subscription;
+  try {
+    subscription = await store.getSubscription(endpoint);
+  } catch (error) {
+    console.error("loading test subscription failed:", error);
     return Response.json({ error: "Storage failed" }, { status: 500 });
   }
   if (!subscription) {
     return Response.json({ error: "Subscription not found" }, { status: 404 });
   }
 
-  webpush.setVapidDetails(
-    process.env.VAPID_SUBJECT ?? "mailto:hello@example.com",
-    vapidPublic,
-    vapidPrivate,
-  );
+  const now = new Date();
+  // The soonest alert across the shows this device follows.
+  const sample =
+    subscription.slugs
+      .map((slug) => nextOpeningAlert(slug, now))
+      .filter((alert) => alert !== null)
+      .sort((a, b) => a.sendFrom.getTime() - b.sendFrom.getTime())[0] ?? null;
+  const message = renderTestAlert(sample, now);
   try {
-    await webpush.sendNotification(
-      {
-        endpoint: subscription.endpoint,
-        keys: { p256dh: subscription.p256dh, auth: subscription.auth },
-      },
-      JSON.stringify({
-        title: "Matinee · Test successful",
-        body: "Deadline alerts are working on this device.",
-        url: "/notify",
-        tag: `matinee-test-${Date.now()}`,
-      }),
-    );
-  } catch (sendError) {
-    const statusCode = (sendError as { statusCode?: number }).statusCode;
-    if (statusCode === 404 || statusCode === 410) {
-      await supabaseAdmin()
-        .from("push_subscriptions")
-        .delete()
-        .eq("endpoint", subscription.endpoint);
+    await webPushSender(vapid)(subscription, {
+      message,
+      ttlSeconds: 5 * 60,
+      urgency: "high",
+    });
+  } catch (error) {
+    if (classifySendError(error) === "gone") {
+      await store.deleteSubscription(endpoint).catch(() => {});
+      return Response.json({ error: "Subscription expired" }, { status: 410 });
     }
-    console.error("test push failed:", sendError);
+    console.error("test push failed:", error);
     return Response.json({ error: "Push delivery failed" }, { status: 502 });
   }
-
-  return Response.json({ ok: true });
+  return Response.json({ ok: true, title: message.title, tag: message.tag });
 }

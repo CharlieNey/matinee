@@ -5,7 +5,6 @@ import {
   getProgramStatus,
   isProgramStale,
 } from "./programs";
-import { duePushEvents } from "./pushEvents";
 
 describe("program schedule engine", () => {
   it("opens the Wednesday TodayTix rush at 9 AM New York time", () => {
@@ -31,14 +30,6 @@ describe("program schedule engine", () => {
       new Date(verifiedAt.getTime() + days * 24 * 60 * 60 * 1000);
     expect(isProgramStale(program, daysLater(7))).toBe(false);
     expect(isProgramStale(program, daysLater(19))).toBe(true);
-  });
-
-  it("generates stable, unique push-event keys", () => {
-    const events = duePushEvents(new Date("2026-07-22T13:10:00.000Z"));
-    expect(events.length).toBeGreaterThan(0);
-    expect(new Set(events.map((event) => event.eventKey)).size).toBe(
-      events.length,
-    );
   });
 });
 

@@ -1,0 +1,179 @@
+{
+  "base": "http://localhost:3417",
+  "startedAt": "2026-11-27T18:27:08.768Z",
+  "steps": [
+    {
+      "name": "followed Wicked; card offers to turn alerts on",
+      "at": "2026-11-27T18:27:13.099Z"
+    },
+    {
+      "name": "subscribed",
+      "at": "2026-11-27T18:27:38.075Z",
+      "pushService": "fcm.googleapis.com",
+      "caption": "Alerts on. Next one 8:55 AM Saturday, for the lottery. Manage"
+    },
+    {
+      "name": "test push",
+      "at": "2026-11-27T18:27:40.118Z",
+      "resultLine": "Delivered to this device: “Test: Wicked lottery opens at 9:00 AM”. No banner? Allow notifications for this browser in your system settings.",
+      "displayed": {
+        "title": "Test: Wicked lottery opens at 9:00 AM",
+        "body": "$55 on Broadway Direct. Enter by 3:00 PM. Preview of the alert due 8:55 AM Saturday.",
+        "tag": "matinee-test-1795804059117",
+        "url": "/shows/wicked#ways-to-save"
+      }
+    },
+    {
+      "name": "scheduler run at 2026-12-01 9:55 AM ET",
+      "at": "2026-11-27T18:27:40.516Z",
+      "status": 200,
+      "summary": {
+        "source": "local-proof",
+        "events": 21,
+        "subscriptions": 1,
+        "pairs": 2,
+        "deduped": 0,
+        "sent": 2,
+        "failed": 0,
+        "released": 0,
+        "pruned": 0,
+        "expired": {
+          "logs": 0,
+          "runs": 0
+        }
+      }
+    },
+    {
+      "name": "notification displayed by the service worker",
+      "at": "2026-11-27T18:27:40.518Z",
+      "alert": {
+        "title": "Wicked rush opens at 10:00 AM",
+        "body": "$45 at the box office, first come, first served.",
+        "tag": "wicked|opening|2026-12-01T15:00:00.000Z",
+        "url": "/shows/wicked#ways-to-save"
+      }
+    },
+    {
+      "name": "scheduler run again at 9:55 (doubled run)",
+      "at": "2026-11-27T18:27:40.540Z",
+      "status": 200,
+      "summary": {
+        "source": "local-proof",
+        "events": 21,
+        "subscriptions": 1,
+        "pairs": 2,
+        "deduped": 2,
+        "sent": 0,
+        "failed": 0,
+        "released": 0,
+        "pruned": 0,
+        "expired": {
+          "logs": 0,
+          "runs": 0
+        }
+      }
+    },
+    {
+      "name": "scheduler run at 9:58",
+      "at": "2026-11-27T18:27:40.559Z",
+      "status": 200,
+      "summary": {
+        "source": "local-proof",
+        "events": 21,
+        "subscriptions": 1,
+        "pairs": 2,
+        "deduped": 2,
+        "sent": 0,
+        "failed": 0,
+        "released": 0,
+        "pruned": 0,
+        "expired": {
+          "logs": 0,
+          "runs": 0
+        }
+      }
+    },
+    {
+      "name": "scheduler run at 10:30 (too late for a heads-up)",
+      "at": "2026-11-27T18:27:40.577Z",
+      "status": 200,
+      "summary": {
+        "source": "local-proof",
+        "events": 1,
+        "subscriptions": 0,
+        "pairs": 0,
+        "deduped": 0,
+        "sent": 0,
+        "failed": 0,
+        "released": 0,
+        "pruned": 0,
+        "expired": {
+          "logs": 0,
+          "runs": 0
+        }
+      }
+    },
+    {
+      "name": "Wicked notifications on the device",
+      "at": "2026-11-27T18:27:40.579Z",
+      "count": 2,
+      "titles": [
+        "Wicked lottery is open until 3:00 PM",
+        "Wicked rush opens at 10:00 AM"
+      ]
+    },
+    {
+      "name": "next day, following only Chicago (unverified) after unfollowing",
+      "at": "2026-11-27T18:27:44.234Z",
+      "runs": [
+        {
+          "at": "2026-12-02 08:55",
+          "sent": 0,
+          "pairs": 0
+        },
+        {
+          "at": "2026-12-02 09:55",
+          "sent": 0,
+          "pairs": 0
+        },
+        {
+          "at": "2026-12-02 11:55",
+          "sent": 0,
+          "pairs": 0
+        },
+        {
+          "at": "2026-12-02 14:00",
+          "sent": 0,
+          "pairs": 0
+        }
+      ]
+    },
+    {
+      "name": "opened the notification's URL",
+      "at": "2026-11-27T18:27:45.120Z",
+      "url": "/shows/wicked#ways-to-save",
+      "scrollY": 449
+    },
+    {
+      "name": "health",
+      "at": "2026-11-27T18:27:45.128Z",
+      "services": {
+        "database": "local",
+        "rateLimit": "ok",
+        "scheduler": "ok",
+        "tkts": "ok"
+      },
+      "push": {
+        "overdueAfterMinutes": 20,
+        "lastRunAt": "2026-11-27T18:27:44.218Z",
+        "lastRunSource": "local-proof",
+        "lastRunError": null,
+        "lastOkRunAt": "2026-11-27T18:27:44.218Z",
+        "lastSentAt": "2026-11-27T18:27:40.128Z",
+        "subscriptions": 1
+      }
+    }
+  ],
+  "consoleErrors": [],
+  "finishedAt": "2026-11-27T18:27:45.128Z"
+}

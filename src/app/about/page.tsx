@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { BackHeader } from "@/components/BackHeader";
-import { allPrograms } from "@/lib/programs";
-import { allTheaters } from "@/lib/theaters";
+import { analyticsEnabled } from "@/lib/analytics";
 import { CONTACT_EMAIL } from "@/lib/contact";
+import { allPrograms, cheapestProgram } from "@/lib/programs";
+import { runningShows } from "@/lib/shows";
+import { allTheaters } from "@/lib/theaters";
 
 export const metadata = {
   title: "About",
@@ -42,6 +44,16 @@ function Endpoint({ path }: { path: string }) {
 export default function AboutPage() {
   const programCount = allPrograms().length;
   const houseCount = allTheaters().length;
+  // Computed from the catalog so the claim is as fresh as the data.
+  const running = runningShows();
+  const under50 = running.filter(
+    (show) => (cheapestProgram(show.slug)?.price ?? Infinity) < 50,
+  ).length;
+  const faces = running
+    .map((show) => show.faceValue)
+    .filter((face) => face > 0)
+    .sort((a, b) => a - b);
+  const medianFace = faces[Math.floor(faces.length / 2)];
 
   return (
     <main className="px-4 pb-12 web:mx-auto web:max-w-[640px]">
@@ -50,23 +62,20 @@ export default function AboutPage() {
       <div className="mt-4">
         <Section title="The cheap seats exist. The interface doesn't.">
           <p>
-            Broadway just closed a record season — $1.91 billion in grosses,
-            an average paid admission around $131, celebrity plays running
-            $300–900 a seat. In the same season,{" "}
+            Of the {running.length} running shows Matinee tracks,{" "}
             <b className="font-semibold text-ink">
-              30 of 32 shows ran an official program that gets you in for
-              under $50
+              {under50} have an official way in for under $50
             </b>
-            : digital lotteries, box-office rush, standing room.
+            : digital lotteries, box-office rush, standing room. The median
+            box-office face value across the same shows is ${medianFace}.
           </p>
           <p>
-            The catch is the interface. Those programs live on four or five
-            separate platforms, open and close at odd hours, and the
-            community&apos;s best tool is a volunteer-run static page whose
-            own disclaimer says it can&apos;t guarantee freshness. Even
-            TodayTix&apos;s official advice is to &quot;note what time Rush
-            opens, set an alert&quot; — yourself. This app is that alert, plus
-            the map, plus the board.
+            The catch is timing. Those programs live on four or five
+            separate platforms and open and close at odd hours. The free
+            lists are good, and TodayTix sends an alert when each of its own
+            lotteries opens, but nothing shows what is open right now across
+            every seller. Matinee is that board, plus a push when a window
+            you follow opens, plus the map.
           </p>
         </Section>
 
@@ -160,6 +169,18 @@ export default function AboutPage() {
           </p>
         </Section>
 
+        {analyticsEnabled && (
+          <Section title="What we count">
+            <p>
+              Matinee counts a few anonymous events with PostHog: taps through
+              to an official seller, follows, alert sign-ups, and alerts sent
+              and opened. It runs in PostHog&apos;s cookieless mode, so
+              nothing is stored on your device, there is no profile of you,
+              and nothing records your screen.
+            </p>
+          </Section>
+        )}
+
         <Section title="Sources & credits">
           <p>
             <b className="font-semibold text-ink">Wikidata.</b> Each house
@@ -180,8 +201,9 @@ export default function AboutPage() {
         <Section title="Colophon">
           <p>
             Built with Next.js, React, Tailwind, and Motion. The visual
-            design began as a study of the Theatr iOS app and has grown its
-            own language since, documented in DESIGN.md; the phased build
+            design began as a clone of the Theatr iOS app, built as a study.
+            The product is different: no resale, only the official sellers.
+            The design language is documented in DESIGN.md; the phased build
             lives in PLAN.md. This is a personal portfolio project. It is not
             affiliated with Theatr, the ticketing platforms, or any theater
             owner, and poster art belongs to its productions.

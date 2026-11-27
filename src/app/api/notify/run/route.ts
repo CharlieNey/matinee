@@ -1,12 +1,15 @@
 import { timingSafeEqual } from "node:crypto";
-import webpush from "web-push";
-import { duePushEvents } from "@/lib/pushEvents";
-import { pushBackendConfigured, supabaseAdmin } from "@/lib/supabaseAdmin";
+import { captureServerEvents, ServerEvent } from "@/lib/analyticsServer";
+import { runNotifications } from "@/lib/push/delivery";
+import { vapidFromEnv, webPushSender } from "@/lib/push/sender";
+import { getPushStore } from "@/lib/push/server";
 
 // web-push needs Node crypto.
 export const runtime = "nodejs";
+// Claims are leased for 5 minutes (CLAIM_LEASE_SECONDS); a run must end first.
+export const maxDuration = 60;
 
-/** Constant-time bearer check — string !== leaks a timing oracle. */
+/** Constant-time bearer check: string !== leaks a timing oracle. */
 function authorized(header: string | null, secret: string): boolean {
   const expected = Buffer.from(`Bearer ${secret}`);
   const received = Buffer.from(header ?? "");
@@ -15,155 +18,70 @@ function authorized(header: string | null, secret: string): boolean {
   );
 }
 
-type SubscriptionRow = {
-  endpoint: string;
-  p256dh: string;
-  auth: string;
-  slugs: string[];
-  entries: { key: string; day: string }[];
-};
-
-/** Slug-followers get window events; claim watches need a matching entry. */
-function eventApplies(
-  sub: SubscriptionRow,
-  event: ReturnType<typeof duePushEvents>[number],
-): boolean {
-  if (event.requiresEntry) {
-    const { key, days } = event.requiresEntry;
-    return (sub.entries ?? []).some(
-      (entry) => entry.key === key && days.includes(entry.day),
-    );
+/** Which scheduler called, for the push_runs heartbeat. */
+function schedulerSource(request: Request): string {
+  const declared = request.headers.get("x-matinee-scheduler");
+  if (declared && /^[a-z0-9-]{1,40}$/.test(declared)) return declared;
+  if (request.headers.get("user-agent")?.includes("vercel-cron")) {
+    return "vercel-cron";
   }
-  return sub.slugs.includes(event.slug);
+  return "unknown";
 }
 
 /**
- * Evaluate program windows and send due pushes. Driven by an external
- * scheduler (GitHub Actions, every ~15 min) — this request is also what keeps
- * the free-tier Supabase project from pausing for inactivity.
+ * One scheduler tick: send the alerts due now, exactly once per device.
+ * Called every minute by Supabase Cron (supabase/scheduler/enable.sql) or
+ * the GitHub Actions backup; safe to call twice, late, or concurrently.
  */
-export async function POST(request: Request) {
+async function run(request: Request) {
   const secret = process.env.CRON_SECRET;
   if (!secret || !authorized(request.headers.get("authorization"), secret)) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
-  if (!pushBackendConfigured()) {
+  const store = getPushStore();
+  if (!store) {
     return Response.json({ error: "Push is not configured" }, { status: 503 });
   }
-  const vapidPublic = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-  const vapidPrivate = process.env.VAPID_PRIVATE_KEY;
-  if (!vapidPublic || !vapidPrivate) {
+  const vapid = vapidFromEnv();
+  if (!vapid) {
     return Response.json({ error: "VAPID keys missing" }, { status: 503 });
   }
-  webpush.setVapidDetails(
-    process.env.VAPID_SUBJECT ?? "mailto:hello@example.com",
-    vapidPublic,
-    vapidPrivate,
-  );
 
-  const db = supabaseAdmin();
-  const retentionCutoff = new Date(
-    Date.now() - 45 * 24 * 60 * 60 * 1000,
-  ).toISOString();
-  const { count: expiredLogs, error: retentionError } = await db
-    .from("notification_log")
-    .delete({ count: "exact" })
-    .lt("sent_at", retentionCutoff);
-  if (retentionError) {
-    console.error("notification log retention failed:", retentionError.message);
-  }
-  const { data: subs, error: subsError } = await db
-    .from("push_subscriptions")
-    .select("endpoint,p256dh,auth,slugs,entries")
-    .returns<SubscriptionRow[]>();
-  if (subsError) {
-    console.error("loading subscriptions failed:", subsError.message);
-    return Response.json({ error: "Storage failed" }, { status: 500 });
-  }
+  // Local demos only: ?at=<ISO> runs the in-process store at another instant
+  // ("9:55 AM Saturday"). Ignored for Supabase, so never in production.
+  const at =
+    store.kind === "memory"
+      ? new URL(request.url).searchParams.get("at")
+      : null;
+  const pinned = at && !Number.isNaN(Date.parse(at)) ? new Date(at) : null;
 
-  const events = duePushEvents(new Date());
-  const summary = {
-    events: events.length,
-    subscribers: subs?.length ?? 0,
-    sent: 0,
-    deduped: 0,
-    pruned: 0,
-    expiredLogs: retentionError ? 0 : (expiredLogs ?? 0),
-  };
-  if (!subs?.length || !events.length) return Response.json(summary);
-
-  // Every applicable (subscriber, due event) pair...
-  const pairs = subs.flatMap((sub) =>
-    events
-      .filter((event) => eventApplies(sub, event))
-      .map((event) => ({ sub, event })),
-  );
-  if (!pairs.length) return Response.json(summary);
-
-  // ...minus the ones already sent for this occurrence.
-  const { data: logged, error: logError } = await db
-    .from("notification_log")
-    .select("endpoint,event_key")
-    .in("event_key", [...new Set(pairs.map(({ event }) => event.eventKey))]);
-  if (logError) {
-    console.error("loading notification log failed:", logError.message);
-    return Response.json({ error: "Storage failed" }, { status: 500 });
-  }
-  const alreadySent = new Set(
-    (logged ?? []).map((row) => `${row.endpoint}|${row.event_key}`),
-  );
-
-  const sentRows: { endpoint: string; event_key: string }[] = [];
-  const deadEndpoints = new Set<string>();
-
-  for (const { sub, event } of pairs) {
-    if (alreadySent.has(`${sub.endpoint}|${event.eventKey}`)) {
-      summary.deduped += 1;
-      continue;
-    }
-    if (deadEndpoints.has(sub.endpoint)) continue;
-    try {
-      await webpush.sendNotification(
-        {
-          endpoint: sub.endpoint,
-          keys: { p256dh: sub.p256dh, auth: sub.auth },
-        },
-        JSON.stringify({
-          title: event.title,
-          body: event.body,
-          url: event.url,
-          tag: event.eventKey,
+  try {
+    const delivered: ServerEvent[] = [];
+    const summary = await runNotifications({
+      store,
+      send: webPushSender(vapid),
+      source: schedulerSource(request),
+      // The heartbeat keeps real time, so health never sees a future run.
+      ...(pinned ? { now: () => pinned, recordAt: () => new Date() } : {}),
+      onSent: (events) =>
+        delivered.push({
+          event: "push_sent",
+          properties: {
+            show: events[0].slug,
+            kinds: [...new Set(events.map((event) => event.kind))].join(","),
+            alerts: events.length,
+          },
         }),
-      );
-      summary.sent += 1;
-      sentRows.push({ endpoint: sub.endpoint, event_key: event.eventKey });
-    } catch (error) {
-      const statusCode = (error as { statusCode?: number }).statusCode;
-      if (statusCode === 404 || statusCode === 410) {
-        deadEndpoints.add(sub.endpoint);
-      } else {
-        console.error(`push to ${sub.endpoint.slice(0, 40)}… failed:`, error);
-      }
-    }
+    });
+    // Off unless NEXT_PUBLIC_POSTHOG_KEY is set; bounded by a 2 s timeout.
+    await captureServerEvents(delivered);
+    return Response.json(summary, { headers: { "Cache-Control": "no-store" } });
+  } catch (error) {
+    console.error("notify run failed:", error);
+    return Response.json({ error: "Run failed" }, { status: 500 });
   }
-
-  if (sentRows.length) {
-    const { error } = await db
-      .from("notification_log")
-      .upsert(sentRows, {
-        onConflict: "endpoint,event_key",
-        ignoreDuplicates: true,
-      });
-    if (error) console.error("logging sends failed:", error.message);
-  }
-  if (deadEndpoints.size) {
-    summary.pruned = deadEndpoints.size;
-    const { error } = await db
-      .from("push_subscriptions")
-      .delete()
-      .in("endpoint", [...deadEndpoints]);
-    if (error) console.error("pruning endpoints failed:", error.message);
-  }
-
-  return Response.json(summary);
 }
+
+export const POST = run;
+// Vercel Cron calls with GET and the same bearer secret.
+export const GET = run;

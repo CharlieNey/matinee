@@ -1,3 +1,8 @@
+/**
+ * The schedule engine: program types, labels, and the code that turns a
+ * weekly schedule into "open now" at a given instant. The rows themselves
+ * live in programCatalog.ts.
+ */
 import { LAST_VERIFIED, PROGRAMS } from "@/lib/programCatalog";
 
 export type ProgramKind =
@@ -92,6 +97,7 @@ export type ProgramStatus = {
 };
 
 const TIMEZONE = "America/New_York" as const;
+
 const KIND_LABELS: Record<ProgramKind, string> = {
   "digital-lottery": "Digital lottery",
   "in-person-lottery": "In-person lottery",
@@ -258,6 +264,15 @@ export function allPrograms(): readonly Program[] {
   return PROGRAMS;
 }
 
+/** Freshest lastVerified across the catalog — trust lines derive from this. */
+export function programsLastVerified(): string {
+  let latest = LAST_VERIFIED;
+  for (const item of PROGRAMS) {
+    if (item.lastVerified > latest) latest = item.lastVerified;
+  }
+  return latest;
+}
+
 /**
  * Oldest lastVerified across the catalog. A trust line that quotes only the
  * newest date overstates freshness when some rows could not be re-checked.
@@ -270,16 +285,6 @@ export function programsOldestVerified(): string {
   return oldest;
 }
 
-/** Freshest lastVerified across the catalog — trust lines derive from this. */
-export function programsLastVerified(): string {
-  let latest = LAST_VERIFIED;
-  for (const item of PROGRAMS) {
-    if (item.lastVerified > latest) latest = item.lastVerified;
-  }
-  return latest;
-}
-
-/** Stable identity for a program — (show, kind, platform) is unique. */
 /** "45 min", "2 hr", "5 hr", "1 hr 30 min". */
 export function formatMinutes(minutes: number): string {
   if (minutes < 60) return `${minutes} min`;
@@ -288,6 +293,7 @@ export function formatMinutes(minutes: number): string {
   return remainder ? `${hours} hr ${remainder} min` : `${hours} hr`;
 }
 
+/** Stable identity for a program — (show, kind, platform) is unique. */
 export function programKey(item: Program): string {
   return `${item.showSlug}/${item.kind}/${item.platform}`;
 }
@@ -324,6 +330,20 @@ const etDayFormat = new Intl.DateTimeFormat("en-CA", {
 /** NYC calendar date (YYYY-MM-DD) of an instant — the entry-log day key. */
 export function etDayKey(date: Date): string {
   return etDayFormat.format(date);
+}
+
+/** New York wall-clock hour (0–23) of an instant. */
+export function etHour(date: Date): number {
+  return getZonedParts(date).hour;
+}
+
+/**
+ * The instant of `time` (HH:MM, New York wall clock) on the New York calendar
+ * day of `date`, shifted by `dayOffset` days. DST-safe: "08:00 tomorrow" is
+ * 8 AM local whichever offset tomorrow has.
+ */
+export function etWallClock(date: Date, time: string, dayOffset = 0): Date {
+  return zonedDate(calendarDate(getZonedParts(date), dayOffset), time);
 }
 
 export function programsForShow(showSlug: string): readonly Program[] {
@@ -364,14 +384,26 @@ export function programPlatformLabel(platform: ProgramPlatform): string {
   return PLATFORM_LABELS[platform];
 }
 
+/** Days a row may go unchecked before it reads as unverified (and /api/health fails). */
+export const STALE_AFTER_DAYS = 14;
+
+/**
+ * True once noon New York time on lastVerified is more than STALE_AFTER_DAYS
+ * old. Noon is resolved in the zone, so the boundary holds across DST.
+ */
 export function isProgramStale(item: Program, now: Date): boolean {
-  const verifiedAt = new Date(`${item.lastVerified}T12:00:00-04:00`);
-  return now.getTime() - verifiedAt.getTime() > 14 * 24 * 60 * 60 * 1000;
+  const [year, month, day] = item.lastVerified.split("-").map(Number);
+  const verifiedAt = zonedDate({ year, month, day }, "12:00");
+  return (
+    now.getTime() - verifiedAt.getTime() >
+    STALE_AFTER_DAYS * 24 * 60 * 60 * 1000
+  );
 }
 
 /**
- * Whether the app may vouch for a row right now: checked within 14 days and
- * confirmed by its source. Untrusted rows still show, marked unverified.
+ * Whether the app may vouch for a row right now: checked within
+ * STALE_AFTER_DAYS and confirmed by its source. Only trusted rows send push
+ * alerts; the rest still show, marked unverified.
  */
 export function isProgramTrusted(item: Program, now: Date): boolean {
   return item.unverified === undefined && !isProgramStale(item, now);

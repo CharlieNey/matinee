@@ -52,3 +52,7 @@ supabase/.temp/
 
 # private working notes (AWS.local.md etc.)
 *.local.md
+
+# playwright output
+/test-results/
+/playwright-report/

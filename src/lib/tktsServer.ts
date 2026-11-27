@@ -11,7 +11,7 @@ import {
 } from "./tkts";
 
 const USER_AGENT =
-  "matinee-prototype/0.1 (non-commercial portfolio project; ~2 fetches/hour)";
+  "Matinee/1.0 (+https://matinee.nyc/about; non-commercial; ~2 fetches/hour)";
 
 /** Fetch both live sources with the same cache and failure semantics. */
 export async function fetchTktsData(): Promise<TktsData> {

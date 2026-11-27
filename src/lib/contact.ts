@@ -12,7 +12,7 @@ import type { Show } from "@/lib/shows";
  *
  * Charlie's own address for now (his call, 2026-11-27): hello@matinee.nyc has
  * no MX record yet, so mail to it bounces. Switch back once forwarding is set
- * up (docs/GO-LIVE.md step 3). The address is public in the page source.
+ * up (docs/GO-LIVE.md, step 10). The address is public in the page source.
  */
 export const CONTACT_EMAIL = "charlieney@gmail.com";
 

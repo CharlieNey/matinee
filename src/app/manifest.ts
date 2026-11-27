@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "Matinee",
     short_name: "Matinee",
     description:
-      "Broadway rush, lottery, and below-face tickets — one warm little index.",
+      "The live board for Broadway rush, lotteries and standing room, with alerts before they open.",
     start_url: "/",
     display: "standalone",
     background_color: "#F5EFE3",

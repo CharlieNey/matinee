@@ -49,6 +49,9 @@ function windowLine(slug: string, now: Date | null): string {
   const open = statuses.find(
     ({ s }) => s.state === "open" || s.state === "closes-soon",
   );
+  if (open?.s.whileSuppliesLast) {
+    return `${programKindLabel(open.p.kind)} open now, while they last`;
+  }
   if (open?.s.nextCloseAt) {
     return `${programKindLabel(open.p.kind)} open now · closes ${fmtTime(open.s.nextCloseAt)}`;
   }
@@ -127,7 +130,10 @@ export default function FollowingPage() {
   const [addOpen, setAddOpen] = useState(false);
 
   const followedSlugs = new Set(follows.map((f) => f.show.slug));
-  const pickableShows = allShows().filter((s) => !followedSlugs.has(s.slug));
+  // Only shows with a rush or lottery can ever alert (closed shows have none).
+  const pickableShows = allShows().filter(
+    (s) => !followedSlugs.has(s.slug) && programsForShow(s.slug).length > 0,
+  );
 
   const handleDelete = (follow: Follow) => {
     const index = follows.findIndex((f) => f.id === follow.id);

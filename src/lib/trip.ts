@@ -61,6 +61,36 @@ export function buildTripPlan(
   return days;
 }
 
+const clock = new Intl.DateTimeFormat("en-US", {
+  timeZone: "America/New_York",
+  hour: "numeric",
+  minute: "2-digit",
+});
+const weekday = new Intl.DateTimeFormat("en-US", {
+  timeZone: "America/New_York",
+  weekday: "short",
+});
+
+function clockLabel(at: Date): string {
+  return clock.format(at).replace(":00", "");
+}
+
+/**
+ * "10 AM–2 PM" for a same-day window. A window that closes on a later New
+ * York day names that day ("10 AM–Thu 12 PM"), so Hamilton's Friday-to-Thursday
+ * lottery doesn't read as a two-hour window, and an overnight lottery
+ * ("5 PM–Sat 9 AM") doesn't look like it closes before it opens.
+ */
+export function tripWindowLabel(slot: TripSlot): string {
+  const opens = clockLabel(slot.opensAt);
+  if (slot.whileSuppliesLast) return `from ${opens}`;
+  const closes = clockLabel(slot.closesAt);
+  if (etDayKey(slot.closesAt) === etDayKey(slot.opensAt)) {
+    return `${opens}–${closes}`;
+  }
+  return `${opens}–${weekday.format(slot.closesAt)} ${closes}`;
+}
+
 /** Rank only actionable windows, before deduplicating shows. */
 export function recommendedSlots(
   plan: TripDay[],
@@ -98,17 +128,3 @@ export function recommendedSlots(
   return picks;
 }
 
-
-/** Grouping for the day view: when does this window open, NYC time? */
-export function daypartOf(opensAt: Date): "morning" | "afternoon" | "evening" {
-  const hour = Number(
-    new Intl.DateTimeFormat("en-US", {
-      timeZone: "America/New_York",
-      hourCycle: "h23",
-      hour: "2-digit",
-    }).format(opensAt),
-  );
-  if (hour < 12) return "morning";
-  if (hour < 17) return "afternoon";
-  return "evening";
-}

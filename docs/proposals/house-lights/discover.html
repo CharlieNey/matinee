@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=390">
+<title>House Lights · Discover (style frame)</title>
+<!-- Throwaway style frame for judging by eye. Not the build. Data as of 2026-11-20. -->
+<link rel="stylesheet" href="frame.css">
+<style>
+  .display { font-size: 76px; margin-top: 8px; }
+  .search {
+    margin-top: 18px; height: 46px; border-radius: 999px; padding: 0 18px;
+    display: flex; align-items: center; background: var(--card); border: 1px solid var(--line);
+    color: var(--plot); font-size: 15px;
+  }
+  .banner {
+    margin-top: 12px; padding: 16px 18px; border-radius: 20px; display: flex; align-items: center; gap: 14px;
+    background: linear-gradient(180deg, rgb(255 196 150 / .10), rgb(255 196 150 / .03));
+    border: 1px solid rgb(255 196 150 / .22);
+  }
+  .banner .count { font: 700 34px/1 "Bodoni Moda", serif; color: var(--ivory); }
+  .banner p { font-size: 14px; color: var(--text); }
+  .banner small { display: block; font-size: 12.5px; color: var(--text-2); margin-top: 2px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--gilt); box-shadow: 0 0 0 4px rgb(201 162 39 / .18), 0 0 14px rgb(201 162 39 / .6); }
+  .grid { margin-top: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .card { background: var(--card); border-radius: 18px; overflow: hidden; border: 1px solid var(--line); }
+  .card img { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; }
+  .card .body { padding: 10px 12px 12px; }
+  .card h3 { font-size: 16px; font-weight: 500; color: var(--ivory); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .card .meta { font-size: 12px; color: var(--text-2); }
+  .card .answer { margin-top: 8px; display: flex; align-items: baseline; gap: 6px; font-size: 12.5px; color: var(--text-2); }
+  .card .answer b { font-size: 21px; color: var(--ivory); }
+</style>
+</head>
+<body>
+  <div class="stage beam"></div>
+  <div class="stage pool"></div>
+  <div class="stage legs"></div>
+  <nav class="pipe" aria-hidden="true"><svg id="plot" data-lit="2"></svg></nav>
+
+  <main class="content">
+    <p class="cue mono"><b>Q 31</b><span>Fri Nov 20 · 2:04 PM</span></p>
+    <h1 class="display">Discover</h1>
+    <div class="search">Search shows, venues, genres</div>
+
+    <div class="banner">
+      <span class="count">31</span>
+      <p>Shows with a rush or lottery open now<small>Most digital lotteries close at 3 PM</small></p>
+      <span class="dot" style="margin-left:auto"></span>
+    </div>
+
+    <div class="row-head"><h2 class="eyebrow">Now playing</h2><span>31 shows</span></div>
+    <div class="grid">
+      <div class="card"><img src="../../../public/posters/hamilton.jpg" alt=""><div class="body"><h3>Hamilton</h3><p class="meta">Broadway · Musical</p><p class="answer">Lottery <b>$10</b></p></div></div>
+      <div class="card"><img src="../../../public/posters/maybe-happy-ending.jpg" alt=""><div class="body"><h3>Maybe Happy Ending</h3><p class="meta">Broadway · Musical</p><p class="answer">Lottery <b>$20.64</b></p></div></div>
+      <div class="card"><img src="../../../public/posters/the-outsiders.jpg" alt="" style="object-position: 0% center"><div class="body"><h3>The Outsiders</h3><p class="meta">Broadway · Musical</p><p class="answer">Standing room <b>$39</b></p></div></div>
+      <div class="card"><img src="../../../public/posters/oh-mary.jpg" alt=""><div class="body"><h3>Oh, Mary!</h3><p class="meta">Broadway · Play</p><p class="answer">Rush <b>$43</b></p></div></div>
+    </div>
+  </main>
+
+  <nav class="tabbar" aria-hidden="true">
+    <span class="on"><i></i>Discover</span><span><i></i>Log</span><span><i></i>Rush</span><span><i></i>Profile</span>
+  </nav>
+  <div class="stage grain"></div>
+  <script src="pipe.js"></script>
+</body>
+</html>

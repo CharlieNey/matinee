@@ -59,7 +59,6 @@ export function ShowPicker({
                 type="button"
                 onClick={() => onSelect(show)}
                 aria-pressed={active}
-                aria-label={show.title}
                 className={`min-w-0 text-left transition-[transform,opacity] duration-150 active:scale-[0.96] ${
                   active ? "opacity-100" : "opacity-90"
                 }`}

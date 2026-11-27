@@ -1,10 +1,5 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
-/** True when the server has what it needs to persist push subscriptions. */
-export function pushBackendConfigured(): boolean {
-  return Boolean(process.env.SUPABASE_URL && process.env.SUPABASE_SECRET_KEY);
-}
-
 let client: SupabaseClient | null = null;
 
 /**

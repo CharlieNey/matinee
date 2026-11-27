@@ -2,16 +2,24 @@ import type { NextConfig } from "next";
 
 // A static CSP preserves CDN-cached pages. Next's framework/bootstrap styles
 // and the pre-paint layout script require inline allowances; all external
-// origins, frames, plugins, and cross-origin connections remain denied.
+// origins, frames, plugins, and cross-origin connections remain denied
+// (one exception, PostHog when analytics is enabled, is below).
 const isDevelopment = process.env.NODE_ENV === "development";
 const isVercel = process.env.VERCEL === "1";
+// Usage analytics is off unless a PostHog key is set at build time
+// (src/lib/analytics.ts). Only then may the page talk to PostHog's API host;
+// the SDK is bundled and loads no remote scripts, so script-src is unchanged.
+const analyticsOrigin = process.env.NEXT_PUBLIC_POSTHOG_KEY
+  ? new URL(process.env.NEXT_PUBLIC_POSTHOG_HOST || "https://us.i.posthog.com")
+      .origin
+  : null;
 const contentSecurityPolicy = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline'${isDevelopment ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
   "font-src 'self' data:",
-  "connect-src 'self'",
+  `connect-src 'self'${analyticsOrigin ? ` ${analyticsOrigin}` : ""}`,
   "worker-src 'self' blob:",
   "manifest-src 'self'",
   "object-src 'none'",

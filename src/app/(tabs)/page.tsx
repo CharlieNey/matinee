@@ -52,7 +52,6 @@ function PosterShelf({
           href={`/shows/${show.slug}`}
           className="card-enter w-[104px] shrink-0 transition-transform duration-150 active:scale-[0.96]"
           style={{ "--stagger": `${Math.min(i * 30, 240)}ms` } as React.CSSProperties}
-          aria-label={show.title}
         >
           <Poster
             show={show}
@@ -128,7 +127,7 @@ export default function DiscoverPage() {
   const [cheapest, setCheapest] = useState(false);
   const [sheet, setSheet] = useState<null | "circuit">(null);
 
-  // Shows on today's TKTS board — live external data, never demo time.
+  // Shows on today’s TKTS board, judged by TDF’s own Updated stamp.
   const tktsToday = useMemo(() => {
     const slugs = new Set<string>();
     if (!tkts) return slugs;
@@ -362,6 +361,7 @@ export default function DiscoverPage() {
                       show={show}
                       posterName={claimFor(1)(show.slug)}
                       onTktsToday={tktsToday.has(show.slug)}
+                      priority={i < 2}
                     />
                   </motion.div>
                 ))}
@@ -382,7 +382,9 @@ export default function DiscoverPage() {
           <SectionHead title="For you" />
           {reason && (
             <p className="mt-1 text-caption text-ink-soft">
-              Because you {savedShows[0] ? "saved" : "attended"} {reason.title}
+              {savedShows[0]
+                ? `Because you’re interested in ${reason.title}`
+                : `Because you attended ${reason.title}`}
             </p>
           )}
           <PosterShelf shows={forYou} claimName={claimFor(3)} />
