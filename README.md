@@ -125,9 +125,10 @@ and Google's push service is recorded in [docs/notifications/](docs/notification
   offsets in New York wall-clock time, correct across daylight saving.
 - **Exactly one push, from a scheduler that can fail.** See Notifications
   above: a claim ledger, a lease, and idempotent display.
-- **Stale data is the failure mode.** Every program carries a verified date. A
-  row that can't be re-confirmed keeps its old date and reads as unverified,
-  and `/api/health` turns the hourly check red.
+- **Stale data is the failure mode.** Every program names the official page it
+  was checked against and the day. A row that page can't confirm is marked
+  unverified with the reason and sends no alerts; a row not re-checked in 14
+  days reads as unverified too, and `/api/health` turns the hourly check red.
 - **A local-first diary that never loses data.** Entries live in versioned
   `localStorage`, photos in IndexedDB, with validated import and export.
   Unreadable storage is backed up rather than overwritten.
@@ -160,9 +161,10 @@ IndexedDB database.
   which returns 503 if the database, rate limiter or TKTS is down, the push
   scheduler has not succeeded in 20 minutes, or any program is more than 14
   days unverified. The failing run prints which one.
-- **Data refresh**: re-check each program against the show's own site and TDF,
-  update the row and its `lastVerified`, and leave the old date on anything
-  you couldn't confirm. `npm test` catches broken slugs, duplicate programs,
+- **Data refresh**: re-check each program against the show's own site (TDF
+  only as a cross-check), set `LAST_VERIFIED`, and build each row with
+  `checked(source, …)` if the site states its seller, price and window, or
+  `unverified(source, why, …)` if it doesn't. `npm test` catches broken slugs, duplicate programs,
   bad times and programs left on closed shows.
 
 ## Deadline pushes: setup

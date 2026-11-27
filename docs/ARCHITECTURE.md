@@ -39,10 +39,12 @@ type Program = {
   platform: "broadway-direct" | "lucky-seat" | "telecharge"
           | "todaytix" | "official-site" | "box-office";
   price: number;
-  maxTickets: number;
+  maxTickets?: number;        // only where the source states one
   entryUrl: string;           // always the official seller
   schedule: ProgramSchedule;  // weekly windows in America/New_York
   lastVerified: string;       // YYYY-MM-DD, per row
+  source: string;             // the official page the row was checked against
+  unverified?: string;        // why the check couldn't confirm it
   claimWindow?: ClaimWindow;  // how long winners have, and how they hear
   notes?: string;
   tips?: readonly string[];
@@ -112,20 +114,26 @@ while-supplies-last.
 
 ## Freshness contract
 
-Every program row carries `lastVerified`. `isProgramStale` marks a row stale
-once noon New York time on that date is more than `STALE_AFTER_DAYS` (14) old.
-Stale rows render as unverified in the UI. `/api/health` returns 503 if any
-row is stale, if Supabase is unreachable, or if the TKTS fetch fails, and the
-hourly `production-health.yml` workflow turns red. A refresh that cannot
-confirm a fact keeps that row's older date, with a comment saying why, rather
-than bumping it.
+Every program row carries `lastVerified` and `source`, the official page it
+was checked against. A row is built with `checked(source, draft)` only when
+that page states its seller, price and window. Otherwise it is
+`unverified(source, why, draft)`: it stays listed, says why, and reads
+"Unverified" instead of a clock. `isProgramStale` marks a row stale once noon
+New York time on its date is more than `STALE_AFTER_DAYS` (14) old, and a
+stale row reads the same way. `isProgramTrusted` (fresh and not unverified)
+gates everything that makes a promise about time: push alerts, the "Open now"
+section, the Discover count, the map's live dots, the trip planner and the
+`/today` checklist. `/api/health` returns 503 if any row is stale (a missed
+re-check), and reports `unverifiedPrograms` without failing on them (a
+deliberate, labeled state).
 
-Every expanded row shows "Checked <date>" and a "Report a problem" link, and
-each show page ends with "Report a problem with this listing". Both open a
-prefilled email (`src/lib/contact.ts`: show, program key, price, platform,
-check date, page URL) to `CONTACT_EMAIL`, the app's only contact address.
-Rush's header names the oldest-to-newest check range, and `/api/health`
-reports `catalog.oldestVerified` beside `lastVerified`.
+Every expanded row shows "Checked <date> · <source site> · Report a wrong
+fact", and each show page ends with "Something out of date? Report a wrong
+fact". The report destination is one setting, `REPORT_TO` in
+`src/lib/contact.ts`: a prefilled email to `CONTACT_EMAIL` by default (show,
+program key, price, platform, check date, source, page URL), or a GitHub
+issue or a form. The Rush header quotes the oldest check date, and
+`/api/health` reports `catalog.oldestVerified` beside `lastVerified`.
 
 `src/lib/catalog.test.ts` checks the data's integrity on every CI run: no
 program on a closed or unknown show, unique keys, valid times, prices and https
