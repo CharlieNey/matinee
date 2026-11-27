@@ -61,10 +61,10 @@ the order is fixed:
    - the Supabase vault, set in step 4
 
    Vercel won't show a sensitive value. If you don't have it, rotate it
-   (`GO-LIVE.md` step 4). An environment change takes effect on the next
+   (`GO-LIVE.md` step 2). An environment change takes effect on the next
    deploy.
 2. **Apply both migrations** in the Supabase SQL editor, in date order
-   (`GO-LIVE.md` step 6). They are additive: the code live today keeps
+   (`GO-LIVE.md` step 3). They are additive: the code live today keeps
    working.
 3. **Deploy the branch.** Merge `get-users-1` into `main` and push. The
    GitHub Actions workflow deploys it.
@@ -82,10 +82,10 @@ the order is fixed:
    calls the same route every 15 minutes; runs are idempotent, so the two
    overlap safely.
 6. **Send a test push** from an iPhone and from a desktop browser
-   (`GO-LIVE.md` step 9):
+   (`GO-LIVE.md` step 7):
    - On the iPhone, add Matinee to the Home Screen first.
    - Follow a show, tap Allow, then on `/notify` tap "Send a test push".
-7. **Watch for a day** (`GO-LIVE.md` step 10).
+7. **Watch for a day** (`GO-LIVE.md` step 8).
 
 **The off switch** stops every alert within a minute:
 
