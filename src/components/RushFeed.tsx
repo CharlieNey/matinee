@@ -459,21 +459,31 @@ export function RushFeed() {
           <FeedSection
             title="Open now"
             groups={result.open}
-            empty="Nothing is open right now. Check what starts later today."
+            empty={
+              result.later.length > 0
+                ? "Nothing is open right now. Below: what opens later today."
+                : "Nothing is open right now."
+            }
             now={now}
           />
-          <FeedSection
-            title="Later today"
-            groups={result.later}
-            empty="No more entry windows open later today."
-            now={now}
-          />
-          <FeedSection
-            title="Coming up"
-            groups={result.coming}
-            empty="No upcoming programs found."
-            now={now}
-          />
+          {/* A section with nothing in it isn't drawn: two empty boxes in a
+              row said nothing twice. */}
+          {result.later.length > 0 && (
+            <FeedSection
+              title="Later today"
+              groups={result.later}
+              empty=""
+              now={now}
+            />
+          )}
+          {result.coming.length > 0 && (
+            <FeedSection
+              title="Coming up"
+              groups={result.coming}
+              empty=""
+              now={now}
+            />
+          )}
           {result.unverified.length > 0 && (
             <FeedSection
               title="Unverified"

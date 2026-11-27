@@ -6,9 +6,9 @@ import { ExternalLink, MapPin } from "lucide-react";
 import { Poster } from "@/components/Poster";
 import { Sheet } from "@/components/Sheet";
 import { TktsBoardSheet } from "@/components/TktsBoard";
+import { nyClock, shortWait } from "@/lib/clock";
 import { officialTicketsForShow } from "@/lib/officialTickets";
 import {
-  formatMinutes,
   getProgramStatus,
   isProgramTrusted,
   ProgramStatus,
@@ -74,26 +74,26 @@ function dotXY(theater: Theater): { cx: number; cy: number } {
     : { cx: theater.x, cy: streetY(theater.street) };
 }
 
-function statusLine(status: ProgramStatus): string {
-  const minutes =
-    status.countdownMs !== null
-      ? Math.max(1, Math.round(status.countdownMs / 60_000))
-      : null;
-  const countdown = minutes === null ? null : formatMinutes(minutes);
-
+function statusLine(status: ProgramStatus, now: Date): string {
   switch (status.state) {
     case "open":
-      return status.whileSuppliesLast
-        ? "Open · while supplies last"
-        : `Open · ${countdown} left`;
     case "closes-soon":
-      return `Closes in ${countdown}`;
+      if (status.whileSuppliesLast) return "Open · while they last";
+      if (status.countdownMs !== null && status.countdownMs < 60 * 60_000) {
+        return `Closes in ${shortWait(status.countdownMs)}`;
+      }
+      return status.nextCloseAt
+        ? `Open · closes ${nyClock(status.nextCloseAt, now)}`
+        : "Open now";
     case "opens-later-today":
-      return `Opens in ${countdown}`;
-    case "closed-today":
-      return "Closed today";
     case "next-open-day":
-      return "Opens later this week";
+      return status.nextOpenAt
+        ? `Opens ${nyClock(status.nextOpenAt, now)}`
+        : "Opens later this week";
+    case "closed-today":
+      return status.nextOpenAt
+        ? `Closed · opens ${nyClock(status.nextOpenAt, now)}`
+        : "Closed today";
   }
 }
 
@@ -126,7 +126,7 @@ export function DistrictMap() {
             return {
               kind: programKindLabel(program.kind),
               price: program.price,
-              line: trusted ? statusLine(status) : "Unverified",
+              line: trusted ? statusLine(status, now!) : "Unverified",
               live,
             };
           },

@@ -7,14 +7,15 @@ import { WinCardSheet } from "@/components/WinCardSheet";
 import { formatCheckedDate } from "@/lib/contact";
 import { allInForPlatform, allInLabel } from "@/lib/fees";
 import { useEnteredToday } from "@/lib/entries";
+import { nyClock, shortWait } from "@/lib/clock";
 import {
   ClaimChannel,
-  etDayKey,
   formatMinutes,
   isProgramStale,
   Program,
   programKey,
   programKindLabel,
+  programOccurrencesNear,
   programPlatformLabel,
   programSourceLabel,
   ProgramStatus,
@@ -32,35 +33,40 @@ const CHANNEL_VERBS: Record<ClaimChannel, string> = {
   app: "pinged in the app",
 };
 
-const timeFormat = new Intl.DateTimeFormat("en-US", {
-  timeZone: "America/New_York",
-  hour: "numeric",
-  minute: "2-digit",
-});
+/** Within this long after a window closes, say so rather than jump ahead. */
+const JUST_CLOSED_MS = 60 * 60 * 1000;
 
-const weekdayFormat = new Intl.DateTimeFormat("en-US", {
-  timeZone: "America/New_York",
-  weekday: "short",
-});
-
-/** "3 PM" today, "Fri 10 AM" any other day. */
-function shortTime(date: Date, now: Date): string {
-  const time = timeFormat.format(date).replace(":00 ", " ");
-  return etDayKey(date) === etDayKey(now)
-    ? time
-    : `${weekdayFormat.format(date)} ${time}`;
-}
-
-function countdown(ms: number): string {
-  return formatMinutes(Math.max(1, Math.ceil(ms / 60_000)));
+/** How long ago this program's latest window closed, if within the hour. */
+function closedAgo(program: Program, now: Date): number | null {
+  let latest: number | null = null;
+  for (const occurrence of programOccurrencesNear(now, program)) {
+    const ago = now.getTime() - occurrence.closesAt.getTime();
+    if (ago >= 0 && ago < JUST_CLOSED_MS && (latest === null || ago < latest)) {
+      latest = ago;
+    }
+  }
+  return latest;
 }
 
 /**
- * Collapsed-row status: quiet text with the numbers carrying the emphasis
- * (DESIGN.md §2). Color is confined to a 6px dot — sage for an open window,
- * the gold marquee pulse for one that's closing (§11). No pills.
+ * Collapsed-row status, the way a New Yorker would say it: "Closes 3 PM",
+ * "Closes in 42 min" in the last hour, "While they last" for first-come
+ * rush, "Closed 5 min ago", "Opens tomorrow 9 AM". Quiet text with the time
+ * carrying the emphasis (DESIGN.md §2). Color is confined to a 6px dot: sage
+ * for an open window, the gold marquee pulse for one that's closing (§11).
  */
-function StatusShort({ status, now }: { status: ProgramStatus; now: Date }) {
+function StatusShort({
+  program,
+  status,
+  now,
+}: {
+  program: Program;
+  status: ProgramStatus;
+  now: Date;
+}) {
+  const strong = (text: string) => (
+    <b className="font-semibold text-ink">{text}</b>
+  );
   if (status.state === "open" || status.state === "closes-soon") {
     const dot = (
       <span
@@ -72,51 +78,26 @@ function StatusShort({ status, now }: { status: ProgramStatus; now: Date }) {
         }`}
       />
     );
-    if (status.whileSuppliesLast || status.countdownMs === null) {
-      return (
-        <>
-          {dot}
-          <span>Open now</span>
-        </>
-      );
-    }
-    // A day-plus window reads calmer as a deadline than as a countdown.
-    if (status.countdownMs >= 24 * 3_600_000 && status.nextCloseAt) {
-      return (
-        <>
-          {dot}
-          <span>
-            Open til{" "}
-            <b className="font-semibold text-ink">
-              {shortTime(status.nextCloseAt, now)}
-            </b>
-          </span>
-        </>
-      );
+    let text: React.ReactNode = "Open now";
+    if (status.whileSuppliesLast) {
+      text = "While they last";
+    } else if (status.countdownMs !== null && status.countdownMs < JUST_CLOSED_MS) {
+      text = <>Closes in {strong(shortWait(status.countdownMs))}</>;
+    } else if (status.nextCloseAt) {
+      text = <>Closes {strong(nyClock(status.nextCloseAt, now))}</>;
     }
     return (
       <>
         {dot}
-        <span>
-          <b className="font-semibold text-ink">
-            {countdown(status.countdownMs)}
-          </b>{" "}
-          left
-        </span>
+        <span>{text}</span>
       </>
     );
   }
 
+  const ago = closedAgo(program, now);
+  if (ago !== null) return <span>Closed {shortWait(ago)} ago</span>;
   if (!status.nextOpenAt) return <span>Check site</span>;
-
-  return (
-    <span>
-      Opens{" "}
-      <b className="font-semibold text-ink">
-        {shortTime(status.nextOpenAt, now)}
-      </b>
-    </span>
-  );
+  return <span>Opens {strong(nyClock(status.nextOpenAt, now))}</span>;
 }
 
 function ProgramRow({
@@ -176,7 +157,7 @@ function ProgramRow({
           {doubtful ? (
             <span>Unverified</span>
           ) : status && now ? (
-            <StatusShort status={status} now={now} />
+            <StatusShort program={program} status={status} now={now} />
           ) : (
             <span className="text-ink-faint">…</span>
           )}

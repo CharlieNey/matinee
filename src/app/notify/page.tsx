@@ -12,29 +12,14 @@ import { Toggle } from "@/components/Toggle";
 import { useToast } from "@/components/Toast";
 import { Follow } from "@/lib/data";
 import {
-  etDayKey,
   getProgramStatus,
   programKindLabel,
   programsForShow,
 } from "@/lib/programs";
+import { nyClock } from "@/lib/clock";
 import { useApp } from "@/lib/store";
 import { allShows, Show } from "@/lib/shows";
 import { useNow } from "@/lib/useNow";
-
-function fmtTime(date: Date): string {
-  return date.toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-    timeZone: "America/New_York",
-  });
-}
-
-function fmtWeekday(date: Date): string {
-  return date.toLocaleDateString("en-US", {
-    weekday: "short",
-    timeZone: "America/New_York",
-  });
-}
 
 /** One line per follow: the most urgent thing its programs are doing. */
 function windowLine(slug: string, now: Date | null): string {
@@ -53,19 +38,14 @@ function windowLine(slug: string, now: Date | null): string {
     return `${programKindLabel(open.p.kind)} open now, while they last`;
   }
   if (open?.s.nextCloseAt) {
-    return `${programKindLabel(open.p.kind)} open now · closes ${fmtTime(open.s.nextCloseAt)}`;
+    return `${programKindLabel(open.p.kind)} open now · closes ${nyClock(open.s.nextCloseAt, now)}`;
   }
 
   const upcoming = statuses
     .filter(({ s }) => s.nextOpenAt !== null)
     .sort((a, b) => a.s.nextOpenAt!.getTime() - b.s.nextOpenAt!.getTime())[0];
   if (upcoming?.s.nextOpenAt) {
-    const opensAt = upcoming.s.nextOpenAt;
-    const when =
-      etDayKey(opensAt) === etDayKey(now)
-        ? fmtTime(opensAt)
-        : `${fmtWeekday(opensAt)} ${fmtTime(opensAt)}`;
-    return `${programKindLabel(upcoming.p.kind)} opens ${when}`;
+    return `${programKindLabel(upcoming.p.kind)} opens ${nyClock(upcoming.s.nextOpenAt, now)}`;
   }
   return count;
 }

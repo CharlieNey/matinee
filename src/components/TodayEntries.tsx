@@ -8,10 +8,12 @@ import { enteredKeysOn, onLotteryLogChange, toggleLotteryEntry } from "@/lib/ent
 import {
   etDayKey,
   Program,
+  ProgramPlatform,
   programKey,
   programKindLabel,
   programPlatformLabel,
 } from "@/lib/programs";
+import { nyClock } from "@/lib/clock";
 import { getShow } from "@/lib/shows";
 import { useApp } from "@/lib/store";
 import {
@@ -23,33 +25,17 @@ import {
 } from "@/lib/today";
 import { useNow } from "@/lib/useNow";
 
+/** "the show's site" reads better mid-sentence than "Official site". */
+const where = (platform: ProgramPlatform, label: string) =>
+  platform === "official-site" ? "the show's site" : label;
+
 const isLottery = (program: Program) =>
   program.kind === "digital-lottery" || program.kind === "in-person-lottery";
 
-const timeFormat = new Intl.DateTimeFormat("en-US", {
-  timeZone: "America/New_York",
-  hour: "numeric",
-  minute: "2-digit",
-});
-const weekdayFormat = new Intl.DateTimeFormat("en-US", {
-  timeZone: "America/New_York",
-  weekday: "short",
-});
-
-/** "3 PM" today, "Thu 12 PM" on another day. */
-function clock(at: Date, now: Date): string {
-  const time = timeFormat.format(at).replace(":00 ", " ");
-  return etDayKey(at) === etDayKey(now)
-    ? time
-    : `${weekdayFormat.format(at)} ${time}`;
-}
-
 function when(window: TodayWindow, now: Date): string {
-  if (window.opensAt > now) return `opens ${clock(window.opensAt, now)}`;
-  if (window.whileSuppliesLast) {
-    return `while they last, until ${clock(window.closesAt, now)}`;
-  }
-  return `closes ${clock(window.closesAt, now)}`;
+  if (window.opensAt > now) return `opens ${nyClock(window.opensAt, now)}`;
+  if (window.whileSuppliesLast) return "while they last";
+  return `closes ${nyClock(window.closesAt, now)}`;
 }
 
 /** Everything ticked today: logged lottery entries plus tried rushes. */
@@ -105,7 +91,7 @@ function Row({
         <span className="mt-0.5 flex items-center gap-1 text-caption font-medium text-ink underline underline-offset-2">
           {program.platform === "box-office"
             ? "Find the box office"
-            : `${isLottery(program) ? "Enter on" : "Open"} ${platform}`}
+            : `${isLottery(program) ? "Enter on" : "Open"} ${where(program.platform, platform)}`}
           <ExternalLink className="size-3.5 shrink-0" strokeWidth={2} aria-hidden />
           <span className="sr-only">(opens in a new tab)</span>
         </span>
@@ -116,10 +102,13 @@ function Row({
         aria-label={`${verb}: ${show?.title ?? program.showSlug} ${programKindLabel(program.kind).toLowerCase()}`}
         onClick={onToggle}
         className={`flex size-11 shrink-0 items-center justify-center rounded-full transition-[background-color,color,transform] duration-150 active:scale-[0.94] ${
-          ticked ? "bg-sage text-sage-ink" : "bg-cream text-ink-faint"
+          ticked
+            ? "bg-sage text-sage-ink"
+            : "border-[1.5px] border-ink-faint bg-paper text-transparent"
         }`}
       >
-        <Check className="size-5" strokeWidth={ticked ? 2.6 : 2} aria-hidden />
+        {/* Unticked is an empty ring: a grey check read as already done. */}
+        <Check className="size-5" strokeWidth={2.6} aria-hidden />
       </button>
     </li>
   );
