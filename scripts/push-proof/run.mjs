@@ -2,6 +2,8 @@
 // real subscription through Google's push service, local VAPID keys and the
 // in-process store. Writes stills and a JSON log to docs/notifications/.
 // usage, from the repo root: node scripts/push-proof/run.mjs <env-file>
+// SHOW picks the followed show (default wicked; its rows must be checked).
+// DAY is a weekday on which its rush opens at 10 AM ET (default Tue Dec 1).
 import { createRequire } from "node:module";
 import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import os from "node:os";
@@ -12,6 +14,11 @@ const require = createRequire(path.join(repo, "package.json"));
 const { chromium } = require("@playwright/test");
 
 const BASE = process.env.BASE ?? "http://localhost:3417";
+const SHOW = process.env.SHOW ?? "wicked";
+const DAY = process.env.DAY ?? "2026-12-01";
+/** An instant at New York wall-clock HH:MM on DAY (December: UTC-5). */
+const et = (time, day = DAY) => new Date(`${day}T${time}:00-05:00`).toISOString();
+const nextDay = (day) => new Date(Date.parse(`${day}T12:00:00Z`) + 864e5).toISOString().slice(0, 10);
 const OUT = path.join(repo, "docs/notifications");
 mkdirSync(OUT, { recursive: true });
 const env = Object.fromEntries(
@@ -82,12 +89,13 @@ try {
   };
 
   // 1. A show page, following, alerts not yet on for this device.
-  await page.goto(`${BASE}/shows/chicago`, { waitUntil: "networkidle" });
+  await page.goto(`${BASE}/shows/${SHOW}`, { waitUntil: "networkidle" });
+  const TITLE = (await page.locator("h1").innerText()).trim();
   await page.getByRole("button", { name: "Follow", exact: true }).click();
   await page.getByText("Alerts are off on this device.").waitFor();
   const card = page.locator("div.rounded-card", { hasText: "Following this show" }).first();
   await card.screenshot({ path: path.join(OUT, "01-following-alerts-off.png") });
-  step("followed Chicago; card offers to turn alerts on");
+  step(`followed ${TITLE}; card offers to turn alerts on`);
 
   // 2. Turn on: a real PushManager subscription, saved to the local store.
   await page.getByRole("button", { name: "Turn on", exact: true }).click();
@@ -114,18 +122,37 @@ try {
     displayed: await waitForNotification((n) => n.title.startsWith("Test:")),
   });
 
-  // 4. The scheduler at 9:55 AM Saturday: the heads-up for the 10 AM rush.
-  const heads = await runScheduler("2026-11-21T14:55:00.000Z");
-  step("scheduler run at Sat 9:55 AM ET", heads);
-  const alert = await waitForNotification((n) => n.title.startsWith("Chicago"));
+  // 4. The scheduler at 9:55 AM: the heads-up for the 10 AM rush.
+  const heads = await runScheduler(et("09:55"));
+  step(`scheduler run at ${DAY} 9:55 AM ET`, heads);
+  const alert = await waitForNotification((n) => / rush opens at 10:00 AM$/.test(n.title));
   step("notification displayed by the service worker", { alert });
 
   // 5. Retries and lateness: the same alert never goes out twice or stale.
-  step("scheduler run again at 9:55 (doubled run)", await runScheduler("2026-11-21T14:55:00.000Z"));
-  step("scheduler run at 9:58", await runScheduler("2026-11-21T14:58:00.000Z"));
-  step("scheduler run at 10:30 (too late for a heads-up)", await runScheduler("2026-11-21T15:30:00.000Z"));
-  const chicagoAlerts = (await notifications()).filter((n) => n.title.startsWith("Chicago"));
-  step("Chicago notifications on the device", { count: chicagoAlerts.length });
+  step("scheduler run again at 9:55 (doubled run)", await runScheduler(et("09:55")));
+  step("scheduler run at 9:58", await runScheduler(et("09:58")));
+  step("scheduler run at 10:30 (too late for a heads-up)", await runScheduler(et("10:30")));
+  const showAlerts = (await notifications()).filter((n) => n.title.startsWith(TITLE));
+  step(`${TITLE} notifications on the device`, {
+    count: showAlerts.length,
+    titles: showAlerts.map((n) => n.title),
+  });
+
+  // 5b. A show whose rows are all unverified never alerts, and an unfollowed
+  // show stops alerting.
+  await page.goto(`${BASE}/shows/chicago`, { waitUntil: "networkidle" });
+  await page.getByRole("button", { name: "Follow", exact: true }).click();
+  await page.goto(`${BASE}/shows/${SHOW}`, { waitUntil: "networkidle" });
+  await page.getByRole("button", { name: "Following", exact: true }).click();
+  await page.waitForTimeout(1500); // the follow change syncs to the store
+  const tomorrow = nextDay(DAY);
+  const after = [];
+  for (const time of ["08:55", "09:55", "11:55", "14:00"]) {
+    after.push({ at: `${tomorrow} ${time}`, ...(await runScheduler(et(time, tomorrow))) });
+  }
+  step("next day, following only Chicago (unverified) after unfollowing", {
+    runs: after.map((r) => ({ at: r.at, sent: r.summary.sent, pairs: r.summary.pairs })),
+  });
 
   // 6. The tap target: the show page at its ways to save.
   if (alert?.url) {
