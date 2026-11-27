@@ -36,9 +36,12 @@ or posted.
 
 ## The gate: true before telling anyone
 
-1. **Push is live in production and works on a real iPhone.**
-   `docs/GO-LIVE.md` steps 2–7 (secret, migrations, deploy, scheduler, test
-   push). Until then, posts don't mention alerts.
+1. **Push works on a real iPhone.**
+   - Push has been live in production since 2026-11-27 20:25 UTC: the
+     scheduler runs every minute and health is green.
+   - Left: Charlie's test push from a Home Screen install
+     (`docs/GO-LIVE.md` step 7). Until it's done, posts don't promise alerts
+     on iPhone.
 2. **The most-searched shows are confirmed, not "Unverified".**
    - Of the 17 unverified rows, five shows matter most for search and for
      first impressions: The Lion King, Aladdin, Hadestown, Chicago and The
@@ -50,8 +53,8 @@ or posted.
    sets up forwarding for `hello@matinee.nyc` (the domain has no MX record).
 4. **Counting is on**, so the two weeks can be measured: one click in the
    Vercel dashboard, then merge `ship/5-counting`
-   (`docs/proposals/cookieless-counting.md`). Note the baseline: the push
-   subscription count in `/api/health` on the day push goes live.
+   (`docs/proposals/cookieless-counting.md`). The baseline is taken: **0
+   push subscriptions** when push went live on 2026-11-27.
 5. **The data is fresh for the launch weeks.**
    - The next re-check is due by noon ET on Friday Dec 11.
    - During the two launch weeks, re-check the shows people actually follow,
