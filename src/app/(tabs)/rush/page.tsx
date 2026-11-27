@@ -7,6 +7,7 @@ export const metadata = {
   title: "Rush & Lottery",
   description:
     "Every official rush, lottery, and standing-room program, sorted by what you can enter right now.",
+  alternates: { canonical: "/rush" },
 };
 
 export default function RushPage() {
