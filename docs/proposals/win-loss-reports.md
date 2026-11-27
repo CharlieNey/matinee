@@ -31,6 +31,14 @@ publishes odds, and Matinee already has the substrate: the "I entered" and
 - **Privacy:** no identifiers, no IPs stored (the limiter already hashes
   them), and reports deleted after a season.
 
-**Recommendation.** Build version 1 now; it's local and safe. Decide on
+**Status (2026-11-27): version 1 built on `get-users-1`, not deployed.**
+- **Where:** a "By show" section in the profile's Record tab.
+- **Code:** `src/lib/record.ts`, with unit tests and a Playwright journey.
+- **Entries not yet drawn wait:** an entry isn't counted as a loss until its
+  drawing can have happened. That's today for daily lotteries, and the end
+  of the window for weekly ones (Hamilton, the Friday Forty).
+- **To leave it out of the go-live,** revert its commit.
+
+**Recommendation.** Ship version 1; it's local and safe. Decide on
 version 2 after launch, when there are enough users for the numbers to mean
 anything.
