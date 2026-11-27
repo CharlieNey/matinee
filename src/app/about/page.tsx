@@ -2,6 +2,7 @@ import Link from "next/link";
 import { BackHeader } from "@/components/BackHeader";
 import { allPrograms } from "@/lib/programs";
 import { allTheaters } from "@/lib/theaters";
+import { CONTACT_EMAIL } from "@/lib/contact";
 
 export const metadata = {
   title: "About",
@@ -184,6 +185,21 @@ export default function AboutPage() {
             lives in PLAN.md. This is a personal portfolio project. It is not
             affiliated with Theatr, the ticketing platforms, or any theater
             owner, and poster art belongs to its productions.
+          </p>
+          <p>
+            Matinee was built with AI coding tools (Claude Code); every
+            program fact is checked against the show&apos;s own site, and each
+            row says when and where.
+          </p>
+          <p>
+            To have a poster or any other material taken down, email{" "}
+            <a
+              href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent("Takedown request")}`}
+              className="font-semibold text-ink underline underline-offset-2"
+            >
+              {CONTACT_EMAIL}
+            </a>{" "}
+            and it will be removed.
           </p>
         </Section>
       </div>
