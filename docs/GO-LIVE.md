@@ -6,7 +6,25 @@ undo it. Steps marked **Charlie** change the production database, hold a
 secret, or send notifications to real people, so only Charlie does them or
 OKs them.
 
-## Where things stand (2026-11-27)
+## Done on 2026-11-27 (afternoon, UTC)
+
+| Step | When (UTC) | Result |
+|---|---|---|
+| 2. New `CRON_SECRET` | 20:06 | Set in Vercel (production and preview) and the GitHub secret. Never printed; Charlie's copy is `~/.config/matinee/CRON_SECRET` (mode 600), for his password manager |
+| 3. Both migrations | ~20:21 | Applied with the Supabase CLI login. Checks: rate limiter `true`; `push_pipeline_status()` one row; **0 push subscriptions** |
+| 4. Merge and deploy | 20:23–20:25 | PR #3 merged (`82ef47d`); health showed database and rate limiter `ok`, scheduler `never-run` (503, expected) |
+| 5. Scheduler | 20:25 | `matinee-notify` every minute; the first calls returned 200 at 20:26–20:28; health `ok: true`, `lastRunSource: supabase-cron` |
+
+The calendar feed, the "By show" record and the counting were reverted
+before the merge (see below), so none of them is live.
+
+**Still to do:**
+- Step 6, the optional backup caller (left off).
+- Step 7, Charlie's iPhone test push.
+- Step 8, a day of watching.
+- Step 9 onward.
+
+## Where things stood before the go-live (2026-11-27)
 
 **Live on matinee.nyc** (`main`; each step deployed and checked green):
 
