@@ -52,9 +52,37 @@ function writeLotteryLog(entries: LotteryEntry[]) {
   }
 }
 
+/** Changes from this tab (SYNC_EVENT) and from other tabs ("storage"). */
 export function onLotteryLogChange(listener: () => void): () => void {
+  const onStorage = (event: StorageEvent) => {
+    if (event.key === null || event.key === STORAGE_KEY) listener();
+  };
   window.addEventListener(SYNC_EVENT, listener);
-  return () => window.removeEventListener(SYNC_EVENT, listener);
+  window.addEventListener("storage", onStorage);
+  return () => {
+    window.removeEventListener(SYNC_EVENT, listener);
+    window.removeEventListener("storage", onStorage);
+  };
+}
+
+/** Log or un-log an entry for one program on one NYC day. */
+export function toggleLotteryEntry(key: string, day: string): void {
+  const log = readLotteryLog();
+  const exists = log.some((e) => e.key === key && e.day === day);
+  writeLotteryLog(
+    exists
+      ? log.filter((e) => !(e.key === key && e.day === day))
+      : [...log, { key, day, at: new Date().toISOString() }],
+  );
+}
+
+/** Program keys logged as entered on one NYC day. */
+export function enteredKeysOn(day: string): Set<string> {
+  return new Set(
+    readLotteryLog()
+      .filter((e) => e.day === day)
+      .map((e) => e.key),
+  );
 }
 
 /** Entered/won state for one program on the current (possibly demo) day. */
@@ -78,14 +106,7 @@ export function useEnteredToday(program: Program, now: Date | null) {
   }, [key, day]);
 
   const toggle = useCallback(() => {
-    if (!day) return;
-    const log = readLotteryLog();
-    const exists = log.some((e) => e.key === key && e.day === day);
-    writeLotteryLog(
-      exists
-        ? log.filter((e) => !(e.key === key && e.day === day))
-        : [...log, { key, day, at: new Date().toISOString() }],
-    );
+    if (day) toggleLotteryEntry(key, day);
   }, [key, day]);
 
   const markWon = useCallback(() => {
