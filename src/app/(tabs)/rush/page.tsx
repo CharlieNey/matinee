@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { RushFeed } from "@/components/RushFeed";
 import { formatCheckedLong } from "@/lib/contact";
 import { allPrograms, programsOldestVerified } from "@/lib/programs";
@@ -31,6 +32,12 @@ export default function RushPage() {
         oldest check {formatCheckedLong(programsOldestVerified())}
         {unverifiedCount > 0 && ` · ${unverifiedCount} unverified`}
       </p>
+      <Link
+        href="/today"
+        className="mt-3 inline-block text-caption font-semibold text-ink underline underline-offset-2 transition-opacity active:opacity-60"
+      >
+        Enter today&apos;s lotteries, one by one
+      </Link>
       <RushFeed />
     </main>
   );

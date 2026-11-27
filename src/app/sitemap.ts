@@ -13,6 +13,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const pages: MetadataRoute.Sitemap = [
     { url: `${SITE_URL}/`, lastModified: catalogChecked, changeFrequency: "daily", priority: 1 },
     { url: `${SITE_URL}/rush`, lastModified: catalogChecked, changeFrequency: "daily", priority: 0.9 },
+    { url: `${SITE_URL}/today`, changeFrequency: "daily", priority: 0.7 },
     { url: `${SITE_URL}/district`, changeFrequency: "monthly", priority: 0.5 },
     { url: `${SITE_URL}/trip`, changeFrequency: "weekly", priority: 0.5 },
     { url: `${SITE_URL}/about`, changeFrequency: "monthly", priority: 0.3 },
