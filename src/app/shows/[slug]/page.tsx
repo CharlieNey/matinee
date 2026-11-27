@@ -5,6 +5,7 @@ import { BackHeader } from "@/components/BackHeader";
 import { InterestedButton } from "@/components/InterestedButton";
 import { OfficialTicketsCard } from "@/components/OfficialTicketsCard";
 import { Poster } from "@/components/Poster";
+import { ProgramHead } from "@/components/ProgramHead";
 import { ShowPrograms } from "@/components/ShowPrograms";
 import { FollowShowCard } from "@/components/FollowShowCard";
 import { ReportLink } from "@/components/ReportLink";
@@ -172,9 +173,7 @@ export default async function ShowPage({
           record (owner/ticketer/capacity, DATA.md). */}
       {theater && (
         <section className="mt-9 px-4 web:px-6">
-          <h2 className="border-b-2 border-ink pb-2 font-display text-[24px] italic leading-none">
-            The house
-          </h2>
+          <ProgramHead title="The house" />
           <div className="mt-4 flex flex-col gap-2.5 web:max-w-[560px]">
             <HouseFact label="Theater" value={theater.name} />
             <HouseFact label="Operated by" value={theater.owner} />

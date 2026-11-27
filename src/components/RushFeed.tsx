@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { FilterChip } from "@/components/FilterChip";
 import { OptionRow } from "@/components/OptionRow";
+import { ProgramHead } from "@/components/ProgramHead";
 import { PlatformTips } from "@/components/PlatformTips";
 import { RushShowCard } from "@/components/RushShowCard";
 import { Sheet } from "@/components/Sheet";
@@ -151,10 +152,7 @@ function FeedSection({
   return (
     <section className="mt-10">
       {/* A program's section break: a serif head over a strong rule. */}
-      <div className="flex items-baseline justify-between border-b-2 border-ink pb-2">
-        <h2 className="font-display text-[24px] italic leading-none">{title}</h2>
-        <span className="text-caption text-ink-soft">{groups.length}</span>
-      </div>
+      <ProgramHead title={title} detail={groups.length} />
       {note && <p className="mt-2 text-caption text-ink-soft">{note}</p>}
       {groups.length > 0 ? (
         <div className="flex flex-col web:grid web:grid-cols-2 web:items-start web:gap-x-12">

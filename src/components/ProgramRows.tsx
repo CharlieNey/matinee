@@ -316,20 +316,21 @@ export function ProgramRows({
   show: Show;
   entries: readonly ProgramEntry[];
   now: Date | null;
-  defaultOpen?: boolean;
+  /** "first" opens only the first row: one full answer, the rest a tap away. */
+  defaultOpen?: boolean | "first";
   /** Hide the first row's top hairline (no header above it). */
   flushTop?: boolean;
 }) {
   return (
     <div className={flushTop ? "[&>div:first-child]:border-t-0" : ""}>
-      {entries.map(({ program, status }) => (
+      {entries.map(({ program, status }, index) => (
         <ProgramRow
           key={programKey(program)}
           program={program}
           show={show}
           status={status}
           now={now}
-          defaultOpen={defaultOpen}
+          defaultOpen={defaultOpen === "first" ? index === 0 : defaultOpen}
         />
       ))}
     </div>

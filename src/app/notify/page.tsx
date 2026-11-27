@@ -4,6 +4,7 @@ import { useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Plus, Trash2 } from "lucide-react";
 import { BackHeader } from "@/components/BackHeader";
+import { ProgramHead } from "@/components/ProgramHead";
 import { NotifyPushCard } from "@/components/NotifyPushCard";
 import { Poster } from "@/components/Poster";
 import { Sheet } from "@/components/Sheet";
@@ -62,11 +63,11 @@ function FollowCard({
   onDelete: () => void;
 }) {
   return (
-    <div className="rounded-card bg-paper p-4">
+    <div className="border-b border-line py-4">
       <div className="flex gap-4">
-        <Poster show={follow.show} className="w-[72px] rounded-thumb" />
+        <Poster show={follow.show} className="w-[56px] rounded-[4px]" />
         <div className="min-w-0 flex-1 pt-0.5">
-          <h3 className="text-[20px] font-bold leading-tight tracking-tight">
+          <h3 className="font-display text-[22px] leading-tight">
             {follow.show.title}
           </h3>
           <p className="mt-1.5 line-clamp-2 text-body text-ink-soft">{line}</p>
@@ -77,7 +78,7 @@ function FollowCard({
           label={`Alerts for ${follow.show.title}`}
         />
       </div>
-      <div className="mt-4 flex justify-end border-t border-line pt-2 text-ink-soft">
+      <div className="mt-1 flex justify-end text-ink-soft">
         <button
           type="button"
           aria-label={`Unfollow ${follow.show.title}`}
@@ -136,7 +137,7 @@ export default function FollowingPage() {
 
       <NotifyPushCard />
 
-      <h2 className="mt-9 text-heading">Shows you follow</h2>
+      <ProgramHead title="Shows you follow" className="mt-10" />
       <div className="mt-4 flex flex-col gap-3.5">
         <AnimatePresence initial={false} mode="popLayout">
           {follows.map((follow) => (
@@ -173,7 +174,7 @@ export default function FollowingPage() {
       <button
         type="button"
         onClick={() => setAddOpen(true)}
-        className="mt-7 flex h-14 w-full items-center justify-center gap-2.5 rounded-full bg-vermilion text-body font-semibold text-white transition-[background-color,transform] duration-150 active:scale-[0.98] active:bg-vermilion-pressed"
+        className="mt-7 flex h-14 w-full items-center justify-center gap-2.5 rounded-md bg-vermilion text-body font-semibold text-white transition-[background-color,transform] duration-150 active:scale-[0.98] active:bg-vermilion-pressed"
       >
         <Plus className="size-6" strokeWidth={2.2} />
         Follow a show

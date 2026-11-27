@@ -1,22 +1,15 @@
 "use client";
 
 import { PlatformTips } from "@/components/PlatformTips";
+import { ProgramHead } from "@/components/ProgramHead";
 import { ProgramRows } from "@/components/ProgramRows";
 import { TktsShowRow } from "@/components/TktsBoard";
 import { getProgramStatus, programsForShow } from "@/lib/programs";
 import { closingLabel, Show } from "@/lib/shows";
 import { useNow } from "@/lib/useNow";
 
-/** A program's section break: a serif head over a strong rule. */
 function SectionHead({ detail }: { detail?: string }) {
-  return (
-    <div className="flex items-baseline justify-between border-b-2 border-ink pb-2">
-      <h2 className="font-display text-[24px] italic leading-none">
-        Ways to save
-      </h2>
-      {detail && <span className="text-caption text-ink-soft">{detail}</span>}
-    </div>
-  );
+  return <ProgramHead title="Ways to save" detail={detail} />;
 }
 
 export function ShowPrograms({ show }: { show: Show }) {
@@ -57,7 +50,7 @@ export function ShowPrograms({ show }: { show: Show }) {
               status: now ? getProgramStatus(now, program) : null,
             }))}
             now={now}
-            defaultOpen
+            defaultOpen="first"
             flushTop
           />
           <TktsShowRow slug={show.slug} />

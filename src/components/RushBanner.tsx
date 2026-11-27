@@ -29,7 +29,7 @@ export function RushBanner() {
   return (
     <Link
       href="/rush"
-      className="mt-6 block rounded-card bg-blush px-5 py-4 transition-transform duration-150 active:scale-[0.985]"
+      className="mt-6 block border-y border-line py-4 transition-opacity duration-150 active:opacity-70"
     >
       {openCount === null ? (
         <span className="block text-body text-ink-soft">

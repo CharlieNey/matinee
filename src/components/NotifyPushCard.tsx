@@ -67,13 +67,13 @@ export function NotifyPushCard() {
   })();
 
   return (
-    <div className="mt-3.5 rounded-card bg-paper p-5">
+    <div className="mt-4 border-y border-line py-5">
       <div className="flex items-start gap-4">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <h2 className="text-title">Deadline alerts</h2>
             {(unavailable || push.support === "needs-install") && (
-              <span className="rounded-full bg-inset px-2 py-1 text-label font-semibold text-ink-soft">
+              <span className="text-caption text-ink-soft">
                 {push.support === "needs-install"
                   ? "Needs Home Screen"
                   : "Unavailable here"}
@@ -119,7 +119,7 @@ export function NotifyPushCard() {
             type="button"
             onClick={() => void push.enable()}
             disabled={push.busy}
-            className="mt-3 h-10 rounded-full bg-espresso px-4 text-caption font-semibold text-white transition-transform active:scale-[0.97]"
+            className="mt-3 h-10 rounded-md bg-espresso px-4 text-caption font-semibold text-white transition-transform active:scale-[0.97]"
           >
             Try again
           </button>
@@ -133,7 +133,7 @@ export function NotifyPushCard() {
                 setTest("sending");
                 void push.sendTest().then(setTest);
               }}
-              className="mt-3 inline-flex h-10 items-center gap-2 rounded-full bg-inset px-4 text-caption font-semibold text-ink transition-transform active:scale-[0.97] disabled:opacity-60"
+              className="mt-3 inline-flex h-10 items-center gap-2 rounded-md border border-ink-faint px-4 text-caption font-semibold text-ink transition-transform active:scale-[0.97] disabled:opacity-60"
             >
               <Send className="size-4" strokeWidth={1.9} aria-hidden="true" />
               Send a test push
