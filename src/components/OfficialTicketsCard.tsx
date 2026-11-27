@@ -19,7 +19,7 @@ export function OfficialTicketsCard({
       data-seller-link="official-tickets"
       data-show={show.slug}
       data-platform={ticketLink.provider}
-      className="flex items-center gap-3 rounded-card bg-paper px-4 py-3.5 transition-transform duration-150 active:scale-[0.985]"
+      className="flex items-center gap-3 border-t border-line py-4 transition-opacity duration-150 active:opacity-60"
     >
       <span className="min-w-0 flex-1">
         <span className="block text-body text-ink">

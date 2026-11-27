@@ -109,7 +109,7 @@ export function FollowShowCard({ show }: { show: Show }) {
 
 
   return (
-    <div className="flex items-center gap-3.5 rounded-card bg-paper px-4 py-3.5">
+    <div className="flex items-center gap-3.5 border-t border-line py-4">
       <div className="min-w-0 flex-1">
         <p className="text-body font-semibold">
           {following
@@ -126,7 +126,7 @@ export function FollowShowCard({ show }: { show: Show }) {
         type="button"
         onClick={() => void onFollow()}
         disabled={push.busy}
-        className={`h-10 shrink-0 rounded-full px-4 text-caption font-semibold transition-[background-color,color,transform] duration-200 active:scale-[0.96] disabled:opacity-60 ${
+        className={`h-10 shrink-0 rounded-md px-4 text-caption font-semibold transition-[background-color,color,transform] duration-200 active:scale-[0.96] disabled:opacity-60 ${
           following && enabled ? "bg-inset text-ink" : "bg-espresso text-white"
         }`}
       >

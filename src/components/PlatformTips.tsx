@@ -16,6 +16,7 @@ export function PlatformTips({
   programs,
   labeled = false,
   chip = false,
+  plain = false,
 }: {
   programs: readonly Program[];
   /** Standalone placement (show page): spell the label out — a lone bulb
@@ -23,6 +24,8 @@ export function PlatformTips({
   labeled?: boolean;
   /** A worded pill sized like the board's filter chips. */
   chip?: boolean;
+  /** With chip: words only, matching the board's plain filters. */
+  plain?: boolean;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -41,7 +44,11 @@ export function PlatformTips({
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="flex h-12 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full bg-paper px-3.5 text-body font-semibold text-ink transition-transform duration-150 active:scale-[0.98]"
+          className={
+            plain
+              ? "flex h-11 shrink-0 items-center gap-1 whitespace-nowrap text-body text-ink-soft transition-opacity active:opacity-60"
+              : "flex h-12 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full bg-paper px-3.5 text-body font-semibold text-ink transition-transform duration-150 active:scale-[0.98]"
+          }
         >
           Good to know{" "}
           <span className="font-medium text-ink-soft">{tips.length}</span>

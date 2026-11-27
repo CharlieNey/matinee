@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { RushFeed } from "@/components/RushFeed";
-import { formatCheckedLong } from "@/lib/contact";
+import { formatCheckedDate } from "@/lib/contact";
 import { allPrograms, programsOldestVerified } from "@/lib/programs";
 import { runningShows } from "@/lib/shows";
 
@@ -26,18 +26,17 @@ export default function RushPage() {
     <main className="px-4 pb-6 pt-6 web:mx-auto web:max-w-[1160px] web:px-6">
       <h1 className="text-display">Rush &amp; Lottery</h1>
       <p className="mt-2 text-caption text-ink-soft">
-        {/* The oldest date, never the newest: quoting the freshest row would
+        {/* The oldest check, never the newest: quoting the freshest row would
             overstate how fresh the rest are. */}
-        All rows checked since{" "}
-        {formatCheckedLong(programsOldestVerified())}
-        {unverifiedCount > 0 && ` · ${unverifiedCount} unverified`}
+        Checked since {formatCheckedDate(programsOldestVerified())}
+        {unverifiedCount > 0 && ` · ${unverifiedCount} unverified`} ·{" "}
+        <Link
+          href="/today"
+          className="font-semibold text-ink underline underline-offset-4 transition-opacity active:opacity-60"
+        >
+          Today&apos;s checklist
+        </Link>
       </p>
-      <Link
-        href="/today"
-        className="mt-3 inline-block text-caption font-semibold text-ink underline underline-offset-2 transition-opacity active:opacity-60"
-      >
-        Enter today&apos;s lotteries, one by one
-      </Link>
       <RushFeed />
       <p className="mt-10 text-caption text-ink-faint">
         {productionCount} productions checked; {programShowCount} have a rush,

@@ -43,7 +43,7 @@ test("closed shows stay up and say so; the sitemap lists every show", async ({
 }) => {
   await page.goto("/shows/heathers");
   await expect(page).toHaveTitle("Heathers (closed) — Matinee");
-  await expect(page.getByText("This production has closed")).toBeVisible();
+  await expect(page.getByText(/^This production closed on /)).toBeVisible();
 
   const sitemap = await (await request.get("/sitemap.xml")).text();
   expect(sitemap).toContain("<loc>https://matinee.nyc/shows/wicked</loc>");

@@ -5,7 +5,6 @@ import { Check, ChevronDown, ExternalLink, Trophy } from "lucide-react";
 import { ReportLink } from "@/components/ReportLink";
 import { WinCardSheet } from "@/components/WinCardSheet";
 import { formatCheckedDate } from "@/lib/contact";
-import { allInForPlatform, allInLabel } from "@/lib/fees";
 import { useEnteredToday } from "@/lib/entries";
 import { nyClock, shortWait } from "@/lib/clock";
 import {
@@ -122,11 +121,6 @@ function ProgramRow({
   const doubtful = stale || program.unverified !== undefined;
   const isLottery =
     program.kind === "digital-lottery" || program.kind === "in-person-lottery";
-  // Free programs (Shakespeare in the Park) skip the fee estimate entirely.
-  const allIn =
-    program.price > 0
-      ? allInForPlatform(program.price, program.platform)
-      : null;
   const platform = programPlatformLabel(program.platform);
 
   return (
@@ -196,15 +190,14 @@ function ProgramRow({
             )}
             {program.claimWindow && (
               <p>
-                If you win: {CHANNEL_VERBS[program.claimWindow.channel]}{" "}
-                {program.claimWindow.notifiedAround} ·{" "}
+                Winners are {CHANNEL_VERBS[program.claimWindow.channel]} and
+                have{" "}
                 <b className="font-semibold text-ink">
                   {formatMinutes(program.claimWindow.minutes)}
                 </b>{" "}
-                to claim — the clock starts on send.
+                to buy.
               </p>
             )}
-            {allIn && <p className="text-ink-faint">{allInLabel(allIn)}</p>}
             {program.unverified && (
               <p>
                 <b className="font-semibold text-ink">Unverified:</b>{" "}
@@ -241,7 +234,7 @@ function ProgramRow({
                 data-seller-link="program"
                 data-show={program.showSlug}
                 data-platform={program.platform}
-                className="flex h-10 items-center gap-1.5 rounded-full bg-espresso px-4 text-caption font-semibold text-white transition-transform duration-150 active:scale-[0.97]"
+                className="flex h-10 items-center gap-1.5 rounded-md bg-espresso px-4 text-caption font-semibold text-white transition-transform duration-150 active:scale-[0.97]"
               >
                 {program.platform === "box-office"
                   ? "Find the box office"
@@ -261,8 +254,8 @@ function ProgramRow({
                     type="button"
                     aria-pressed={entered}
                     onClick={toggle}
-                    className={`flex h-10 items-center gap-1.5 rounded-full px-4 text-caption font-semibold transition-[background-color,color,transform] duration-150 active:scale-[0.97] ${
-                      entered ? "bg-sage text-sage-ink" : "bg-cream text-ink-soft"
+                    className={`flex h-10 items-center gap-1.5 rounded-md px-4 text-caption font-semibold transition-[background-color,color,transform] duration-150 active:scale-[0.97] ${
+                      entered ? "bg-sage text-sage-ink" : "border border-ink-faint text-ink"
                     }`}
                   >
                     {entered && (
@@ -277,7 +270,7 @@ function ProgramRow({
                         markWon();
                         setWinOpen(true);
                       }}
-                      className="flex h-10 items-center gap-1.5 rounded-full bg-cream px-4 text-caption font-semibold text-ink-soft transition-transform duration-150 active:scale-[0.97]"
+                      className="flex h-10 items-center gap-1.5 rounded-md border border-ink-faint px-4 text-caption font-semibold text-ink transition-transform duration-150 active:scale-[0.97]"
                     >
                       <Trophy
                         className="size-4 text-gold"
