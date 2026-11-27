@@ -18,7 +18,7 @@ export function RushShowCard({
   now: Date | null;
 }) {
   return (
-    <div className="border-b border-line pt-4 pb-1">
+    <div className="border-b border-ink/25 pt-4 pb-1">
       <Link
         href={`/shows/${show.slug}`}
         className="flex items-center gap-3 transition-opacity duration-150 active:opacity-60"
@@ -28,7 +28,7 @@ export function RushShowCard({
           className="size-10 shrink-0 rounded-[3px]"
           name={`poster-${show.slug}`}
         />
-        <span className="min-w-0 flex-1 truncate font-display text-[22px] leading-tight">
+        <span className="min-w-0 flex-1 text-balance font-display text-[22px] font-bold leading-tight">
           {show.title}
         </span>
         {show.tier !== "Broadway" && (

@@ -247,23 +247,28 @@ export function ProfileHeader({
         {profile.bio ?? "Add a few words about yourself"}
       </button>
 
-      {/* The season recap appears once there is something to recap. */}
-      <p className="mt-6 flex gap-6 text-body font-semibold">
-        <Link
-          href="/notify"
-          className="underline decoration-white/40 underline-offset-4 transition-opacity active:opacity-70"
-        >
-          Following
-        </Link>
-        {hasRecap && (
-          <Link
-            href="/wrapped"
-            className="underline decoration-white/40 underline-offset-4 transition-opacity active:opacity-70"
-          >
-            Wrapped
-          </Link>
-        )}
-      </p>
+      {/* "Following" only when the stats line has no "N following" link to
+          the same page; the season recap once there is something to recap. */}
+      {(follows.length === 0 || hasRecap) && (
+        <p className="mt-6 flex gap-6 text-body font-semibold">
+          {follows.length === 0 && (
+            <Link
+              href="/notify"
+              className="underline decoration-white/40 underline-offset-4 transition-opacity active:opacity-70"
+            >
+              Following
+            </Link>
+          )}
+          {hasRecap && (
+            <Link
+              href="/wrapped"
+              className="underline decoration-white/40 underline-offset-4 transition-opacity active:opacity-70"
+            >
+              Wrapped
+            </Link>
+          )}
+        </p>
+      )}
       </div>
     </header>
   );

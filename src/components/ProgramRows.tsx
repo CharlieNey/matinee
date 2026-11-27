@@ -137,7 +137,7 @@ function ProgramRow({
             {program.price === 0 ? "Free" : `$${program.price}`}
           </b>
         </span>
-        <span className="flex shrink-0 items-center gap-1.5 text-caption text-ink-soft">
+        <span className="flex shrink-0 items-center gap-1.5 text-[15px] text-ink">
           {entered && (
             <>
               <Check
@@ -149,7 +149,7 @@ function ProgramRow({
             </>
           )}
           {doubtful ? (
-            <span>Unverified</span>
+            <span className="text-ink-soft">Unverified</span>
           ) : status && now ? (
             <StatusShort program={program} status={status} now={now} />
           ) : (

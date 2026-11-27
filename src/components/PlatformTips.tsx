@@ -46,7 +46,7 @@ export function PlatformTips({
           onClick={() => setOpen(true)}
           className={
             plain
-              ? "flex h-11 shrink-0 items-center gap-1 whitespace-nowrap text-body text-ink-soft transition-opacity active:opacity-60"
+              ? "flex h-11 shrink-0 items-center gap-1 whitespace-nowrap text-body text-ink transition-opacity active:opacity-60"
               : "flex h-12 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full bg-paper px-3.5 text-body font-semibold text-ink transition-transform duration-150 active:scale-[0.98]"
           }
         >
