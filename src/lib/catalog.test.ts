@@ -49,7 +49,9 @@ describe("program data", () => {
     for (const program of programs) {
       const key = programKey(program);
       expect(program.price, key).toBeGreaterThan(0);
-      expect(program.maxTickets, key).toBeGreaterThanOrEqual(1);
+      if (program.maxTickets !== undefined) {
+        expect(program.maxTickets, key).toBeGreaterThanOrEqual(1);
+      }
       expect(new URL(program.entryUrl).protocol, key).toBe("https:");
     }
   });
@@ -67,6 +69,19 @@ describe("program data", () => {
           expect(day, key).toBeLessThanOrEqual(6);
         }
       }
+    }
+  });
+
+  it("names the https page every row was checked against", () => {
+    for (const program of programs) {
+      expect(new URL(program.source).protocol, programKey(program)).toBe("https:");
+    }
+  });
+
+  it("says in a sentence why each unverified row is in doubt", () => {
+    for (const program of programs) {
+      if (program.unverified === undefined) continue;
+      expect(program.unverified, programKey(program)).toMatch(/^[A-Z].{20,}\.$/);
     }
   });
 

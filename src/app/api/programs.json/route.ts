@@ -12,7 +12,7 @@ export async function GET() {
       timezone: "America/New_York",
       docs: "/about",
       license:
-        "Facts, hand-curated; provided as-is. Verify with the linked platform before you plan a night around it — each row carries its own lastVerified date.",
+        "Facts, hand-curated; provided as-is. Verify with the linked platform before you plan a night around it — each row carries its own lastVerified date and the source it was checked against, and rows marked unverified couldn't be confirmed.",
     },
     programs: allPrograms().map((program) => ({
       showSlug: program.showSlug,
@@ -21,11 +21,13 @@ export async function GET() {
       platform: program.platform,
       name: program.name ?? null,
       price: program.price,
-      maxTickets: program.maxTickets,
+      maxTickets: program.maxTickets ?? null,
       entryUrl: program.entryUrl,
       schedule: program.schedule,
       notes: program.notes ?? null,
       lastVerified: program.lastVerified,
+      source: program.source,
+      unverified: program.unverified ?? null,
     })),
   });
 }

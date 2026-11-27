@@ -90,6 +90,11 @@ export async function GET() {
         lastVerified: programsLastVerified(),
         oldestVerified: programsOldestVerified(),
         stalePrograms: stalePrograms.length,
+        // Reported, not failed on: an unverified row is a deliberate, labeled
+        // state that sends no alerts. A stale row is a missed re-check.
+        unverifiedPrograms: allPrograms().filter(
+          (program) => program.unverified !== undefined,
+        ).length,
       },
       services: { database, rateLimit, scheduler, tkts },
       push: {

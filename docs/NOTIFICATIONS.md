@@ -20,6 +20,10 @@ windows is about to open. Lotteries also get a last call. If you tapped
 - **A tap opens the show**, scrolled to its ways to save.
 - **Standing room gets no alerts.** It is sold only when a performance sells
   out, so there is no clock to alert on.
+- **No alert from a row we can't vouch for.** A row marked unverified, or not
+  re-checked in 14 days, sends nothing, and the Follow card and test push
+  never preview one. `duePushEvents` skips it at the moment of sending, so a
+  row that goes stale at noon stops alerting at noon.
 
 Not promised: to-the-minute timing (the scheduler ticks every minute and push
 services add their own delay), alerts on iPhone without Add to Home Screen, or

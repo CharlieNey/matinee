@@ -203,12 +203,80 @@ describe("the live catalog", () => {
   });
 
   it("samples the next real alert for the test push", () => {
-    const sample = nextOpeningAlert("hadestown", et("12:00"));
+    const sample = nextOpeningAlert("wicked", et("12:00"));
     expect(sample).not.toBeNull();
     const message = renderTestAlert(sample, et("12:00"));
-    expect(message.title).toMatch(/^Test: Hadestown /);
+    expect(message.title).toMatch(/^Test: Wicked /);
     expect(message.body).toMatch(/Preview of the alert due \d/);
-    expect(message.url).toBe("/shows/hadestown#ways-to-save");
+    expect(message.url).toBe("/shows/wicked#ways-to-save");
+    // Hadestown's only alerting row is unverified: nothing to preview.
+    expect(nextOpeningAlert("hadestown", et("12:00"))).toBeNull();
     expect(renderTestAlert(null, et("12:00")).url).toBe("/notify");
+  });
+});
+
+describe("rows the app can't vouch for", () => {
+  /** Every distinct alert due at some minute in [from, to). */
+  const sweep = (from: Date, to: Date, programs: Program[]) => {
+    const sent = new Map<string, PushEvent>();
+    for (let at = from; at < to; at = minutes(at, 1)) {
+      for (const alert of due(at, programs)) sent.set(alert.eventKey, alert);
+    }
+    return [...sent.values()];
+  };
+
+  it("never alerts from an unverified row, on any alert kind", () => {
+    const rows = [RUSH, DAY_LOTTERY, MIDNIGHT_LOTTERY];
+    const control = sweep(et("00:00"), et("23:59"), rows);
+    expect(new Set(kinds(control))).toEqual(
+      new Set(["opening", "last-call", "claim"]),
+    );
+    const doubtful = rows.map((row) => ({
+      ...row,
+      unverified: "Two sources give different prices.",
+    }));
+    expect(sweep(et("00:00"), et("23:59"), doubtful)).toEqual([]);
+  });
+
+  it("stops alerting at the moment a row goes stale, mid-day", () => {
+    // Checked Nov 20, so stale from noon New York time on Dec 4.
+    const before = sweep(et("08:00", "2026-12-04"), et("12:00", "2026-12-04"), [
+      DAY_LOTTERY,
+    ]);
+    expect(kinds(before)).toEqual(["opening"]);
+    const after = sweep(et("12:00", "2026-12-04"), et("23:59", "2026-12-04"), [
+      DAY_LOTTERY,
+    ]);
+    expect(after).toEqual([]);
+    expect(sweep(et("08:00", "2026-12-05"), et("22:00", "2026-12-05"), [RUSH])).toEqual([]);
+  });
+
+  it("doesn't promise an untrusted alert on the Follow card or the test push", () => {
+    expect(nextOpeningAlert("hadestown", et("12:00"), [RUSH])).not.toBeNull();
+    expect(
+      nextOpeningAlert("hadestown", et("12:00"), [
+        { ...RUSH, unverified: "The price is in doubt." },
+      ]),
+    ).toBeNull();
+    // Trusted today, stale by the time the alert would go out.
+    expect(nextOpeningAlert("hadestown", et("12:30", "2026-12-04"), [RUSH])).toBeNull();
+  });
+
+  it("sends nothing from an untrusted row anywhere in the live catalog", () => {
+    // Doubt every other row and age a third, then sweep a full day.
+    const programs = allPrograms().map((program, index) =>
+      index % 2 === 0
+        ? { ...program, unverified: "Test: in doubt." }
+        : index % 3 === 0
+          ? { ...program, lastVerified: "2026-10-01" }
+          : program,
+    );
+    const day = "2026-12-01";
+    const sent = sweep(et("00:00", day), et("23:59", day), programs);
+    expect(sent.length).toBeGreaterThan(0);
+    for (const alert of sent) {
+      expect(alert.program.unverified, alert.eventKey).toBeUndefined();
+      expect(alert.program.lastVerified, alert.eventKey).not.toBe("2026-10-01");
+    }
   });
 });

@@ -4,20 +4,25 @@ Written 2026-11-21. This replaces the earlier go-live checklist and
 `docs/HANDOFF.md`. Do the steps in order. Each has the command or click,
 what to check, and how to undo it.
 
-## The deadline: noon ET, Wednesday Nov 25
+## Freshness: production has been stale since noon ET, Wednesday Nov 25
 
 A program row goes stale 14 days after noon ET on its `lastVerified` date.
-Stale rows say "due for re-checking" and `/api/health` returns 503, so the
-hourly `production-health.yml` run goes red.
+Stale rows read "Unverified", send no alerts, and make `/api/health` return
+503, so the hourly `production-health.yml` run goes red.
 
-- **Production today:** all 57 rows are dated 2026-11-11, so all of them go stale
-  at noon ET on Nov 25. Shipping this branch (steps 1–8) fixes that: its
-  rows are dated Nov 20 and 21.
-- **On this branch:** four rows are still dated 2026-11-11 because the sources
-  disagree. Step 2 settles them. If you don't, health goes red at noon on
-  Nov 25 even after you ship.
-- **Next due date:** the rows dated Nov 20 go stale at noon ET on Friday
-  Dec 4. Step 11 covers that.
+- **Production today (checked 2026-11-27):** all 57 rows are dated
+  2026-11-11, so every row has read as unverified since noon ET on Nov 25 and
+  health has been red since. Shipping this branch fixes that.
+- **On `get-users-1`:** every row was re-checked on 2026-11-27 against the
+  show's official site, and each row names that page. 17 of 59 rows couldn't
+  be confirmed there; they are marked unverified with the reason, show in
+  their own section on `/rush`, and send no alerts. Health doesn't fail on
+  them (it reports `unverifiedPrograms`). Step 2 lists them.
+- **Next due date:** noon ET on Friday Dec 11. Step 11 covers that.
+
+`get-users-1` is cut from `showcase/polish` plus `origin/main`, so shipping it
+ships everything below too. Where this file says `showcase/polish`, read
+`get-users-1`.
 
 ## What is on the branch
 
@@ -64,37 +69,56 @@ Two commits can be dropped on their own:
 
 **Undo:** nothing to undo.
 
-### 2. Settle the four unverified rows (before step 7)
+### 2. Hand-check the unverified rows (optional, about 20 minutes)
 
-All four are in `src/lib/programCatalog.ts`. Each one's comment says what
-conflicts. For each row, either confirm it or delete it:
-- **Confirm:** fix the fact, then set `lastVerified` to the day you checked.
-- **Delete:** remove the whole `{ ... }` block.
+These 17 rows couldn't be confirmed on the show's own site on 2026-11-27,
+usually because only a seller's page (which the checker doesn't read) or TDF
+states the fact. Each row's comment in `src/lib/programCatalog.ts` quotes
+what the sources say. A person can settle most of them in a normal browser:
 
-| Row | App says | Conflict | Where to check |
-|---|---|---|---|
-| Aladdin digital lottery | $45 | TDF says $35 | aladdinthemusical.com/lottery |
-| Chicago standing room | $39 | TDF says $27, when sold out | Ambassador box office, chicagothemusical.com |
-| Hadestown Lucky Seat lottery | $49, no deadline stated | TDF says $47.50, entries close 10:30 AM day of | luckyseat.com/shows/hadestown-newyork |
-| Book of Mormon Lucky Seat lottery | $49 daily | Official site lists only a $15 monthly lottery | luckyseat.com/shows/thebookofmormon-newyork |
+| Row | In doubt | Where to look |
+|---|---|---|
+| 860: lottery, rush, digital rush | entry times; box-office hours | rush.telecharge.com, the Imperial box office |
+| Aladdin lottery | price: TDF $35, older guides $45 | aladdinthemusical.com/lottery |
+| Book of Mormon Lucky Seat lottery | whether it still runs (TDF: $45, enter by 10:30 AM the day before) | luckyseat.com/shows/thebookofmormon-newyork |
+| Book of Mormon digital rush | whether it still runs | the TodayTix app |
+| Chicago rush and standing room | not on the show's site (TDF: $49 and $27) | the Ambassador box office |
+| Hadestown lottery | entry deadline | luckyseat.com/shows/hadestown-newyork |
+| The Lion King lottery | price: TDF $35, the row used to say $60 | lionking.com/lottery |
+| Maybe Happy Ending lottery | which performances; when entries open | rush.telecharge.com |
+| Operation Mincemeat lottery and rush | whether the lottery is live; box-office hours | operationbroadway.com, the Golden box office |
+| Paranormal Activity rush | box-office hours | the August Wilson box office |
+| Rocky Horror lottery | entry window | the TodayTix app |
+| Wanted lottery | where to enter (TDF: Telecharge) | rush.telecharge.com |
+| Perfect Crime digital rush | price and time | the TodayTix app |
+
+To confirm a row, fix any fact that differs, then change its
+`unverified(source, why, draft)` to `checked(source, draft)`, with the page
+that confirmed it as `source`.
 
 ```bash
-npx vitest run src/lib/catalog.test.ts src/lib/programs.test.ts src/app
-git commit -am "data: settle the last four Nov 11 rows"
+npx vitest run src/lib/catalog.test.ts src/lib/programs.test.ts src/lib/push
+git commit -am "data: confirm <show> by hand"
 ```
 
-**Check:**
-- The tests pass.
-- `grep -c '"2026-11-11"' src/lib/programCatalog.ts` prints `0`.
+**Check:** the tests pass, and `/rush` lists the row outside "Unverified".
 
 **Undo:** `git revert HEAD`.
 
 ### 3. Make the report links reach someone
 
-Every "Report a problem" link mails `hello@matinee.nyc`
-(`CONTACT_EMAIL` in `src/lib/contact.ts`). On 2026-11-21 that domain had
-no MX record, so those emails would bounce. The domain's DNS is on Vercel.
-Pick one:
+Every "Report a wrong fact" link goes where `REPORT_TO` in
+`src/lib/contact.ts` says. It defaults to a prefilled email to
+`hello@matinee.nyc` (`CONTACT_EMAIL`). On 2026-11-21 and again on 2026-11-27
+that domain had no MX record, so those emails would bounce. The domain's DNS
+is on Vercel. Pick one:
+
+- **Send reports to GitHub issues instead.** Set `REPORT_TO` to
+  `{ kind: "github", repo: "CharlieNey/matinee" }`. Free, but reporters need
+  a GitHub account and the report is public.
+- **Send reports to a form.** Set `REPORT_TO` to `{ kind: "form", url: "…" }`
+  for any form that reads `subject` and `details` from the query string.
+  That needs an account with a form service.
 
 - **Forward the address.** Sign up with an email-forwarding service. It
   gives you MX values (and usually an SPF TXT record). Add them:
@@ -219,10 +243,11 @@ curl -s https://matinee.nyc/api/health | jq '{ok, catalog, services}'
 ```
 
 **Check:**
-- `catalog.oldestVerified` is `2026-11-20` or later. If it's still
-  `2026-11-11`, step 2 is not done.
+- `catalog.oldestVerified` is `2026-11-27` or later, and
+  `catalog.stalePrograms` is `0`.
 - `services.scheduler` is `"never-run"` until step 8.
-- On `/rush`, expand a row: it shows a "Checked" date and "Report a problem".
+- On `/rush`, the header reads "oldest check November 27". Expand a row: it
+  shows "Checked Nov 27 · <the source's site> · Report a wrong fact".
 
 **Undo:** Vercel dashboard → Deployments → the previous production deploy
 → Instant Rollback (or `vercel rollback`).
@@ -301,9 +326,10 @@ shows 0 failed runs and the second returns 0.
   push and deploy.
   **Check:** `/shows/two-strangers` reads "Closed November 29, 2026".
   **Undo:** revert the commit.
-- **By noon ET on Friday Dec 4: re-check the catalog.** Re-check the rows
-  in `src/lib/programCatalog.ts` and move each `lastVerified`. Deleting a row
-  you can't confirm is better than leaving it to go stale.
+- **By noon ET on Friday Dec 11: re-check the catalog.** Re-check every row
+  in `src/lib/programCatalog.ts` against its `source` and move
+  `LAST_VERIFIED`. A row you can't confirm becomes `unverified(...)` with the
+  reason; it stays listed but sends no alerts.
   **Check:** `curl -s https://matinee.nyc/api/health | jq .catalog`.
 - **Every 60 days: commit to `main`.** GitHub switches off scheduled
   workflows after 60 days without a commit. That is how `notify-cron.yml`

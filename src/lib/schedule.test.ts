@@ -25,6 +25,7 @@ function fixture(
     entryUrl: "https://example.com/",
     schedule: { timezone: "America/New_York", summary: "test", windows },
     lastVerified,
+    source: "https://example.com/policy",
   };
 }
 

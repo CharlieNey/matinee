@@ -10,6 +10,7 @@ import { officialTicketsForShow } from "@/lib/officialTickets";
 import {
   formatMinutes,
   getProgramStatus,
+  isProgramTrusted,
   ProgramStatus,
   programKindLabel,
   programsForShow,
@@ -118,12 +119,14 @@ export function DistrictMap() {
         const statuses = (show && now ? programsForShow(show.slug) : []).map(
           (program) => {
             const status = getProgramStatus(now!, program);
+            const trusted = isProgramTrusted(program, now!);
             const live =
-              status.state === "open" || status.state === "closes-soon";
+              trusted &&
+              (status.state === "open" || status.state === "closes-soon");
             return {
               kind: programKindLabel(program.kind),
               price: program.price,
-              line: statusLine(status),
+              line: trusted ? statusLine(status) : "Unverified",
               live,
             };
           },

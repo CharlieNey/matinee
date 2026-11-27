@@ -89,11 +89,11 @@ export default function AboutPage() {
           </p>
           <p>
             That&apos;s a feature, not a fallback: the dataset is small,
-            slow-moving, and legible. Every row carries a{" "}
-            <b className="font-semibold text-ink">lastVerified</b> date, and
-            anything older than about two weeks renders as unverified in the
-            UI rather than pretending to be fresh. Every row shows the day it
-            was last checked and a link to report a mistake.
+            slow-moving, and legible. Every row shows the day it was last
+            checked and the official page it was checked against. A row we
+            couldn&apos;t confirm, or one not re-checked in two weeks, is
+            marked unverified and never sends an alert. Every row has a link
+            to report a wrong fact.
           </p>
         </Section>
 

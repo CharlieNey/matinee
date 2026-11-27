@@ -1,6 +1,7 @@
 import {
   allPrograms,
   etDayKey,
+  isProgramTrusted,
   Program,
   programOccurrencesNear,
 } from "./programs";
@@ -42,6 +43,8 @@ export function buildTripPlan(
     const slots: TripSlot[] = [];
 
     for (const program of allPrograms()) {
+      // A plan is a promise about times: only rows we can vouch for today.
+      if (!isProgramTrusted(program, now)) continue;
       const show = getShow(program.showSlug);
       if (!show) continue;
       for (const occurrence of programOccurrencesNear(anchor, program)) {

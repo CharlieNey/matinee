@@ -62,10 +62,19 @@ export type Program = {
   /** Optional branded program name, such as “Friday Forty.” */
   name?: string;
   price: number;
-  maxTickets: number;
+  /** Tickets per winner or buyer. Absent when the source doesn't say. */
+  maxTickets?: number;
   entryUrl: string;
   schedule: ProgramSchedule;
+  /** The day (YYYY-MM-DD, New York) this row was last checked. */
   lastVerified: string;
+  /** The official page the row was checked against. */
+  source: string;
+  /**
+   * Set when that check couldn't confirm a fact: what is in doubt, in plain
+   * words. The row stays listed, marked unverified, and never sends an alert.
+   */
+  unverified?: string;
   notes?: string;
   claimWindow?: ClaimWindow;
   /** Platform folk knowledge, curated from community reports (MARKET.md). */
@@ -389,6 +398,20 @@ export function isProgramStale(item: Program, now: Date): boolean {
     now.getTime() - verifiedAt.getTime() >
     STALE_AFTER_DAYS * 24 * 60 * 60 * 1000
   );
+}
+
+/**
+ * Whether the app may vouch for a row right now: checked within
+ * STALE_AFTER_DAYS and confirmed by its source. Only trusted rows send push
+ * alerts; the rest still show, marked unverified.
+ */
+export function isProgramTrusted(item: Program, now: Date): boolean {
+  return item.unverified === undefined && !isProgramStale(item, now);
+}
+
+/** The source's host, without "www.": "ohmaryplay.com". */
+export function programSourceLabel(item: Program): string {
+  return new URL(item.source).hostname.replace(/^www\./, "");
 }
 
 /** Interpret one curated weekly schedule at a caller-supplied instant. */

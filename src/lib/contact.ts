@@ -7,7 +7,8 @@ import {
 import type { Show } from "@/lib/shows";
 
 /**
- * The one address visitors write to, used by every "Report a problem" link.
+ * The one address visitors write to. Every "Report a wrong fact" link uses
+ * it while REPORT_TO is set to email.
  *
  * TODO(Charlie): matinee.nyc had no MX record when this was added
  * (2026-11-21), so mail to this address bounces until forwarding is set up
@@ -30,40 +31,49 @@ export function formatCheckedDate(isoDate: string): string {
   return checkedFormat.format(new Date(`${isoDate}T12:00:00Z`));
 }
 
-const monthFormat = new Intl.DateTimeFormat("en-US", {
+const checkedLongFormat = new Intl.DateTimeFormat("en-US", {
   timeZone: "UTC",
   month: "long",
+  day: "numeric",
 });
 
-/** "November 20", "November 11–20", or "October 30 – November 20". */
-export function formatCheckedRange(oldest: string, newest: string): string {
-  const long = (iso: string) =>
-    new Date(`${iso}T12:00:00Z`).toLocaleDateString("en-US", {
-      timeZone: "UTC",
-      month: "long",
-      day: "numeric",
-    });
-  if (oldest === newest) return long(newest);
-  const a = new Date(`${oldest}T12:00:00Z`);
-  const b = new Date(`${newest}T12:00:00Z`);
-  const sameMonth =
-    monthFormat.format(a) === monthFormat.format(b) &&
-    a.getUTCFullYear() === b.getUTCFullYear();
-  if (sameMonth) {
-    return `${long(oldest)}–${b.getUTCDate()}`;
-  }
-  return `${long(oldest)} – ${long(newest)}`;
+/** "2026-11-20" → "November 20". */
+export function formatCheckedLong(isoDate: string): string {
+  return checkedLongFormat.format(new Date(`${isoDate}T12:00:00Z`));
 }
 
 /**
- * A mailto link prefilled with everything needed to find the row: the show,
- * and for a program its kind, platform, price, key and check date. The
- * visitor only has to say what's wrong.
+ * Where "Report a wrong fact" sends a visitor. This is the one setting:
+ *
+ * - `email`: a prefilled email (the default).
+ * - `github`: a prefilled issue on the public repo. Needs a GitHub account,
+ *   and the report is public.
+ * - `form`: any form that reads query parameters (Tally, Fillout and
+ *   Formspree do). It gets `subject` and `details`.
  */
-export function reportProblemHref(show: Show, program?: Program): string {
+export type ReportDestination =
+  | { kind: "email"; to: string }
+  | { kind: "github"; repo: string }
+  | { kind: "form"; url: string };
+
+export const REPORT_TO: ReportDestination = {
+  kind: "email",
+  to: CONTACT_EMAIL,
+};
+
+/**
+ * A report link prefilled with everything needed to find the row: the show,
+ * and for a program its kind, platform, price, key, source and check date.
+ * The visitor only has to say what's wrong.
+ */
+export function reportWrongFactHref(
+  show: Show,
+  program?: Program,
+  destination: ReportDestination = REPORT_TO,
+): string {
   const subject = program
-    ? `Problem with a listing: ${show.title}, ${programKindLabel(program.kind)} $${program.price}`
-    : `Problem with a listing: ${show.title}`;
+    ? `Wrong fact: ${show.title}, ${programKindLabel(program.kind)} $${program.price}`
+    : `Wrong fact: ${show.title}`;
   const details = [
     `Show: ${show.title}`,
     ...(program
@@ -71,6 +81,7 @@ export function reportProblemHref(show: Show, program?: Program): string {
           `Program: ${programKindLabel(program.kind)}, $${program.price}, ${programPlatformLabel(program.platform)}`,
           `Key: ${programKey(program)}`,
           `Last checked: ${program.lastVerified}`,
+          `Source: ${program.source}`,
         ]
       : []),
     `Page: ${SITE_URL}/shows/${show.slug}`,
@@ -82,6 +93,29 @@ export function reportProblemHref(show: Show, program?: Program): string {
     "",
     "Listing details, so we can find it:",
     ...details,
-  ].join("\r\n");
-  return `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  ];
+
+  switch (destination.kind) {
+    case "email":
+      return `mailto:${destination.to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body.join("\r\n"))}`;
+    case "github": {
+      const url = new URL(`https://github.com/${destination.repo}/issues/new`);
+      url.searchParams.set("title", subject);
+      url.searchParams.set("body", body.join("\n"));
+      return url.toString();
+    }
+    case "form": {
+      const url = new URL(destination.url);
+      url.searchParams.set("subject", subject);
+      url.searchParams.set("details", details.join("\n"));
+      return url.toString();
+    }
+  }
+}
+
+/** Email opens the mail app; the other destinations open a new tab. */
+export function reportOpensNewTab(
+  destination: ReportDestination = REPORT_TO,
+): boolean {
+  return destination.kind !== "email";
 }

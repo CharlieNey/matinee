@@ -2,7 +2,11 @@
 
 import Link from "next/link";
 import { ArrowRight, TicketCheck } from "lucide-react";
-import { allPrograms, getProgramStatus } from "@/lib/programs";
+import {
+  allPrograms,
+  getProgramStatus,
+  isProgramTrusted,
+} from "@/lib/programs";
 import { useNow } from "@/lib/useNow";
 
 export function RushBanner() {
@@ -13,6 +17,8 @@ export function RushBanner() {
     ? new Set(
         allPrograms()
           .filter((program) => {
+            // Same rule as the feed: an unverified row never counts as open.
+            if (!isProgramTrusted(program, now)) return false;
             const state = getProgramStatus(now, program).state;
             return state === "open" || state === "closes-soon";
           })

@@ -3,6 +3,7 @@ import {
   etDayKey,
   etHour,
   etWallClock,
+  isProgramTrusted,
   Program,
   programKey,
   programOccurrencesNear,
@@ -190,7 +191,11 @@ export function alertsForOccurrence(
   return alerts;
 }
 
-/** Alerts whose send window contains `now`. Nothing is due in quiet hours. */
+/**
+ * Alerts whose send window contains `now`. Nothing is due in quiet hours, and
+ * nothing is ever due from a row the app can't vouch for at `now` (stale or
+ * unverified): a wrong push sends people to a window that may not exist.
+ */
 export function duePushEvents(
   now: Date,
   programs: readonly Program[] = allPrograms(),
@@ -199,6 +204,7 @@ export function duePushEvents(
   const due: PushEvent[] = [];
   const seen = new Set<string>();
   for (const program of programs) {
+    if (!isProgramTrusted(program, now)) continue;
     for (const occurrence of programOccurrencesNear(now, program)) {
       for (const alert of alertsForOccurrence(program, occurrence)) {
         if (alert.sendFrom > now || now >= alert.sendUntil) continue;
@@ -211,7 +217,11 @@ export function duePushEvents(
   return due;
 }
 
-/** The next opening alert for a show after `now` — the test push's sample. */
+/**
+ * The next opening alert for a show after `now`: the test push's sample and
+ * the Follow card's "next alert". Untrusted rows are skipped here too, so the
+ * app never promises an alert that won't be sent.
+ */
 export function nextOpeningAlert(
   slug: string,
   now: Date,
@@ -223,6 +233,9 @@ export function nextOpeningAlert(
     for (const occurrence of programOccurrencesNear(now, program)) {
       for (const alert of alertsForOccurrence(program, occurrence)) {
         if (alert.kind !== "opening" || alert.sendFrom <= now) continue;
+        // Trusted when it would be sent, not just now: a row can go stale
+        // between today and next Friday's alert.
+        if (!isProgramTrusted(program, alert.sendFrom)) continue;
         if (!best || alert.sendFrom < best.sendFrom) best = alert;
       }
     }

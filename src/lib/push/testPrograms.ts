@@ -27,6 +27,7 @@ function make(
       windows: [{ days: EVERY_DAY, opensAt, closesAt, whileSuppliesLast }],
     },
     lastVerified: "2026-11-20",
+    source: "https://example.com/policy",
     ...rest,
   };
 }

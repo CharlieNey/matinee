@@ -8,6 +8,9 @@ type ApiProgram = {
   name: string | null;
   price: number;
   entryUrl: string;
+  lastVerified: string;
+  source: string;
+  unverified: string | null;
 };
 
 /**
@@ -46,8 +49,16 @@ test("Rush: expanding a program reveals the official seller's entry link", async
     }
   }
 
+  // Every row names the official page it was checked against.
+  for (const program of programs) {
+    expect(new URL(program.source).protocol, program.showSlug).toBe("https:");
+  }
+
   const program = programs.find(
-    (p) => p.platform === "broadway-direct" && p.kind === "digital-lottery",
+    (p) =>
+      p.platform === "broadway-direct" &&
+      p.kind === "digital-lottery" &&
+      p.unverified === null,
   );
   expect(program).toBeDefined();
   if (!program) return;
@@ -73,4 +84,24 @@ test("Rush: expanding a program reveals the official seller's entry link", async
   await expect(entry).toBeVisible();
   await expect(entry).toHaveAttribute("href", program.entryUrl);
   await expect(entry).toHaveAttribute("target", "_blank");
+
+  // The row says when it was checked, links its source, and offers a
+  // prefilled report.
+  const panel = row.locator("xpath=following-sibling::div[1]");
+  await expect(panel.getByText(/^Checked [A-Z][a-z]{2} \d{1,2} ·/)).toBeVisible();
+  await expect(panel.getByRole("link", { name: /^Source: / })).toHaveAttribute(
+    "href",
+    program.source,
+  );
+  const report = panel.getByRole("link", { name: "Report a wrong fact" });
+  await expect(report).toHaveAttribute("href", /^mailto:.*subject=Wrong%20fact/);
+
+  // The header quotes the oldest check, never the newest.
+  const oldest = programs.map((p) => p.lastVerified).sort()[0];
+  const long = new Date(`${oldest}T12:00:00Z`).toLocaleDateString("en-US", {
+    timeZone: "UTC",
+    month: "long",
+    day: "numeric",
+  });
+  await expect(page.getByText(`oldest check ${long}`)).toBeVisible();
 });

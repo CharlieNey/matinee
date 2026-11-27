@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { Check, ChevronDown, ExternalLink, Trophy } from "lucide-react";
+import { ReportLink } from "@/components/ReportLink";
 import { WinCardSheet } from "@/components/WinCardSheet";
-import { formatCheckedDate, reportProblemHref } from "@/lib/contact";
+import { formatCheckedDate } from "@/lib/contact";
 import { allInForPlatform, allInLabel } from "@/lib/fees";
 import { useEnteredToday } from "@/lib/entries";
 import {
@@ -15,6 +16,7 @@ import {
   programKey,
   programKindLabel,
   programPlatformLabel,
+  programSourceLabel,
   ProgramStatus,
 } from "@/lib/programs";
 import { Show } from "@/lib/shows";
@@ -134,6 +136,9 @@ function ProgramRow({
   const [winOpen, setWinOpen] = useState(false);
   const { entered, won, toggle, markWon } = useEnteredToday(program, now);
   const stale = now ? isProgramStale(program, now) : false;
+  // A row the app can't vouch for doesn't get a clock: its times may be the
+  // fact in doubt. The detail says why.
+  const doubtful = stale || program.unverified !== undefined;
   const isLottery =
     program.kind === "digital-lottery" || program.kind === "in-person-lottery";
   // Free programs (Shakespeare in the Park) skip the fee estimate entirely.
@@ -168,7 +173,9 @@ function ProgramRow({
               <span className="sr-only">Entered today</span>
             </>
           )}
-          {status && now ? (
+          {doubtful ? (
+            <span>Unverified</span>
+          ) : status && now ? (
             <StatusShort status={status} now={now} />
           ) : (
             <span className="text-ink-faint">…</span>
@@ -195,11 +202,17 @@ function ProgramRow({
               <b className="font-semibold text-ink">{platform}</b> ·{" "}
               {program.schedule.summary}
             </p>
-            <p>
-              Up to {program.maxTickets} ticket
-              {program.maxTickets === 1 ? "" : "s"}
-              {program.notes ? ` · ${program.notes}` : ""}
-            </p>
+            {(program.maxTickets !== undefined || program.notes) && (
+              <p>
+                {[
+                  program.maxTickets !== undefined &&
+                    `Up to ${program.maxTickets} ticket${program.maxTickets === 1 ? "" : "s"}`,
+                  program.notes,
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </p>
+            )}
             {program.claimWindow && (
               <p>
                 If you win: {CHANNEL_VERBS[program.claimWindow.channel]}{" "}
@@ -211,17 +224,33 @@ function ProgramRow({
               </p>
             )}
             {allIn && <p className="text-ink-faint">{allInLabel(allIn)}</p>}
+            {program.unverified && (
+              <p>
+                <b className="font-semibold text-ink">Unverified:</b>{" "}
+                {program.unverified} Confirm on the entry site.
+              </p>
+            )}
+            {stale && !program.unverified && (
+              <p>
+                <b className="font-semibold text-ink">Unverified:</b> not
+                re-checked in over two weeks. Confirm on the entry site.
+              </p>
+            )}
             <p className="text-ink-faint">
-              Checked {formatCheckedDate(program.lastVerified)}
-              {stale && " · due for re-checking, so confirm on the entry site"}
-              {" · "}
+              Checked {formatCheckedDate(program.lastVerified)} ·{" "}
               <a
-                href={reportProblemHref(show, program)}
+                href={program.source}
+                target="_blank"
+                rel="noreferrer"
                 className="underline underline-offset-2 transition-opacity active:opacity-60"
               >
-                Report a problem
-                <span className="sr-only"> with this listing</span>
-              </a>
+                <span className="sr-only">Source: </span>
+                {programSourceLabel(program)}
+              </a>{" "}
+              ·{" "}
+              <ReportLink show={show} program={program}>
+                Report a wrong fact
+              </ReportLink>
             </p>
             <div className="flex flex-wrap items-center gap-2 pt-2">
               <a
