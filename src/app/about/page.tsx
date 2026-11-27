@@ -2,7 +2,6 @@ import Link from "next/link";
 import { BackHeader } from "@/components/BackHeader";
 import { analyticsEnabled } from "@/lib/analytics";
 import { CONTACT_EMAIL } from "@/lib/contact";
-import { pageCountingEnabled } from "@/lib/pageCounting";
 import { allPrograms, cheapestProgram } from "@/lib/programs";
 import { runningShows } from "@/lib/shows";
 import { allTheaters } from "@/lib/theaters";
@@ -170,27 +169,15 @@ export default function AboutPage() {
           </p>
         </Section>
 
-        {(pageCountingEnabled || analyticsEnabled) && (
+        {analyticsEnabled && (
           <Section title="What we count">
-            {pageCountingEnabled && (
-              <p>
-                Matinee counts page views with Vercel Web Analytics. It uses
-                no cookies: Vercel recognizes a visit by a hash of the request
-                that it resets every day, so no one is followed from one day to
-                the next. Only the page&apos;s address is sent, never anything
-                after it, so a shared diary link is never counted with what is
-                in it.
-              </p>
-            )}
-            {analyticsEnabled && (
-              <p>
-                Matinee counts a few anonymous events with PostHog: taps through
-                to an official seller, follows, alert sign-ups, and alerts sent
-                and opened. It runs in PostHog&apos;s cookieless mode, so
-                nothing is stored on your device, there is no profile of you,
-                and nothing records your screen.
-              </p>
-            )}
+            <p>
+              Matinee counts a few anonymous events with PostHog: taps through
+              to an official seller, follows, alert sign-ups, and alerts sent
+              and opened. It runs in PostHog&apos;s cookieless mode, so
+              nothing is stored on your device, there is no profile of you,
+              and nothing records your screen.
+            </p>
           </Section>
         )}
 

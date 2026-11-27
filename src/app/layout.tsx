@@ -2,7 +2,6 @@ import { ViewTransition } from "react";
 import type { Metadata } from "next";
 import { Bodoni_Moda, Schibsted_Grotesk } from "next/font/google";
 import { LayoutToggle } from "@/components/LayoutToggle";
-import { PageCounter } from "@/components/PageCounter";
 import { Providers } from "@/components/Providers";
 import { WebNav } from "@/components/WebNav";
 import "./globals.css";
@@ -79,7 +78,6 @@ export default function RootLayout({
           </ViewTransition>
           <LayoutToggle />
         </Providers>
-        <PageCounter />
       </body>
     </html>
   );
