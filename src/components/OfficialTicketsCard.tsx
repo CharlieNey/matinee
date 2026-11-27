@@ -1,4 +1,4 @@
-import { BadgeCheck, ExternalLink, Ticket } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import { allInForProvider, allInLabel } from "@/lib/fees";
 import { OfficialTicketLink } from "@/lib/officialTickets";
 import { Show } from "@/lib/shows";
@@ -19,30 +19,20 @@ export function OfficialTicketsCard({
       data-seller-link="official-tickets"
       data-show={show.slug}
       data-platform={ticketLink.provider}
-      className="flex items-center gap-3 rounded-card bg-paper p-4 transition-transform duration-150 active:scale-[0.985]"
+      className="flex items-center gap-3 border-t border-line py-4 transition-opacity duration-150 active:opacity-60"
     >
-      <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-sage text-sage-ink">
-        <Ticket className="size-5" strokeWidth={1.9} aria-hidden="true" />
-      </span>
       <span className="min-w-0 flex-1">
-        <span className="flex items-center gap-1.5 text-caption font-semibold text-sage-ink">
-          <BadgeCheck className="size-4" strokeWidth={2} aria-hidden="true" />
-          Official tickets
+        <span className="block text-body text-ink">
+          Full price on{" "}
+          <b className="font-semibold">{ticketLink.provider}</b>
         </span>
-        <span className="mt-0.5 block truncate text-body font-semibold text-ink">
-          Buy at {ticketLink.provider}
+        <span className="mt-0.5 block text-caption text-ink-soft">
+          ${show.faceValue} face
+          {allIn ? ` · ${allInLabel(allIn)}` : ""}
         </span>
-        <span className="mt-0.5 block truncate text-caption text-ink-soft">
-          Primary seller for {show.venue}
-        </span>
-        {allIn && (
-          <span className="mt-0.5 block text-caption text-ink-soft">
-            ${show.faceValue} face · {allInLabel(allIn)}
-          </span>
-        )}
       </span>
       <ExternalLink
-        className="size-5 shrink-0 text-ink-soft"
+        className="size-4 shrink-0 text-ink-soft"
         strokeWidth={1.8}
         aria-hidden="true"
       />

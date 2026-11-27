@@ -120,7 +120,6 @@ export function CollectionTab({
             text="Rank the shows you've seen — a few quick “which did you like more?” matchups build the list."
             actionLabel="Start ranking"
             onAction={() => openSheet("rank")}
-            icon={<Swords className="size-16 text-ink-faint" strokeWidth={1.4} />}
           />
         )}
       </section>
@@ -130,7 +129,7 @@ export function CollectionTab({
         label="Attended"
         shows={attended}
         onOpen={() => openSheet("attended")}
-        emptyText="Log a show you've been to and it collects here…"
+        emptyText="Shows you log will collect here."
       />
 
       {/* 3 — Interested: what's next. */}
@@ -138,7 +137,7 @@ export function CollectionTab({
         label="Interested"
         shows={savedShows}
         onOpen={() => openSheet("interested")}
-        emptyText="Tap Interested on any show and it collects here…"
+        emptyText="Shows you mark Interested will collect here."
       />
     </div>
   );

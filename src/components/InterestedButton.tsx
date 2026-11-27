@@ -49,12 +49,10 @@ export function InterestedButton({
       onClick={() => toggleSaved(show.slug)}
       aria-pressed={active}
       aria-label={aria}
-      className={`flex h-12 items-center gap-2 rounded-full px-5 text-body font-semibold transition-[background-color,color,transform] duration-200 active:scale-[0.97] ${
-        active ? "bg-inset text-ink" : "bg-espresso text-white"
-      }`}
+      className="-ml-1 flex h-10 items-center gap-1.5 px-1 text-caption font-semibold text-ink transition-opacity duration-150 active:opacity-60"
     >
       <Bookmark
-        className="size-5 transition-[fill] duration-150"
+        className="size-4 transition-[fill] duration-150"
         strokeWidth={1.8}
         fill={active ? "currentColor" : "none"}
       />

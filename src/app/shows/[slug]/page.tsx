@@ -2,10 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BackHeader } from "@/components/BackHeader";
-import { HeroBackdrop } from "@/components/HeroBackdrop";
 import { InterestedButton } from "@/components/InterestedButton";
 import { OfficialTicketsCard } from "@/components/OfficialTicketsCard";
 import { Poster } from "@/components/Poster";
+import { ProgramHead } from "@/components/ProgramHead";
 import { ShowPrograms } from "@/components/ShowPrograms";
 import { FollowShowCard } from "@/components/FollowShowCard";
 import { ReportLink } from "@/components/ReportLink";
@@ -118,72 +118,62 @@ export default async function ShowPage({
         <div className="web:hidden">
           <BackHeader />
         </div>
-        <div className="relative mt-1 overflow-hidden rounded-card web:mt-4">
-          <HeroBackdrop show={show} />
-          <div className="relative flex items-end gap-4 p-4 web:gap-8 web:p-8">
-            <Poster
-              show={show}
-              className="w-[104px] shrink-0 rounded-thumb shadow-float web:w-[230px] web:rounded-card"
-              name={`poster-${show.slug}`}
-              sizes="(min-width: 1024px) 230px, 104px"
-              priority
-            />
-            <div className="min-w-0 pb-0.5 web:pb-1">
-              <p className="truncate text-label font-medium text-ink-soft web:text-caption">
-                {show.tier} · {show.genre} ·{" "}
-                <Link
-                  href="/district"
-                  className="underline underline-offset-2 transition-opacity active:opacity-60"
-                >
-                  {show.venue}
-                </Link>
-              </p>
-              <h1 className="mt-1 text-title web:mt-1.5 web:text-display">
-                {show.title}
-              </h1>
-              <p className="mt-1.5 text-caption text-ink-soft web:mt-3 web:text-body">
-                {closed ? (
-                  <>Closed {closed}</>
-                ) : show.faceValue > 0 ? (
-                  <>
-                    Face value{" "}
-                    <b className="font-semibold text-ink">${show.faceValue}</b>{" "}
-                    at the box office
-                  </>
-                ) : (
-                  <b className="font-semibold text-ink">
-                    Free — every ticket, every night
-                  </b>
-                )}
-              </p>
-              {final && (
-                <p className="mt-0.5 text-caption text-ink-soft web:text-body">
-                  Final performance {final.label}
-                </p>
-              )}
+        {/* The title block of a program page: poster, title, house. No
+            backdrop card; the page itself is the paper. */}
+        <div className="mt-2 flex items-start gap-4 web:mt-6 web:gap-8">
+          <Poster
+            show={show}
+            className="w-[88px] shrink-0 rounded-[4px] web:w-[200px]"
+            name={`poster-${show.slug}`}
+            sizes="(min-width: 1024px) 200px, 88px"
+            priority
+          />
+          <div className="min-w-0">
+            <h1 className="text-display leading-[1.05] web:text-[48px]">
+              {show.title}
+            </h1>
+            <p className="mt-2 text-caption text-ink-soft web:text-body">
+              <Link
+                href="/district"
+                className="underline underline-offset-2 transition-opacity active:opacity-60"
+              >
+                {show.venue}
+              </Link>
+              {closed
+                ? ` · Closed ${closed}`
+                : final
+                  ? ` · Until ${final.label}`
+                  : ""}
+              {!closed && !officialTickets && show.faceValue > 0
+                ? ` · $${show.faceValue} at the box office`
+                : ""}
+            </p>
+            <div className="mt-2">
+              <InterestedButton show={show} />
             </div>
           </div>
         </div>
-        <div className="mt-3 flex flex-col gap-3 web:mt-4">
-          <div className="flex">
-            <InterestedButton show={show} />
-          </div>
+      </div>
+
+      {/* What people open this page for comes first: the ways in. Following
+          and full price follow it, quieter. */}
+      <ShowPrograms show={show} />
+
+      {(hasPrograms || officialTickets) && (
+        <div className="mt-6 flex flex-col border-b border-line px-4 web:mx-6 web:max-w-[720px] web:px-0">
+          {hasPrograms && <FollowShowCard show={show} />}
           {officialTickets && (
             <OfficialTicketsCard show={show} ticketLink={officialTickets} />
           )}
-          {hasPrograms && <FollowShowCard show={show} />}
         </div>
-      </div>
-
-      <ShowPrograms show={show} answer={showAnswer(show, programs)} />
+      )}
 
       {/* The house (Phase 15): the program page's fact block — typeset
           straight on the ivory, no card. Data is the hand-curated theater
           record (owner/ticketer/capacity, DATA.md). */}
       {theater && (
         <section className="mt-9 px-4 web:px-6">
-          <div className="rule-double" aria-hidden />
-          <h2 className="eyebrow mt-7">The house</h2>
+          <ProgramHead title="The house" />
           <div className="mt-4 flex flex-col gap-2.5 web:max-w-[560px]">
             <HouseFact label="Theater" value={theater.name} />
             <HouseFact label="Operated by" value={theater.owner} />

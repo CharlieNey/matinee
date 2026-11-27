@@ -31,7 +31,7 @@ export function RecordTab() {
     return (
       <div className="pt-10">
         <EmptyState
-          text="Tap “I entered” on a rush or lottery and your record collects here…"
+          text="Lotteries you tap “I entered” on are counted here."
           actionLabel="See today's windows"
           actionHref="/rush"
         />

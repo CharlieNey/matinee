@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Check, ExternalLink } from "lucide-react";
 import { FilterChip } from "@/components/FilterChip";
+import { ProgramHead } from "@/components/ProgramHead";
 import { enteredKeysOn, onLotteryLogChange, toggleLotteryEntry } from "@/lib/entries";
 import {
   etDayKey,
@@ -72,7 +73,7 @@ function Row({
   const what = `${program.name ?? programKindLabel(program.kind)} · $${program.price}`;
   const verb = isLottery(program) ? "Entered" : "Done";
   return (
-    <li className="flex items-center gap-3 border-t border-line py-3 first:border-t-0">
+    <li className="flex items-center gap-3 border-b border-line py-3">
       <a
         href={program.entryUrl}
         target="_blank"
@@ -126,13 +127,10 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="mt-8">
-      <div className="flex items-baseline justify-between">
-        <h2 className="eyebrow">{title}</h2>
-        <span className="text-caption text-ink-soft">{count}</span>
-      </div>
-      {note && <p className="mt-1.5 text-caption text-ink-soft">{note}</p>}
-      <ul className="mt-3 rounded-card bg-paper px-4">{children}</ul>
+    <section className="mt-10">
+      <ProgramHead title={title} detail={count} />
+      {note && <p className="mt-2 text-caption text-ink-soft">{note}</p>}
+      <ul>{children}</ul>
     </section>
   );
 }
@@ -212,7 +210,7 @@ export function TodayEntries() {
       {follows.length > 0 && (
         <div className="mt-5 flex">
           <FilterChip
-            icon={null}
+            plain
             label="Shows I follow"
             chevron={false}
             active={followedOnly}
@@ -237,7 +235,7 @@ export function TodayEntries() {
         </Section>
       )}
       {actionable.length === 0 && (
-        <p className="mt-8 rounded-card bg-paper px-4 py-5 text-body text-ink-soft">
+        <p className="mt-8 text-body text-ink-soft">
           {followedOnly
             ? "Nothing from the shows you follow is open or opening today."
             : "Nothing else opens today. Tomorrow's lotteries are on the "}

@@ -98,10 +98,10 @@ test("Rush: expanding a program reveals the official seller's entry link", async
 
   // The header quotes the oldest check, never the newest.
   const oldest = programs.map((p) => p.lastVerified).sort()[0];
-  const long = new Date(`${oldest}T12:00:00Z`).toLocaleDateString("en-US", {
+  const short = new Date(`${oldest}T12:00:00Z`).toLocaleDateString("en-US", {
     timeZone: "UTC",
-    month: "long",
+    month: "short",
     day: "numeric",
   });
-  await expect(page.getByText(`oldest check ${long}`)).toBeVisible();
+  await expect(page.getByText(`Checked since ${short}`)).toBeVisible();
 });

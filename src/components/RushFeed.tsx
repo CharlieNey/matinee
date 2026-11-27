@@ -3,15 +3,12 @@
 import { useMemo, useState } from "react";
 import {
   Clock3,
-  CircleDollarSign,
-  Landmark,
   Search,
-  Store,
-  Ticket,
   X,
 } from "lucide-react";
 import { FilterChip } from "@/components/FilterChip";
 import { OptionRow } from "@/components/OptionRow";
+import { ProgramHead } from "@/components/ProgramHead";
 import { PlatformTips } from "@/components/PlatformTips";
 import { RushShowCard } from "@/components/RushShowCard";
 import { Sheet } from "@/components/Sheet";
@@ -109,7 +106,7 @@ function matchesKind(program: Program, kind: KindGroup): boolean {
 
 /** Estimated card height — header block + one line per program row. */
 function cardWeight(group: ShowGroup): number {
-  return 96 + 50 * group.entries.length;
+  return 44 + 50 * group.entries.length;
 }
 
 /**
@@ -153,16 +150,12 @@ function FeedSection({
   now: Date;
 }) {
   return (
-    <section className="mt-8">
-      <div className="flex items-baseline justify-between">
-        <h2 className="eyebrow">{title}</h2>
-        <span className="text-caption text-ink-soft">{groups.length}</span>
-      </div>
-      {note && (
-        <p className="mt-1.5 text-caption text-ink-soft">{note}</p>
-      )}
+    <section className="mt-10">
+      {/* A program's section break: a serif head over a strong rule. */}
+      <ProgramHead title={title} detail={groups.length} />
+      {note && <p className="mt-2 text-caption text-ink-soft">{note}</p>}
       {groups.length > 0 ? (
-        <div className="mt-3 flex flex-col gap-3 web:grid web:grid-cols-2 web:items-start">
+        <div className="flex flex-col web:grid web:grid-cols-2 web:items-start web:gap-x-12">
           {splitColumns(groups).map((column, columnIndex, columns) => {
             const offset = columnIndex === 0 ? 0 : columns[0].length;
             return (
@@ -170,7 +163,7 @@ function FeedSection({
               // one list. Web: each wrapper is an independent column.
               <div
                 key={columnIndex}
-                className="contents web:flex web:flex-col web:gap-3"
+                className="contents web:flex web:flex-col"
               >
                 {column.map((group, index) => (
                   <div
@@ -194,9 +187,7 @@ function FeedSection({
           })}
         </div>
       ) : (
-        <p className="mt-3 rounded-card bg-paper px-4 py-5 text-body text-ink-soft">
-          {empty}
-        </p>
+        <p className="mt-3 text-body text-ink-soft">{empty}</p>
       )}
     </section>
   );
@@ -376,10 +367,10 @@ export function RushFeed() {
 
   return (
     <div>
-      {/* Search + platform folk knowledge (bulb opens the tips sheet) */}
+      {/* Search; the platform tips sit at the end of the chip row. */}
       <div className="mt-5 flex items-center gap-2.5">
-        <div className="flex h-12 min-w-0 flex-1 items-center gap-2.5 rounded-full bg-paper px-4 web:max-w-[420px]">
-          <Search className="size-5 shrink-0 text-ink-soft" strokeWidth={1.8} />
+        <div className="flex h-11 min-w-0 flex-1 items-center gap-2.5 border-b border-ink/25 web:max-w-[420px]">
+          <Search className="size-4 shrink-0 text-ink-soft" strokeWidth={1.8} />
           <input
             type="search"
             value={query}
@@ -399,14 +390,13 @@ export function RushFeed() {
             </button>
           )}
         </div>
-        <PlatformTips programs={result.programs} />
       </div>
 
       {/* Filters — the app's filter idiom: a few chips, sheets carry the
           options with live faceted counts (DESIGN.md §5). */}
-      <div className="-mx-4 mt-3 flex gap-2.5 overflow-x-auto px-4 pb-1 [scrollbar-width:none] web:mx-0 web:px-0">
+      <div className="-mx-4 mt-2 flex gap-5 overflow-x-auto px-4 pb-1 [scrollbar-width:none] web:mx-0 web:px-0">
         <FilterChip
-          icon={<Ticket className="size-5" strokeWidth={1.8} />}
+          plain
           label={
             kind === "all"
               ? "Program"
@@ -416,24 +406,25 @@ export function RushFeed() {
           onClick={() => setSheet("kind")}
         />
         <FilterChip
-          icon={<Store className="size-5" strokeWidth={1.8} />}
+          plain
           label={platform === "all" ? "Platform" : programPlatformLabel(platform)}
           active={platform !== "all"}
           onClick={() => setSheet("platform")}
         />
         <FilterChip
-          icon={<Landmark className="size-5" strokeWidth={1.8} />}
+          plain
           label={circuit === "all" ? "Circuit" : circuit}
           active={circuit !== "all"}
           onClick={() => setSheet("circuit")}
         />
         <FilterChip
-          icon={<CircleDollarSign className="size-5" strokeWidth={1.8} />}
+          plain
           label="Under $50"
           chevron={false}
           active={underFifty}
           onClick={() => setUnderFifty((v) => !v)}
         />
+        <PlatformTips programs={result.programs} chip plain />
       </div>
 
       {hasFilters && (

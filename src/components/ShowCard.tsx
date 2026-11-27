@@ -33,9 +33,10 @@ export function ShowCard({
   return (
     <Link
       href={`/shows/${show.slug}`}
-      className="group block overflow-hidden rounded-card bg-paper shadow-float transition-transform duration-150 active:scale-[0.98]"
+      className="group block transition-opacity duration-150 active:opacity-70"
     >
-      <div className="overflow-hidden">
+      {/* The poster and its caption, printed on the page: no card, no shadow. */}
+      <div className="overflow-hidden rounded-[4px]">
         <Poster
           show={show}
           className="w-full web:transition-transform web:duration-200 web:ease-out web:group-hover:scale-[1.03]"
@@ -44,12 +45,11 @@ export function ShowCard({
           priority={priority}
         />
       </div>
-      <div className="p-4">
-        <h3 className="truncate text-heading">{show.title}</h3>
-        <p className="mt-0.5 truncate text-caption text-ink-soft">
-          {show.tier} · {show.genre}
-        </p>
-        <p className="mt-2.5 flex items-baseline gap-1.5">
+      <div className="pt-2.5">
+        <h3 className="truncate font-display text-[20px] font-bold leading-tight">
+          {show.title}
+        </h3>
+        <p className="mt-1 flex items-baseline gap-1.5">
           {closed ? (
             <span className="truncate text-caption text-ink-soft">
               Closed {closed}
@@ -59,28 +59,37 @@ export function ShowCard({
               <span className="truncate text-caption text-ink-soft">
                 {programKindShortLabel(program.kind)}
               </span>
-              <span className="text-[24px] font-bold leading-none tracking-tight">
+              <span className="text-[19px] font-bold leading-none tracking-tight">
                 {program.price > 0 ? `$${program.price}` : "Free"}
               </span>
             </>
           ) : show.faceValue > 0 ? (
             <>
               <span className="text-caption text-ink-soft">face value</span>
-              <span className="text-[24px] font-bold leading-none tracking-tight">
+              <span className="text-[19px] font-bold leading-none tracking-tight">
                 ${show.faceValue}
               </span>
             </>
           ) : (
-            <span className="text-[24px] font-bold leading-none tracking-tight">
+            <span className="text-[19px] font-bold leading-none tracking-tight">
               Free
             </span>
           )}
+          {/* "+1", not "+1 more": the longer form cut "Lottery" to "Lott…". */}
           <span className="ml-auto shrink-0 text-caption text-ink-soft">
-            {onTktsToday
-              ? "On TKTS today"
-              : otherWays > 0
-                ? `+${otherWays} more`
-                : ""}
+            {onTktsToday ? (
+              "On TKTS today"
+            ) : otherWays > 0 ? (
+              <>
+                +{otherWays}
+                <span className="sr-only">
+                  {" "}
+                  more way{otherWays === 1 ? "" : "s"} to save
+                </span>
+              </>
+            ) : (
+              ""
+            )}
           </span>
         </p>
       </div>

@@ -4,18 +4,12 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "motion/react";
 import {
-  CalendarRange,
-  ChevronRight,
-  CircleDollarSign,
-  Map as MapIcon,
   Search,
-  Theater,
-  TicketPercent,
   X,
-  Zap,
 } from "lucide-react";
 import { EmptyState } from "@/components/EmptyState";
 import { FilterChip } from "@/components/FilterChip";
+import { ProgramHead } from "@/components/ProgramHead";
 import { OptionRow } from "@/components/OptionRow";
 import { Poster } from "@/components/Poster";
 import { RushBanner } from "@/components/RushBanner";
@@ -55,7 +49,7 @@ function PosterShelf({
         >
           <Poster
             show={show}
-            className="w-full rounded-thumb"
+            className="w-full rounded-[4px]"
             name={claimName(show.slug)}
             sizes="104px"
           />
@@ -68,46 +62,10 @@ function PosterShelf({
   );
 }
 
-/** Utility destination: an iOS-style list row, not a dashboard tile. */
-function QuickLink({
-  href,
-  icon,
-  title,
-  sub,
-}: {
-  href: string;
-  icon: React.ReactNode;
-  title: string;
-  sub: string;
-}) {
-  return (
-    <Link
-      href={href}
-      className="flex items-center gap-3.5 border-t border-line py-3.5 transition-opacity duration-150 first:border-t-0 active:opacity-70"
-    >
-      <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-cream">
-        {icon}
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="block text-body font-semibold">{title}</span>
-        <span className="mt-0.5 block truncate text-caption text-ink-soft">
-          {sub}
-        </span>
-      </span>
-      <ChevronRight
-        className="size-5 shrink-0 text-ink-faint"
-        strokeWidth={1.8}
-      />
-    </Link>
-  );
-}
 
 function SectionHead({ title, detail }: { title: string; detail?: string }) {
   return (
-    <div className="mt-8 flex items-baseline justify-between">
-      <h2 className="eyebrow">{title}</h2>
-      {detail && <span className="text-caption text-ink-soft">{detail}</span>}
-    </div>
+    <ProgramHead title={title} detail={detail} className="mt-10" />
   );
 }
 
@@ -226,7 +184,7 @@ export default function DiscoverPage() {
     <main className="px-4 pt-6 web:mx-auto web:max-w-[1160px] web:px-6">
       <h1 className="text-display">Discover</h1>
 
-      <div className="mt-4 flex h-12 items-center gap-2.5 rounded-full bg-paper px-4 focus-within:ring-2 focus-within:ring-espresso/15">
+      <div className="mt-4 flex h-11 items-center gap-2.5 border-b border-ink/25 focus-within:border-ink">
         <Search className="size-5 shrink-0 text-ink-soft" strokeWidth={1.9} />
         <input
           type="search"
@@ -273,22 +231,20 @@ export default function DiscoverPage() {
         <>
           <RushBanner />
 
-          <div className="mt-3 rounded-card bg-paper px-4">
-            <QuickLink
+          <p className="mt-4 flex gap-6 px-1 text-body">
+            <Link
               href="/district"
-              icon={<MapIcon className="size-5 text-ink" strokeWidth={1.8} />}
-              title="The District"
-              sub="Every Broadway house, one live map"
-            />
-            <QuickLink
+              className="font-semibold text-ink underline underline-offset-4 transition-opacity active:opacity-60"
+            >
+              The District map
+            </Link>
+            <Link
               href="/trip"
-              icon={
-                <CalendarRange className="size-5 text-ink" strokeWidth={1.8} />
-              }
-              title="Trip mode"
-              sub="Day-by-day windows for your visit"
-            />
-          </div>
+              className="font-semibold text-ink underline underline-offset-4 transition-opacity active:opacity-60"
+            >
+              Trip mode
+            </Link>
+          </p>
 
           {savedShows.length > 0 && (
             <>
@@ -301,31 +257,27 @@ export default function DiscoverPage() {
           )}
 
           <SectionHead title="Now playing" detail={`${filtered.length} shows`} />
-          <div className="-mx-4 mt-3 flex gap-2.5 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
-            <FilterChip
-              icon={<Theater className="size-5" strokeWidth={1.8} />}
+          <div className="-mx-4 mt-2 flex gap-5 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
+            <FilterChip plain
               label={circuit}
               active={circuit !== "All shows"}
               onClick={() => setSheet("circuit")}
             />
-            <FilterChip
-              icon={<Zap className="size-5" strokeWidth={1.8} />}
+            <FilterChip plain
               label="Rush & lottery"
               chevron={false}
               active={rushOnly}
               onClick={() => setRushOnly((v) => !v)}
             />
             {tktsToday.size > 0 && (
-              <FilterChip
-                icon={<TicketPercent className="size-5" strokeWidth={1.8} />}
+              <FilterChip plain
                 label="On TKTS today"
                 chevron={false}
                 active={tktsOnly}
                 onClick={() => setTktsOnly((v) => !v)}
               />
             )}
-            <FilterChip
-              icon={<CircleDollarSign className="size-5" strokeWidth={1.8} />}
+            <FilterChip plain
               label="Cheapest"
               chevron={false}
               active={cheapest}
@@ -336,7 +288,7 @@ export default function DiscoverPage() {
           {filtered.length === 0 ? (
             <div className="pt-6">
               <EmptyState
-                text="Nothing matches your filters…"
+                text="Nothing matches these filters."
                 actionLabel="Clear filters"
                 onAction={() => {
                   setCircuit("Broadway");

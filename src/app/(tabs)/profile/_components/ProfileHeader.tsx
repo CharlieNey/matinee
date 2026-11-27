@@ -2,14 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import {
-  BellPlus,
-  Settings,
-  SquarePen,
-  Trophy,
-  UserRound,
-  Zap,
-} from "lucide-react";
+import { Settings, SquarePen, UserRound, Zap } from "lucide-react";
 import { FollowSpot } from "@/components/FollowSpot";
 import { ShareButton } from "@/components/ShareButton";
 import { useToast } from "@/components/Toast";
@@ -23,35 +16,6 @@ import { encodeSharedProfile } from "@/lib/shareProfile";
 import { getShow } from "@/lib/shows";
 import { useApp } from "@/lib/store";
 import { useNow } from "@/lib/useNow";
-
-function HeaderPill({
-  icon,
-  label,
-  href,
-  onClick,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  href?: string;
-  onClick?: () => void;
-}) {
-  const className =
-    "flex h-12 items-center justify-center gap-2 rounded-full bg-espresso-raised text-body font-medium text-white transition-transform duration-150 active:scale-[0.97]";
-  if (href) {
-    return (
-      <Link href={href} className={className}>
-        {icon}
-        {label}
-      </Link>
-    );
-  }
-  return (
-    <button type="button" onClick={onClick} className={className}>
-      {icon}
-      {label}
-    </button>
-  );
-}
 
 /** Consecutive ET days with at least one entry, ending today or yesterday. */
 function entryStreak(log: LotteryEntry[], now: Date): number {
@@ -210,47 +174,49 @@ export function ProfileHeader({
         </div>
       </div>
 
-      <div className="mt-5 grid grid-cols-6 overflow-hidden rounded-card border border-white/10 bg-white/10">
-        <button
-          type="button"
-          onClick={onAttended}
-          className="col-span-2 flex min-h-16 flex-col items-center justify-center border-b border-r border-white/10 px-2 py-2 text-center transition-colors active:bg-white/10"
-        >
-          <b className="text-heading font-semibold tabular-nums">{attended.length}</b>
-          <span className="mt-0.5 text-label leading-tight text-white/60">Shows logged</span>
-        </button>
-        <button
-          type="button"
-          onClick={onRecord}
-          className="col-span-2 flex min-h-16 flex-col items-center justify-center border-b border-r border-white/10 px-2 py-2 text-center transition-colors active:bg-white/10"
-        >
-          <b className="text-heading font-semibold tabular-nums">{log.length}</b>
-          <span className="mt-0.5 text-label leading-tight text-white/60">Entries</span>
-        </button>
-        <button
-          type="button"
-          onClick={onRecord}
-          className="col-span-2 flex min-h-16 flex-col items-center justify-center border-b border-white/10 px-2 py-2 text-center transition-colors active:bg-white/10"
-        >
-          <b className="text-heading font-semibold tabular-nums">{wins.length}</b>
-          <span className="mt-0.5 text-label leading-tight text-white/60">Wins</span>
-        </button>
-        <button
-          type="button"
-          onClick={onRecord}
-          className="col-span-3 flex min-h-16 flex-col items-center justify-center border-r border-white/10 px-2 py-2 text-center transition-colors active:bg-white/10"
-        >
-          <b className="text-heading font-semibold tabular-nums">${moneySaved}</b>
-          <span className="mt-0.5 text-label leading-tight text-white/60">Money saved</span>
-        </button>
-        <Link
-          href="/notify"
-          className="col-span-3 flex min-h-16 flex-col items-center justify-center px-2 py-2 text-center transition-colors active:bg-white/10"
-        >
-          <b className="text-heading font-semibold tabular-nums">{follows.length}</b>
-          <span className="mt-0.5 text-label leading-tight text-white/60">Following</span>
-        </Link>
-      </div>
+      {/* One line of what there is, in words; nothing at all until there is
+          something. A grid of zeros told a new visitor nothing. */}
+      {(() => {
+        const stat = "font-semibold text-white tabular-nums";
+        const link =
+          "underline decoration-white/30 underline-offset-4 transition-opacity active:opacity-70";
+        const items = [
+          attended.length > 0 && (
+            <button key="shows" type="button" onClick={onAttended} className={link}>
+              <b className={stat}>{attended.length}</b>{" "}
+              {attended.length === 1 ? "show" : "shows"}
+            </button>
+          ),
+          log.length > 0 && (
+            <button key="entries" type="button" onClick={onRecord} className={link}>
+              <b className={stat}>{log.length}</b>{" "}
+              {log.length === 1 ? "entry" : "entries"}
+            </button>
+          ),
+          wins.length > 0 && (
+            <button key="wins" type="button" onClick={onRecord} className={link}>
+              <b className={stat}>{wins.length}</b>{" "}
+              {wins.length === 1 ? "win" : "wins"}
+            </button>
+          ),
+          moneySaved > 0 && (
+            <button key="saved" type="button" onClick={onRecord} className={link}>
+              <b className={stat}>${moneySaved}</b> saved
+            </button>
+          ),
+          follows.length > 0 && (
+            <Link key="following" href="/notify" className={link}>
+              <b className={stat}>{follows.length}</b> following
+            </Link>
+          ),
+        ].filter(Boolean);
+        if (items.length === 0) return null;
+        return (
+          <p className="mt-5 flex flex-wrap gap-x-4 gap-y-1 text-body text-white/70">
+            {items}
+          </p>
+        );
+      })()}
 
       {streak > 1 && (
         <div className="mt-4">
@@ -281,23 +247,28 @@ export function ProfileHeader({
         {profile.bio ?? "Add a few words about yourself"}
       </button>
 
-      {/* The season recap appears once there is something to recap. */}
-      <div
-        className={`mt-6 grid gap-3 ${hasRecap ? "grid-cols-2" : "grid-cols-1"}`}
-      >
-        <HeaderPill
-          icon={<BellPlus className="size-5" strokeWidth={1.8} />}
-          label="Following"
-          href="/notify"
-        />
-        {hasRecap && (
-          <HeaderPill
-            icon={<Trophy className="size-5" strokeWidth={1.8} />}
-            label="Wrapped"
-            href="/wrapped"
-          />
-        )}
-      </div>
+      {/* "Following" only when the stats line has no "N following" link to
+          the same page; the season recap once there is something to recap. */}
+      {(follows.length === 0 || hasRecap) && (
+        <p className="mt-6 flex gap-6 text-body font-semibold">
+          {follows.length === 0 && (
+            <Link
+              href="/notify"
+              className="underline decoration-white/40 underline-offset-4 transition-opacity active:opacity-70"
+            >
+              Following
+            </Link>
+          )}
+          {hasRecap && (
+            <Link
+              href="/wrapped"
+              className="underline decoration-white/40 underline-offset-4 transition-opacity active:opacity-70"
+            >
+              Wrapped
+            </Link>
+          )}
+        </p>
+      )}
       </div>
     </header>
   );

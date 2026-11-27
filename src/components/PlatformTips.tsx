@@ -15,11 +15,17 @@ import { Program, programPlatformLabel } from "@/lib/programs";
 export function PlatformTips({
   programs,
   labeled = false,
+  chip = false,
+  plain = false,
 }: {
   programs: readonly Program[];
   /** Standalone placement (show page): spell the label out — a lone bulb
    *  next to the search field explains itself, one floating mid-page doesn't. */
   labeled?: boolean;
+  /** A worded pill sized like the board's filter chips. */
+  chip?: boolean;
+  /** With chip: words only, matching the board's plain filters. */
+  plain?: boolean;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -34,6 +40,20 @@ export function PlatformTips({
 
   return (
     <>
+      {chip ? (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className={
+            plain
+              ? "flex h-11 shrink-0 items-center gap-1 whitespace-nowrap text-body text-ink transition-opacity active:opacity-60"
+              : "flex h-12 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full bg-paper px-3.5 text-body font-semibold text-ink transition-transform duration-150 active:scale-[0.98]"
+          }
+        >
+          Good to know{" "}
+          <span className="font-medium text-ink-soft">{tips.length}</span>
+        </button>
+      ) : (
       <button
         type="button"
         aria-label={labeled ? undefined : `Good to know — ${tips.length} platform tip${tips.length === 1 ? "" : "s"}`}
@@ -56,6 +76,7 @@ export function PlatformTips({
           </span>
         )}
       </button>
+      )}
 
       <Sheet open={open} onClose={() => setOpen(false)} title="Good to know">
         <ul className="mt-4 flex flex-col gap-2.5 pb-2">

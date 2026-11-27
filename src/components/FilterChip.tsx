@@ -8,14 +8,35 @@ export function FilterChip({
   label,
   chevron = true,
   active = false,
+  plain = false,
   onClick,
 }: {
-  icon: ReactNode;
+  /** Words only, no pill: the board's printed-program controls. */
+  plain?: boolean;
+  /** Optional; the board's chips carry words only. */
+  icon?: ReactNode;
   label: string;
   chevron?: boolean;
   active?: boolean;
   onClick?: () => void;
 }) {
+  if (plain) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        aria-pressed={active}
+        className={`flex h-11 shrink-0 items-center gap-1 whitespace-nowrap text-body transition-opacity active:opacity-60 ${
+          active
+            ? "font-semibold text-ink underline decoration-2 underline-offset-[6px]"
+            : "text-ink"
+        }`}
+      >
+        {label}
+        {chevron && <ChevronDown className="size-4" strokeWidth={2} aria-hidden />}
+      </button>
+    );
+  }
   return (
     <button
       type="button"

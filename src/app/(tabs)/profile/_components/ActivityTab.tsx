@@ -188,7 +188,7 @@ export function ActivityTab() {
     return (
       <div className="pt-10">
         <EmptyState
-          text="Log a show you’ve seen and your diary starts here…"
+          text="Shows you log will appear here."
           actionLabel="Find a show"
           actionHref="/"
         />
