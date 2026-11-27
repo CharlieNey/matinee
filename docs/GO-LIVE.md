@@ -72,6 +72,8 @@ Two commits can be dropped on their own:
 ### 2. Hand-check the unverified rows (optional, about 20 minutes)
 
 These 17 rows couldn't be confirmed on the show's own site on 2026-11-27,
+nor on a second pass the same day in a real browser (the pages that refuse
+automated readers included),
 usually because only a seller's page (which the checker doesn't read) or TDF
 states the fact. Each row's comment in `src/lib/programCatalog.ts` quotes
 what the sources say. A person can settle most of them in a normal browser:
@@ -79,12 +81,12 @@ what the sources say. A person can settle most of them in a normal browser:
 | Row | In doubt | Where to look |
 |---|---|---|
 | 860: lottery, rush, digital rush | entry times; box-office hours | rush.telecharge.com, the Imperial box office |
-| Aladdin lottery | price: TDF $35, older guides $45 | aladdinthemusical.com/lottery |
+| Aladdin lottery | terms (TDF: $35, 9–3 the day before; older guides $45) | lottery.broadwaydirect.com/show/aladdin, where the show's own link goes |
 | Book of Mormon Lucky Seat lottery | whether it still runs (TDF: $45, enter by 10:30 AM the day before) | luckyseat.com/shows/thebookofmormon-newyork |
 | Book of Mormon digital rush | whether it still runs | the TodayTix app |
 | Chicago rush and standing room | not on the show's site (TDF: $49 and $27) | the Ambassador box office |
 | Hadestown lottery | entry deadline | luckyseat.com/shows/hadestown-newyork |
-| The Lion King lottery | price: TDF $35, the row used to say $60 | lionking.com/lottery |
+| The Lion King lottery | terms (TDF: $35; the row used to say $60) | lottery.broadwaydirect.com/show/the-lion-king, where the show's own link goes |
 | Maybe Happy Ending lottery | which performances; when entries open | rush.telecharge.com |
 | Operation Mincemeat lottery and rush | whether the lottery is live; box-office hours | operationbroadway.com, the Golden box office |
 | Paranormal Activity rush | box-office hours | the August Wilson box office |
@@ -108,10 +110,11 @@ git commit -am "data: confirm <show> by hand"
 ### 3. Make the report links reach someone
 
 Every "Report a wrong fact" link goes where `REPORT_TO` in
-`src/lib/contact.ts` says. It defaults to a prefilled email to
-`hello@matinee.nyc` (`CONTACT_EMAIL`). On 2026-11-21 and again on 2026-11-27
-that domain had no MX record, so those emails would bounce. The domain's DNS
-is on Vercel. Pick one:
+`src/lib/contact.ts` says: a prefilled email to `CONTACT_EMAIL`. Since
+2026-11-27 that is Charlie's own address, his call, because
+`hello@matinee.nyc` had no MX record on 2026-11-21 or 2026-11-27, so mail to
+it bounced. To move reports to the matinee.nyc address (its DNS is on
+Vercel), or elsewhere, pick one:
 
 - **Send reports to GitHub issues instead.** Set `REPORT_TO` to
   `{ kind: "github", repo: "CharlieNey/matinee" }`. Free, but reporters need

@@ -398,19 +398,22 @@ export const PROGRAMS: readonly Program[] = [
     ),
   ),
 
-  // aladdinthemusical.com/lottery answers automated readers with 403. TDF:
-  // "$35 per ticket. Entries are accepted from 9 AM-3 PM the day prior ...
-  // you have 60 minutes to pay". Earlier guides said $45.
+  // Re-checked 2026-11-27 in a browser: aladdinthemusical.com/lottery
+  // forwards to lottery.broadwaydirect.com/show/aladdin/ (not read: Broadway
+  // Direct's terms bar automated access), and the show's help center says
+  // only "a ticket lottery is offered for select performances". TDF: "$35
+  // per ticket. Entries are accepted from 9 AM-3 PM the day prior ... you
+  // have 60 minutes to pay". Earlier guides said $45.
   unverified(
     "https://www.tdf.org/shows/12819/aladdin/",
-    "The show's lottery page couldn't be read. TDF says $35, 9 AM–3 PM the day before, with 60 minutes to pay; other guides say $45.",
+    "The show's site confirms a lottery for select performances on Broadway Direct, but gives its terms only there. TDF says $35, 9 AM–3 PM the day before, with 60 minutes to pay; other guides say $45.",
     program(
       "aladdin",
       "digital-lottery",
-      "official-site",
+      "broadway-direct",
       35,
       undefined,
-      "https://www.aladdinthemusical.com/lottery",
+      "https://lottery.broadwaydirect.com/show/aladdin/",
       dailyWindow(
         "9 AM–3 PM the day before a performance, per TDF",
         "09:00",
@@ -701,12 +704,14 @@ export const PROGRAMS: readonly Program[] = [
     ),
   ),
 
-  // lionking.com answers automated readers with 403. TDF: "$35 tickets ...
-  // starting at 9 AM on the day prior to the performance until 3 PM ...
-  // Winners have 60 minutes ... up to 2 tickets." This row said $60.
+  // Re-checked 2026-11-27 in a browser: lionking.com/lottery forwards to
+  // Broadway Direct (not read), and the show's help center says only "The
+  // Lion King offers a ticket lottery for select performances". TDF: "$35
+  // tickets ... starting at 9 AM on the day prior to the performance until
+  // 3 PM ... Winners have 60 minutes ... up to 2 tickets." This row said $60.
   unverified(
     "https://www.tdf.org/shows/1601/the-lion-king/",
-    "The show's site couldn't be read. TDF says $35, 9 AM–3 PM the day before, with 60 minutes to pay. This row used to say $60.",
+    "The show's site confirms a lottery for select performances on Broadway Direct, but gives its terms only there. TDF says $35, 9 AM–3 PM the day before, with 60 minutes to pay. This row used to say $60.",
     broadwayDirectLottery(
       "the-lion-king",
       35,
@@ -1096,7 +1101,7 @@ export const PROGRAMS: readonly Program[] = [
   // (/faq) Mon–Sat 10:00 AM–8:00 PM, Sunday 12:00–6:00 PM.
   unverified(
     "https://wantedmusical.com/calendar/",
-    "The show's site gives $45, midnight–3 PM the day before and five hours to claim, but doesn't say where to enter. TDF says rush.telecharge.com.",
+    "The show's site gives $45, midnight–3 PM the day before and five hours to claim, and sells its tickets through Telecharge, but doesn't say where to enter the lottery. TDF says rush.telecharge.com.",
     telechargeLottery("wanted", 45, { maxTickets: 2, claimHours: 5 }),
   ),
   checked(

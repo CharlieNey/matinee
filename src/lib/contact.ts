@@ -10,12 +10,11 @@ import type { Show } from "@/lib/shows";
  * The one address visitors write to. Every "Report a wrong fact" link uses
  * it while REPORT_TO is set to email.
  *
- * TODO(Charlie): matinee.nyc had no MX record when this was added
- * (2026-11-21), so mail to this address bounces until forwarding is set up
- * at the registrar, or until this constant points at a real inbox. It is the
- * only place the address lives.
+ * Charlie's own address for now (his call, 2026-11-27): hello@matinee.nyc has
+ * no MX record yet, so mail to it bounces. Switch back once forwarding is set
+ * up (docs/GO-LIVE.md step 3). The address is public in the page source.
  */
-export const CONTACT_EMAIL = "hello@matinee.nyc";
+export const CONTACT_EMAIL = "charlieney@gmail.com";
 
 /** Canonical origin, so a report names the page even when sent from a preview. */
 export const SITE_URL = "https://matinee.nyc";
