@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { allPrograms, isProgramStale, programKey } from "./programs";
 import { duePushEvents } from "./pushEvents";
-import { getShow } from "./shows";
+import { getShow, isRunning } from "./shows";
 
 /**
  * Integrity checks on the hand-curated rows. A data refresh is a hand edit
@@ -17,7 +17,7 @@ describe("program data", () => {
     for (const program of programs) {
       const show = getShow(program.showSlug);
       expect(show, program.showSlug).toBeDefined();
-      expect(show!.currentlyRunning, program.showSlug).not.toBe(false);
+      expect(isRunning(show!), `${program.showSlug} has closed`).toBe(true);
     }
   });
 

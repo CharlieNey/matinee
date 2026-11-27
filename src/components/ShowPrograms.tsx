@@ -7,7 +7,14 @@ import { getProgramStatus, programsForShow } from "@/lib/programs";
 import { closingLabel, Show } from "@/lib/shows";
 import { useNow } from "@/lib/useNow";
 
-export function ShowPrograms({ show }: { show: Show }) {
+export function ShowPrograms({
+  show,
+  answer,
+}: {
+  show: Show;
+  /** The page's plain answer (showAnswer), rendered on the server. */
+  answer: string;
+}) {
   const now = useNow();
   const programs = programsForShow(show.slug);
   const closed = closingLabel(show);
@@ -63,6 +70,7 @@ export function ShowPrograms({ show }: { show: Show }) {
           {programs.length} program{programs.length === 1 ? "" : "s"}
         </span>
       </div>
+      <p className="mt-3 text-body text-ink-soft web:max-w-[640px]">{answer}</p>
       <div className="mt-4 rounded-card bg-paper px-4 py-1.5">
         <ProgramRows
           show={show}

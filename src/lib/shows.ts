@@ -940,7 +940,7 @@ const SHOWS: Show[] = [
       bg: "#101418",
       fg: "#5fe0c8",
       style: "condensed",
-      caption: "Previews Begin July 22",
+      caption: "Signature Theatre",
       captionColor: "#5b6a72",
     },
   },
@@ -948,6 +948,53 @@ const SHOWS: Show[] = [
 
 export function allShows(): Show[] {
   return SHOWS;
+}
+
+/**
+ * Final performances announced on the shows' own sites, checked 2026-11-27.
+ * Where a page prints no year (& Juliet, Much Ado, Paranormal Activity), the
+ * date is the next one after the check, and TDF agrees. When a date passes,
+ * set the show's closedOn (that is what takes it out of the slate).
+ */
+const FINAL_PERFORMANCES: Record<string, { on: string; source: string }> = {
+  "860": { on: "2027-02-14", source: "https://www.billycrystal860.com/" },
+  "a-few-good-men": {
+    on: "2027-01-10",
+    source: "https://www.lct.org/shows/a-few-good-men/",
+  },
+  "and-juliet": { on: "2027-01-03", source: "https://andjulietbroadway.com/tickets/" },
+  "buena-vista-social-club": {
+    on: "2027-01-17",
+    source: "https://buenavistamusical.com/",
+  },
+  "gazillion-bubble-show": { on: "2027-01-18", source: "https://gazillionbubbleshow.com/" },
+  "inter-alia": { on: "2027-02-21", source: "https://interaliabroadway.com/" },
+  "much-ado-about-nothing": { on: "2027-01-10", source: "https://muchadobroadway.com/" },
+  "oh-mary": { on: "2027-07-10", source: "https://www.ohmaryplay.com/" },
+  "other-desert-cities": {
+    on: "2027-01-17",
+    source: "https://otherdesertcitiesbroadway.com/",
+  },
+  "paranormal-activity": { on: "2027-02-28", source: "https://paranormalbroadway.com/" },
+  six: { on: "2027-01-03", source: "https://sixonbroadway.com/" },
+  "stranger-things-first-shadow": {
+    on: "2027-01-03",
+    source: "https://broadway.strangerthingsonstage.com/ticket-info/",
+  },
+  "two-strangers": { on: "2026-11-29", source: "https://twostrangersmusical.com/" },
+};
+
+/** A running show's announced final performance, with where it's stated. */
+export function finalPerformance(
+  show: Show,
+): { on: string; label: string; source: string } | null {
+  if (show.closedOn) return null;
+  const entry = FINAL_PERFORMANCES[show.slug];
+  if (!entry) return null;
+  return {
+    ...entry,
+    label: closingFormat.format(new Date(`${entry.on}T12:00:00Z`)),
+  };
 }
 
 export function isRunning(show: Show): boolean {

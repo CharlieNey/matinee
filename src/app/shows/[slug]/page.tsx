@@ -9,13 +9,16 @@ import { Poster } from "@/components/Poster";
 import { ShowPrograms } from "@/components/ShowPrograms";
 import { FollowShowCard } from "@/components/FollowShowCard";
 import { ReportLink } from "@/components/ReportLink";
+import { SITE_URL } from "@/lib/contact";
 import { officialTicketsForShow } from "@/lib/officialTickets";
+import { programsForShow } from "@/lib/programs";
+import { showAnswer, showSearchTitle } from "@/lib/showAnswer";
 import {
-  cheapestProgram,
-  programKindLabel,
-  programsForShow,
-} from "@/lib/programs";
-import { allShows, closingLabel, getShow } from "@/lib/shows";
+  allShows,
+  closingLabel,
+  finalPerformance,
+  getShow,
+} from "@/lib/shows";
 import { allTheaters, TICKETER_LABELS } from "@/lib/theaters";
 
 /** One program-page fact row: label, dot leader, value (DESIGN.md §13). */
@@ -33,7 +36,11 @@ export function generateStaticParams() {
   return allShows().map((show) => ({ slug: show.slug }));
 }
 
-/** Shared show links carry the show's name and its cheapest way in. */
+/**
+ * Each show page answers a search: its title names what the show offers
+ * ("Wicked lottery and rush"), and its description is the page's own answer
+ * sentence, built from the checked rows. One canonical URL per show.
+ */
 export async function generateMetadata({
   params,
 }: {
@@ -41,23 +48,22 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const show = getShow(slug);
-  if (!show) return {};
-  const cheapest = cheapestProgram(slug);
-  const closed = closingLabel(show);
-  const description = closed
-    ? `${show.title} closed on ${closed}.`
-    : cheapest
-      ? `${programKindLabel(cheapest.kind)} from $${cheapest.price} — every verified way to see ${show.title} for less, and where the official box office is.`
-      : `Where the official box office is for ${show.title}, and every verified way to pay less.`;
+  if (!show) return { title: "Show not found" };
+  const programs = programsForShow(slug);
+  const title = showSearchTitle(show, programs);
+  const description = showAnswer(show, programs);
+  const canonical = `/shows/${slug}`;
   // openGraph is shallow-merged and fully overwritten per segment, so
   // re-attach the shared card here — otherwise og:image (and the
   // twitter:image that falls back to it) drop off show links.
   return {
-    title: show.title,
+    title,
     description,
+    alternates: { canonical },
     openGraph: {
-      title: show.title,
+      title,
       description,
+      url: canonical,
       images: ["/opengraph-image"],
     },
   };
@@ -77,14 +83,37 @@ export default async function ShowPage({
   if (!show) notFound();
 
   const closed = closingLabel(show);
+  const final = finalPerformance(show);
   const officialTickets = closed ? null : officialTicketsForShow(slug);
-  const hasPrograms = programsForShow(slug).length > 0;
+  const programs = programsForShow(slug);
+  const hasPrograms = programs.length > 0;
+  // Structured data only where it's exact: a breadcrumb. An Event or Offer
+  // would need performance dates and times, which Matinee doesn't publish.
+  const breadcrumb = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Matinee", item: `${SITE_URL}/` },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: show.title,
+        item: `${SITE_URL}/shows/${slug}`,
+      },
+    ],
+  };
   // Broadway houses only — Off-Broadway venues aren't in the theater data,
   // so the house section simply doesn't render for them.
   const theater = allTheaters().find((t) => t.name === show.venue);
 
   return (
     <main className="pb-10 web:mx-auto web:max-w-[1160px]">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(breadcrumb).replace(/</g, "\\u003c"),
+        }}
+      />
       <div className="px-4 web:px-6">
         <div className="web:hidden">
           <BackHeader />
@@ -127,6 +156,11 @@ export default async function ShowPage({
                   </b>
                 )}
               </p>
+              {final && (
+                <p className="mt-0.5 text-caption text-ink-soft web:text-body">
+                  Final performance {final.label}
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -141,7 +175,7 @@ export default async function ShowPage({
         </div>
       </div>
 
-      <ShowPrograms show={show} />
+      <ShowPrograms show={show} answer={showAnswer(show, programs)} />
 
       {/* The house (Phase 15): the program page's fact block — typeset
           straight on the ivory, no card. Data is the hand-curated theater
