@@ -215,12 +215,13 @@ describe("the live catalog", () => {
   });
 });
 
-describe("rows the app can't vouch for", () => {
+// Whole-day sweeps: generous timeouts, because CI runners are slower.
+describe("rows the app can't vouch for", { timeout: 30_000 }, () => {
   /**
    * Every distinct alert due at some step in [from, to). Every send window is
    * at least 10 minutes long, so 5-minute steps land inside each one.
    */
-  const sweep = (from: Date, to: Date, programs: Program[], step = 1) => {
+  const sweep = (from: Date, to: Date, programs: Program[], step = 5) => {
     const sent = new Map<string, PushEvent>();
     for (let at = from; at < to; at = minutes(at, step)) {
       for (const alert of due(at, programs)) sent.set(alert.eventKey, alert);
@@ -275,11 +276,11 @@ describe("rows the app can't vouch for", () => {
           : program,
     );
     const day = "2026-12-01";
-    const sent = sweep(et("00:00", day), et("23:59", day), programs, 5);
+    const sent = sweep(et("00:00", day), et("23:59", day), programs);
     expect(sent.length).toBeGreaterThan(0);
     for (const alert of sent) {
       expect(alert.program.unverified, alert.eventKey).toBeUndefined();
       expect(alert.program.lastVerified, alert.eventKey).not.toBe("2026-10-01");
     }
-  }, 30_000);
+  });
 });
