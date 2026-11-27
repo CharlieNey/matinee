@@ -11,7 +11,6 @@ import {
   readLotteryLog,
 } from "@/lib/entries";
 import { allPrograms, programKey, programKindLabel } from "@/lib/programs";
-import { recordByShow, recordLine } from "@/lib/record";
 import { getShow } from "@/lib/shows";
 import { useNow } from "@/lib/useNow";
 
@@ -54,39 +53,9 @@ export function RecordTab() {
     .sort((a, b) => b.at.localeCompare(a.at))
     .slice(0, 12);
 
-  const byShow = now ? recordByShow(log, now) : [];
-
   return (
     <div className="flex flex-col gap-7 pb-8 pt-6">
       {now && <EntryHeatmap log={log} now={now} />}
-
-      {byShow.length > 0 && (
-        <section aria-labelledby="record-by-show">
-          <p id="record-by-show" className="eyebrow">
-            By show
-          </p>
-          <p className="mt-1 text-caption text-ink-soft">
-            Your own odds, from your &ldquo;I entered&rdquo; and &ldquo;I
-            won&rdquo; taps on this device. Nothing is sent anywhere.
-          </p>
-          <div className="mt-2.5 rounded-card bg-paper px-4">
-            {byShow.map((record) => (
-              <Link
-                key={record.slug}
-                href={`/shows/${record.slug}`}
-                className="block border-t border-line py-3 first:border-t-0 transition-opacity active:opacity-60"
-              >
-                <span className="block truncate text-body font-semibold">
-                  {record.title}
-                </span>
-                <span className="mt-0.5 block text-caption text-ink-soft">
-                  {recordLine(record)}
-                </span>
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
 
       {recentWins.length > 0 && (
         <section>
