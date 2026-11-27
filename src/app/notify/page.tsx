@@ -4,7 +4,6 @@ import { useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Plus, Trash2 } from "lucide-react";
 import { BackHeader } from "@/components/BackHeader";
-import { CalendarSubscribe } from "@/components/CalendarSubscribe";
 import { NotifyPushCard } from "@/components/NotifyPushCard";
 import { Poster } from "@/components/Poster";
 import { Sheet } from "@/components/Sheet";
@@ -190,10 +189,6 @@ export default function FollowingPage() {
           </p>
         )}
       </div>
-
-      <CalendarSubscribe
-        slugs={follows.filter((f) => f.enabled).map((f) => f.show.slug)}
-      />
 
       <button
         type="button"
