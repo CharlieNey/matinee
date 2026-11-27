@@ -55,3 +55,16 @@ test("Today: every open window links out, and a tick lasts the day only", async 
   await page.reload();
   await expect(page.getByText(/^Wednesday, December 2 · 0 of \d+ done$/)).toBeVisible();
 });
+
+test("Today: a tick in one tab shows in another", async ({ context }) => {
+  await context.clock.setFixedTime(TUESDAY);
+  const first = await context.newPage();
+  const second = await context.newPage();
+  await first.goto("/today");
+  await second.goto("/today");
+  const row = (page: typeof first) =>
+    page.locator("li", { hasText: "Wicked" }).filter({ hasText: "Digital lottery" });
+  await row(first).getByRole("button").click();
+  await expect(row(second).getByRole("button")).toHaveAttribute("aria-pressed", "true");
+  await expect(second.getByText(/· 1 of \d+ done$/)).toBeVisible();
+});

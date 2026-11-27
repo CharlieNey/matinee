@@ -97,7 +97,15 @@ export function toggleRushDone(key: string, day: string): void {
   window.dispatchEvent(new Event(RUSH_DONE_EVENT));
 }
 
+/** Changes from this tab and from other tabs ("storage"). */
 export function onRushDoneChange(listener: () => void): () => void {
+  const onStorage = (event: StorageEvent) => {
+    if (event.key === null || event.key === RUSH_DONE_KEY) listener();
+  };
   window.addEventListener(RUSH_DONE_EVENT, listener);
-  return () => window.removeEventListener(RUSH_DONE_EVENT, listener);
+  window.addEventListener("storage", onStorage);
+  return () => {
+    window.removeEventListener(RUSH_DONE_EVENT, listener);
+    window.removeEventListener("storage", onStorage);
+  };
 }

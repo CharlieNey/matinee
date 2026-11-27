@@ -52,9 +52,17 @@ function writeLotteryLog(entries: LotteryEntry[]) {
   }
 }
 
+/** Changes from this tab (SYNC_EVENT) and from other tabs ("storage"). */
 export function onLotteryLogChange(listener: () => void): () => void {
+  const onStorage = (event: StorageEvent) => {
+    if (event.key === null || event.key === STORAGE_KEY) listener();
+  };
   window.addEventListener(SYNC_EVENT, listener);
-  return () => window.removeEventListener(SYNC_EVENT, listener);
+  window.addEventListener("storage", onStorage);
+  return () => {
+    window.removeEventListener(SYNC_EVENT, listener);
+    window.removeEventListener("storage", onStorage);
+  };
 }
 
 /** Log or un-log an entry for one program on one NYC day. */

@@ -1,8 +1,40 @@
 import { describe, expect, it } from "vitest";
-import { programKey } from "./programs";
-import { et, minutes } from "./push/testPrograms";
-import { DAY_LOTTERY, RUSH, STANDING_ROOM, OVERNIGHT_LOTTERY } from "./push/testPrograms";
+import { Program, programKey, Weekday } from "./programs";
 import { todaysWindows } from "./today";
+
+/** Hand-built rows, independent of the live catalog. Checked Nov 20. */
+const EVERY_DAY: Weekday[] = [0, 1, 2, 3, 4, 5, 6];
+function make(
+  showSlug: string,
+  kind: Program["kind"],
+  opensAt: string,
+  closesAt: string,
+  whileSuppliesLast = false,
+): Program {
+  return {
+    showSlug,
+    kind,
+    platform: kind === "digital-lottery" ? "broadway-direct" : "box-office",
+    price: 45,
+    maxTickets: 2,
+    entryUrl: "https://example.com/enter",
+    schedule: {
+      timezone: "America/New_York",
+      summary: "test",
+      windows: [{ days: EVERY_DAY, opensAt, closesAt, whileSuppliesLast }],
+    },
+    lastVerified: "2026-11-20",
+    source: "https://example.com/policy",
+  };
+}
+const RUSH = make("hadestown", "rush", "10:00", "20:00", true);
+const DAY_LOTTERY = make("wicked", "digital-lottery", "09:00", "15:00");
+const OVERNIGHT_LOTTERY = make("rocky-horror-show", "digital-lottery", "17:00", "09:00");
+const STANDING_ROOM = make("chicago", "sro", "10:00", "20:00", true);
+
+/** New York wall-clock time on a standard-time day (both test days are EST). */
+const et = (time: string, day = "2026-11-20") => new Date(`${day}T${time}:00-05:00`);
+const minutes = (date: Date, n: number) => new Date(date.getTime() + n * 60_000);
 
 const keys = (windows: { program: Parameters<typeof programKey>[0] }[]) =>
   windows.map((w) => programKey(w.program));
