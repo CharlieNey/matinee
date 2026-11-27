@@ -133,6 +133,9 @@ function ProgramRow({
   const [winOpen, setWinOpen] = useState(false);
   const { entered, won, toggle, markWon } = useEnteredToday(program, now);
   const stale = now ? isProgramStale(program, now) : false;
+  // A row the app can't vouch for doesn't get a clock: its times may be the
+  // fact in doubt. The detail says why.
+  const doubtful = stale || program.unverified !== undefined;
   const isLottery =
     program.kind === "digital-lottery" || program.kind === "in-person-lottery";
   // Free programs (Shakespeare in the Park) skip the fee estimate entirely.
@@ -167,7 +170,9 @@ function ProgramRow({
               <span className="sr-only">Entered today</span>
             </>
           )}
-          {status && now ? (
+          {doubtful ? (
+            <span>Unverified</span>
+          ) : status && now ? (
             <StatusShort status={status} now={now} />
           ) : (
             <span className="text-ink-faint">…</span>
@@ -194,11 +199,17 @@ function ProgramRow({
               <b className="font-semibold text-ink">{platform}</b> ·{" "}
               {program.schedule.summary}
             </p>
-            <p>
-              Up to {program.maxTickets} ticket
-              {program.maxTickets === 1 ? "" : "s"}
-              {program.notes ? ` · ${program.notes}` : ""}
-            </p>
+            {(program.maxTickets !== undefined || program.notes) && (
+              <p>
+                {[
+                  program.maxTickets !== undefined &&
+                    `Up to ${program.maxTickets} ticket${program.maxTickets === 1 ? "" : "s"}`,
+                  program.notes,
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </p>
+            )}
             {program.claimWindow && (
               <p>
                 If you win: {CHANNEL_VERBS[program.claimWindow.channel]}{" "}
@@ -210,7 +221,13 @@ function ProgramRow({
               </p>
             )}
             {allIn && <p className="text-ink-faint">{allInLabel(allIn)}</p>}
-            {stale && (
+            {program.unverified && (
+              <p>
+                <b className="font-semibold text-ink">Unverified:</b>{" "}
+                {program.unverified} Confirm on the entry site.
+              </p>
+            )}
+            {stale && !program.unverified && (
               <p className="text-ink-faint">
                 Details are due for verification — confirm on the entry site.
               </p>

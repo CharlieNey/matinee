@@ -3,6 +3,7 @@ import {
   etDayKey,
   formatMinutes,
   getProgramStatus,
+  isProgramStale,
   programKey,
   programKindLabel,
   programOccurrencesNear,
@@ -73,6 +74,9 @@ export function duePushEvents(now: Date): PushEvent[] {
   const events: PushEvent[] = [];
 
   for (const item of allPrograms()) {
+    // Never alert from a row we can't vouch for: unverified, or not
+    // re-checked in 14 days.
+    if (item.unverified !== undefined || isProgramStale(item, now)) continue;
     const status = getProgramStatus(now, item);
     if (!status.nextOpenAt) continue;
     const occurrence = status.nextOpenAt.toISOString();

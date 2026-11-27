@@ -21,11 +21,13 @@ export async function GET() {
       platform: program.platform,
       name: program.name ?? null,
       price: program.price,
-      maxTickets: program.maxTickets,
+      maxTickets: program.maxTickets ?? null,
       entryUrl: program.entryUrl,
       schedule: program.schedule,
       notes: program.notes ?? null,
       lastVerified: program.lastVerified,
+      source: program.source,
+      unverified: program.unverified ?? null,
     })),
   });
 }
