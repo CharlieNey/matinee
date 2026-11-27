@@ -29,3 +29,7 @@ iCalendar output and a check that unverified rows never appear. About a day.
 
 **Recommendation.** Build it. It's free, private by design, and it covers
 iPhone users who won't install the app. Waiting on Charlie's yes.
+
+**Status (2026-11-27): built (`d116cd8`) and tested, then reverted
+(`01e9737`) so it stays out of the push go-live until Charlie says yes. To
+ship it: `git revert 01e9737`.

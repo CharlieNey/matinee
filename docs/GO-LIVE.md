@@ -29,11 +29,16 @@ OKs them.
 - **The stricter `/api/health`:** it also checks the rate limiter and the
   scheduler.
 - **PostHog wiring,** off until a key is set.
-- **Two proposals, built and waiting for Charlie's yes:**
-  - the calendar feed for followed shows (`d116cd8`);
-  - the device-only "By show" lottery record (`8531ff7`).
-
-  To ship the branch without one, `git revert <sha>` it first.
+- **Three features built and kept out of the go-live** until Charlie says
+  yes. Each was reverted on the branch before the 2026-11-27 merge; bring
+  one back with `git revert <revert sha>`:
+  - the calendar feed for followed shows (built `d116cd8`, reverted
+    `01e9737`);
+  - the device-only "By show" lottery record (built `8531ff7`, reverted
+    `fdbb80d`);
+  - cookieless counting (built `d71c5ea`, reverted `6b2f8e5`). It also sits
+    alone on `ship/5-counting`; merge that only after Web Analytics is
+    enabled in the Vercel dashboard.
 - **Polish:** posters replaced, the profile split, the season recap hidden
   until there is something to recap, a titled 404, TKTS booth hours,
   About's numbers computed from the catalog, and more. `git log origin/main..get-users-1`

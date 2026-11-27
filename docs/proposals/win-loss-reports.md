@@ -34,3 +34,7 @@ publishes odds, and Matinee already has the substrate: the "I entered" and
 **Recommendation.** Build version 1 now; it's local and safe. Decide on
 version 2 after launch, when there are enough users for the numbers to mean
 anything.
+
+**Status (2026-11-27): built (`8531ff7`) and tested, then reverted
+(`fdbb80d`) so it stays out of the push go-live until Charlie says yes. To
+ship it: `git revert fdbb80d`.

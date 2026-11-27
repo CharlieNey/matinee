@@ -35,3 +35,7 @@ open an account.
 
 **Smallest version.** That's it: one component, one sentence, one dashboard
 toggle. Under an hour.
+
+**Status (2026-11-27): built (`d71c5ea`) and tested, then reverted
+(`6b2f8e5`) so it stays out of the push go-live until Charlie says yes. To
+ship it: `git revert 6b2f8e5`. Or, after the dashboard click, merge `ship/5-counting`.
