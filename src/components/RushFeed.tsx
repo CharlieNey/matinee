@@ -19,6 +19,7 @@ import { TktsRushSection } from "@/components/TktsBoard";
 import {
   allPrograms,
   getProgramStatus,
+  isProgramTrusted,
   Program,
   ProgramKind,
   ProgramPlatform,
@@ -33,6 +34,8 @@ type Entry = {
   program: Program;
   show: Show;
   status: ProgramStatus;
+  /** Checked recently and confirmed by its source (isProgramTrusted). */
+  trusted: boolean;
 };
 
 /** One rush-feed card: a show with every program it currently matches. */
@@ -42,18 +45,29 @@ type ShowGroup = {
   sortKey: number;
 };
 
-type Bucket = "open" | "later" | "coming";
+type Bucket = "open" | "later" | "coming" | "unverified";
 
-const BUCKET_RANK: Record<Bucket, number> = { open: 0, later: 1, coming: 2 };
+const BUCKET_RANK: Record<Bucket, number> = {
+  open: 0,
+  later: 1,
+  coming: 2,
+  unverified: 3,
+};
 
-function bucketOf(state: ProgramStatusState): Bucket {
+/**
+ * A row the app can't vouch for never counts as open: it files under
+ * "Unverified", so "Open now" only ever lists windows we stand behind.
+ */
+function bucketOf(entry: Entry): Bucket {
+  if (!entry.trusted) return "unverified";
+  const state: ProgramStatusState = entry.status.state;
   if (state === "open" || state === "closes-soon") return "open";
   return state === "opens-later-today" ? "later" : "coming";
 }
 
 /** Within-bucket order: soonest deadline first, no-deadline windows last. */
 function entrySortKey(entry: Entry): number {
-  if (bucketOf(entry.status.state) === "open") {
+  if (bucketOf(entry) === "open") {
     return entry.status.countdownMs ?? Number.MAX_SAFE_INTEGER;
   }
   return entry.status.nextOpenAt?.getTime() ?? Number.MAX_SAFE_INTEGER;
@@ -128,11 +142,14 @@ function FeedSection({
   title,
   groups,
   empty,
+  note,
   now,
 }: {
   title: string;
   groups: ShowGroup[];
   empty: string;
+  /** One line under the header, for a section that needs explaining. */
+  note?: string;
   now: Date;
 }) {
   return (
@@ -141,6 +158,9 @@ function FeedSection({
         <h2 className="eyebrow">{title}</h2>
         <span className="text-caption text-ink-soft">{groups.length}</span>
       </div>
+      {note && (
+        <p className="mt-1.5 text-caption text-ink-soft">{note}</p>
+      )}
       {groups.length > 0 ? (
         <div className="mt-3 flex flex-col gap-3 web:grid web:grid-cols-2 web:items-start">
           {splitColumns(groups).map((column, columnIndex, columns) => {
@@ -215,7 +235,12 @@ export function RushFeed() {
       .map((program): Entry | null => {
         const show = getShow(program.showSlug);
         if (!show) return null;
-        return { program, show, status: getProgramStatus(now, program) };
+        return {
+          program,
+          show,
+          status: getProgramStatus(now, program),
+          trusted: isProgramTrusted(program, now),
+        };
       })
       .filter((entry): entry is Entry => entry !== null);
 
@@ -292,17 +317,17 @@ export function RushFeed() {
       open: [],
       later: [],
       coming: [],
+      unverified: [],
     };
     for (const list of byShow.values()) {
       list.sort(
         (a, b) =>
-          BUCKET_RANK[bucketOf(a.status.state)] -
-            BUCKET_RANK[bucketOf(b.status.state)] ||
+          BUCKET_RANK[bucketOf(a)] - BUCKET_RANK[bucketOf(b)] ||
           entrySortKey(a) - entrySortKey(b) ||
           a.program.price - b.program.price,
       );
       const best = list[0];
-      sections[bucketOf(best.status.state)].push({
+      sections[bucketOf(best)].push({
         show: best.show,
         entries: list,
         sortKey: entrySortKey(best),
@@ -322,6 +347,7 @@ export function RushFeed() {
       open: sections.open,
       later: sections.later,
       coming: sections.coming,
+      unverified: sections.unverified,
     };
   }, [now, query, kind, platform, circuit, underFifty]);
 
@@ -448,6 +474,15 @@ export function RushFeed() {
             empty="No upcoming programs found."
             now={now}
           />
+          {result.unverified.length > 0 && (
+            <FeedSection
+              title="Unverified"
+              groups={result.unverified}
+              empty=""
+              note="We couldn't confirm these with the official source, so they send no alerts. Check the entry site before you go."
+              now={now}
+            />
+          )}
 
           {/* Walk-up inventory, not an entry window — its own section */}
           <TktsRushSection />

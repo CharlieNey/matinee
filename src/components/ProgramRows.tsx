@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import { Check, ChevronDown, ExternalLink, Trophy } from "lucide-react";
+import { ReportLink } from "@/components/ReportLink";
 import { WinCardSheet } from "@/components/WinCardSheet";
+import { formatCheckedDate } from "@/lib/contact";
 import { allInForPlatform, allInLabel } from "@/lib/fees";
 import { useEnteredToday } from "@/lib/entries";
 import {
@@ -14,6 +16,7 @@ import {
   programKey,
   programKindLabel,
   programPlatformLabel,
+  programSourceLabel,
   ProgramStatus,
 } from "@/lib/programs";
 import { Show } from "@/lib/shows";
@@ -228,15 +231,35 @@ function ProgramRow({
               </p>
             )}
             {stale && !program.unverified && (
-              <p className="text-ink-faint">
-                Details are due for verification — confirm on the entry site.
+              <p>
+                <b className="font-semibold text-ink">Unverified:</b> not
+                re-checked in over two weeks. Confirm on the entry site.
               </p>
             )}
+            <p className="text-ink-faint">
+              Checked {formatCheckedDate(program.lastVerified)} ·{" "}
+              <a
+                href={program.source}
+                target="_blank"
+                rel="noreferrer"
+                className="underline underline-offset-2 transition-opacity active:opacity-60"
+              >
+                <span className="sr-only">Source: </span>
+                {programSourceLabel(program)}
+              </a>{" "}
+              ·{" "}
+              <ReportLink show={show} program={program}>
+                Report a wrong fact
+              </ReportLink>
+            </p>
             <div className="flex flex-wrap items-center gap-2 pt-2">
               <a
                 href={program.entryUrl}
                 target="_blank"
                 rel="noreferrer"
+                data-seller-link="program"
+                data-show={program.showSlug}
+                data-platform={program.platform}
                 className="flex h-10 items-center gap-1.5 rounded-full bg-espresso px-4 text-caption font-semibold text-white transition-transform duration-150 active:scale-[0.97]"
               >
                 {program.platform === "box-office"

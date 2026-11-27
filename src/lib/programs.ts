@@ -258,6 +258,18 @@ export function allPrograms(): readonly Program[] {
   return PROGRAMS;
 }
 
+/**
+ * Oldest lastVerified across the catalog. A trust line that quotes only the
+ * newest date overstates freshness when some rows could not be re-checked.
+ */
+export function programsOldestVerified(): string {
+  let oldest = LAST_VERIFIED;
+  for (const item of PROGRAMS) {
+    if (item.lastVerified < oldest) oldest = item.lastVerified;
+  }
+  return oldest;
+}
+
 /** Freshest lastVerified across the catalog — trust lines derive from this. */
 export function programsLastVerified(): string {
   let latest = LAST_VERIFIED;
@@ -355,6 +367,19 @@ export function programPlatformLabel(platform: ProgramPlatform): string {
 export function isProgramStale(item: Program, now: Date): boolean {
   const verifiedAt = new Date(`${item.lastVerified}T12:00:00-04:00`);
   return now.getTime() - verifiedAt.getTime() > 14 * 24 * 60 * 60 * 1000;
+}
+
+/**
+ * Whether the app may vouch for a row right now: checked within 14 days and
+ * confirmed by its source. Untrusted rows still show, marked unverified.
+ */
+export function isProgramTrusted(item: Program, now: Date): boolean {
+  return item.unverified === undefined && !isProgramStale(item, now);
+}
+
+/** The source's host, without "www.": "ohmaryplay.com". */
+export function programSourceLabel(item: Program): string {
+  return new URL(item.source).hostname.replace(/^www\./, "");
 }
 
 /** Interpret one curated weekly schedule at a caller-supplied instant. */

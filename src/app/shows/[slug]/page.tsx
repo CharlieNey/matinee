@@ -8,6 +8,7 @@ import { OfficialTicketsCard } from "@/components/OfficialTicketsCard";
 import { Poster } from "@/components/Poster";
 import { ShowPrograms } from "@/components/ShowPrograms";
 import { FollowShowCard } from "@/components/FollowShowCard";
+import { ReportLink } from "@/components/ReportLink";
 import { officialTicketsForShow } from "@/lib/officialTickets";
 import {
   cheapestProgram,
@@ -164,6 +165,11 @@ export default async function ShowPage({
           </Link>
         </section>
       )}
+
+      <p className="mt-9 px-4 text-caption text-ink-faint web:px-6">
+        Something out of date?{" "}
+        <ReportLink show={show}>Report a wrong fact</ReportLink>
+      </p>
     </main>
   );
 }
