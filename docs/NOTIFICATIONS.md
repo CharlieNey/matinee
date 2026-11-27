@@ -4,6 +4,8 @@ Written 2026-11-20, before the build. It is the spec the code is held to.
 Going live needs the hosted steps in `docs/GO-LIVE.md` (rate-limit and
 ledger migrations, scheduler switch-on); until then production still runs the
 old path, whose GitHub cron has been disabled since 2026-09-15.
+`docs/PUSH-SWITCH-ON.md` (2026-11-27) lists exactly what switching on needs
+and what it costs.
 
 ## What it promises
 
@@ -167,6 +169,8 @@ monitor at a third vendor (any uptime checker that alerts on a non-200 from
 ## Local development
 
 `PUSH_STORE=memory` swaps Supabase for an in-process store (refused on Vercel).
+`src/app/api/push/journey.test.ts` uses it to run a whole day through the
+real routes, with only the push service faked.
 With local VAPID keys from `npx web-push generate-vapid-keys`, a real Chrome
 subscription receives real pushes through Google's push service on a
 developer machine. `docs/notifications/` holds the recorded proof. Only
