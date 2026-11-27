@@ -29,6 +29,11 @@ OKs them.
 - **The stricter `/api/health`:** it also checks the rate limiter and the
   scheduler.
 - **PostHog wiring,** off until a key is set.
+- **Two proposals, built and waiting for Charlie's yes:**
+  - the calendar feed for followed shows (`d116cd8`);
+  - the device-only "By show" lottery record (`8531ff7`).
+
+  To ship the branch without one, `git revert <sha>` it first.
 - **Polish:** posters replaced, the profile split, the season recap hidden
   until there is something to recap, a titled 404, TKTS booth hours,
   About's numbers computed from the catalog, and more. `git log origin/main..get-users-1`
