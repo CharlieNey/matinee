@@ -4,15 +4,8 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "motion/react";
 import {
-  CalendarRange,
-  ChevronRight,
-  CircleDollarSign,
-  Map as MapIcon,
   Search,
-  Theater,
-  TicketPercent,
   X,
-  Zap,
 } from "lucide-react";
 import { EmptyState } from "@/components/EmptyState";
 import { FilterChip } from "@/components/FilterChip";
@@ -68,39 +61,6 @@ function PosterShelf({
   );
 }
 
-/** Utility destination: an iOS-style list row, not a dashboard tile. */
-function QuickLink({
-  href,
-  icon,
-  title,
-  sub,
-}: {
-  href: string;
-  icon: React.ReactNode;
-  title: string;
-  sub: string;
-}) {
-  return (
-    <Link
-      href={href}
-      className="flex items-center gap-3.5 border-t border-line py-3.5 transition-opacity duration-150 first:border-t-0 active:opacity-70"
-    >
-      <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-cream">
-        {icon}
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="block text-body font-semibold">{title}</span>
-        <span className="mt-0.5 block truncate text-caption text-ink-soft">
-          {sub}
-        </span>
-      </span>
-      <ChevronRight
-        className="size-5 shrink-0 text-ink-faint"
-        strokeWidth={1.8}
-      />
-    </Link>
-  );
-}
 
 function SectionHead({ title, detail }: { title: string; detail?: string }) {
   return (
@@ -273,22 +233,20 @@ export default function DiscoverPage() {
         <>
           <RushBanner />
 
-          <div className="mt-3 rounded-card bg-paper px-4">
-            <QuickLink
+          <p className="mt-4 flex gap-6 px-1 text-body">
+            <Link
               href="/district"
-              icon={<MapIcon className="size-5 text-ink" strokeWidth={1.8} />}
-              title="The District"
-              sub="Every Broadway house, one live map"
-            />
-            <QuickLink
+              className="font-semibold text-ink underline underline-offset-4 transition-opacity active:opacity-60"
+            >
+              The District map
+            </Link>
+            <Link
               href="/trip"
-              icon={
-                <CalendarRange className="size-5 text-ink" strokeWidth={1.8} />
-              }
-              title="Trip mode"
-              sub="Day-by-day windows for your visit"
-            />
-          </div>
+              className="font-semibold text-ink underline underline-offset-4 transition-opacity active:opacity-60"
+            >
+              Trip mode
+            </Link>
+          </p>
 
           {savedShows.length > 0 && (
             <>
@@ -303,13 +261,11 @@ export default function DiscoverPage() {
           <SectionHead title="Now playing" detail={`${filtered.length} shows`} />
           <div className="-mx-4 mt-3 flex gap-2.5 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
             <FilterChip
-              icon={<Theater className="size-5" strokeWidth={1.8} />}
               label={circuit}
               active={circuit !== "All shows"}
               onClick={() => setSheet("circuit")}
             />
             <FilterChip
-              icon={<Zap className="size-5" strokeWidth={1.8} />}
               label="Rush & lottery"
               chevron={false}
               active={rushOnly}
@@ -317,7 +273,6 @@ export default function DiscoverPage() {
             />
             {tktsToday.size > 0 && (
               <FilterChip
-                icon={<TicketPercent className="size-5" strokeWidth={1.8} />}
                 label="On TKTS today"
                 chevron={false}
                 active={tktsOnly}
@@ -325,7 +280,6 @@ export default function DiscoverPage() {
               />
             )}
             <FilterChip
-              icon={<CircleDollarSign className="size-5" strokeWidth={1.8} />}
               label="Cheapest"
               chevron={false}
               active={cheapest}
@@ -336,7 +290,7 @@ export default function DiscoverPage() {
           {filtered.length === 0 ? (
             <div className="pt-6">
               <EmptyState
-                text="Nothing matches your filters…"
+                text="Nothing matches these filters."
                 actionLabel="Clear filters"
                 onAction={() => {
                   setCircuit("Broadway");

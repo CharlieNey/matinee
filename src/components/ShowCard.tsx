@@ -75,12 +75,21 @@ export function ShowCard({
               Free
             </span>
           )}
+          {/* "+1", not "+1 more": the longer form cut "Lottery" to "Lott…". */}
           <span className="ml-auto shrink-0 text-caption text-ink-soft">
-            {onTktsToday
-              ? "On TKTS today"
-              : otherWays > 0
-                ? `+${otherWays} more`
-                : ""}
+            {onTktsToday ? (
+              "On TKTS today"
+            ) : otherWays > 0 ? (
+              <>
+                +{otherWays}
+                <span className="sr-only">
+                  {" "}
+                  more way{otherWays === 1 ? "" : "s"} to save
+                </span>
+              </>
+            ) : (
+              ""
+            )}
           </span>
         </p>
       </div>

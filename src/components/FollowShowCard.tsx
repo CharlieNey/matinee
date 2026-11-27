@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { BellOff, BellPlus, BellRing } from "lucide-react";
 import { usePushAlerts } from "@/components/PushProvider";
 import { useToast } from "@/components/Toast";
 import { track } from "@/lib/analytics";
@@ -108,17 +107,9 @@ export function FollowShowCard({ show }: { show: Show }) {
     );
   })();
 
-  const Icon = !following
-    ? BellPlus
-    : enabled && push.subscribed
-      ? BellRing
-      : BellOff;
 
   return (
-    <div className="flex items-center gap-3.5 rounded-card bg-paper p-4">
-      <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-cream">
-        <Icon className="size-5 text-ink" strokeWidth={1.8} aria-hidden="true" />
-      </span>
+    <div className="flex items-center gap-3.5 rounded-card bg-paper px-4 py-3.5">
       <div className="min-w-0 flex-1">
         <p className="text-body font-semibold">
           {following

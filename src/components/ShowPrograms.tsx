@@ -70,7 +70,9 @@ export function ShowPrograms({
           {programs.length} program{programs.length === 1 ? "" : "s"}
         </span>
       </div>
-      <p className="mt-3 text-body text-ink-soft web:max-w-[640px]">{answer}</p>
+      <p className="mt-2.5 text-caption leading-relaxed text-ink-soft web:max-w-[640px]">
+        {answer}
+      </p>
       <div className="mt-4 rounded-card bg-paper px-4 py-1.5">
         <ProgramRows
           show={show}

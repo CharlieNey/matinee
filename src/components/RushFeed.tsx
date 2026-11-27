@@ -3,11 +3,7 @@
 import { useMemo, useState } from "react";
 import {
   Clock3,
-  CircleDollarSign,
-  Landmark,
   Search,
-  Store,
-  Ticket,
   X,
 } from "lucide-react";
 import { FilterChip } from "@/components/FilterChip";
@@ -109,7 +105,7 @@ function matchesKind(program: Program, kind: KindGroup): boolean {
 
 /** Estimated card height — header block + one line per program row. */
 function cardWeight(group: ShowGroup): number {
-  return 96 + 50 * group.entries.length;
+  return 72 + 50 * group.entries.length;
 }
 
 /**
@@ -376,7 +372,7 @@ export function RushFeed() {
 
   return (
     <div>
-      {/* Search + platform folk knowledge (bulb opens the tips sheet) */}
+      {/* Search; the platform tips sit at the end of the chip row. */}
       <div className="mt-5 flex items-center gap-2.5">
         <div className="flex h-12 min-w-0 flex-1 items-center gap-2.5 rounded-full bg-paper px-4 web:max-w-[420px]">
           <Search className="size-5 shrink-0 text-ink-soft" strokeWidth={1.8} />
@@ -399,14 +395,12 @@ export function RushFeed() {
             </button>
           )}
         </div>
-        <PlatformTips programs={result.programs} />
       </div>
 
       {/* Filters — the app's filter idiom: a few chips, sheets carry the
           options with live faceted counts (DESIGN.md §5). */}
       <div className="-mx-4 mt-3 flex gap-2.5 overflow-x-auto px-4 pb-1 [scrollbar-width:none] web:mx-0 web:px-0">
         <FilterChip
-          icon={<Ticket className="size-5" strokeWidth={1.8} />}
           label={
             kind === "all"
               ? "Program"
@@ -416,24 +410,22 @@ export function RushFeed() {
           onClick={() => setSheet("kind")}
         />
         <FilterChip
-          icon={<Store className="size-5" strokeWidth={1.8} />}
           label={platform === "all" ? "Platform" : programPlatformLabel(platform)}
           active={platform !== "all"}
           onClick={() => setSheet("platform")}
         />
         <FilterChip
-          icon={<Landmark className="size-5" strokeWidth={1.8} />}
           label={circuit === "all" ? "Circuit" : circuit}
           active={circuit !== "all"}
           onClick={() => setSheet("circuit")}
         />
         <FilterChip
-          icon={<CircleDollarSign className="size-5" strokeWidth={1.8} />}
           label="Under $50"
           chevron={false}
           active={underFifty}
           onClick={() => setUnderFifty((v) => !v)}
         />
+        <PlatformTips programs={result.programs} chip />
       </div>
 
       {hasFilters && (

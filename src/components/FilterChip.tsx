@@ -10,7 +10,8 @@ export function FilterChip({
   active = false,
   onClick,
 }: {
-  icon: ReactNode;
+  /** Optional; the board's chips carry words only. */
+  icon?: ReactNode;
   label: string;
   chevron?: boolean;
   active?: boolean;

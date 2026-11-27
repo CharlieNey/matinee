@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, TicketCheck } from "lucide-react";
 import {
   allPrograms,
   getProgramStatus,
@@ -26,28 +25,30 @@ export function RushBanner() {
       ).size
     : null;
 
+  // The one live fact on Discover, set like a program's headline number.
   return (
     <Link
       href="/rush"
-      className="mt-6 flex items-center gap-3 rounded-card bg-blush p-5 transition-transform duration-150 active:scale-[0.985]"
+      className="mt-6 block rounded-card bg-blush px-5 py-4 transition-transform duration-150 active:scale-[0.985]"
     >
-      <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-paper text-ink">
-        <TicketCheck className="size-5" strokeWidth={1.9} />
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="block text-title">Rush &amp; Lottery</span>
-        <span className="mt-0.5 block text-body text-ink-soft">
-          {openCount === null ? (
-            "Checking live deadlines…"
-          ) : (
-            <>
-              <strong className="font-semibold text-ink">{openCount}</strong> shows
-              open now
-            </>
-          )}
+      {openCount === null ? (
+        <span className="block text-body text-ink-soft">
+          Checking what&apos;s open…
         </span>
+      ) : (
+        <span className="flex items-baseline gap-2.5">
+          <span className="font-display text-[40px] leading-none text-ink">
+            {openCount}
+          </span>
+          <span className="text-body text-ink">
+            {openCount === 1 ? "show has" : "shows have"} a rush or lottery
+            open now
+          </span>
+        </span>
+      )}
+      <span className="mt-2 block text-caption font-semibold text-ink underline underline-offset-4">
+        See the board
       </span>
-      <ArrowRight className="size-5 shrink-0 text-ink-soft" strokeWidth={1.9} />
     </Link>
   );
 }

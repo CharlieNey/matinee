@@ -29,7 +29,7 @@ test("a fresh visitor starts with an empty profile, not a demo persona", async (
   await expect(page.getByText("John Doe")).toHaveCount(0);
   await expect(page.getByText(/Joined/)).toHaveCount(0);
   await expect(
-    page.getByText("Log a show you’ve seen and your diary starts here…"),
+    page.getByText("Shows you log will appear here."),
   ).toBeVisible();
 });
 

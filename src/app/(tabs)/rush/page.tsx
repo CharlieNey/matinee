@@ -25,11 +25,11 @@ export default function RushPage() {
   return (
     <main className="px-4 pb-6 pt-6 web:mx-auto web:max-w-[1160px] web:px-6">
       <h1 className="text-display">Rush &amp; Lottery</h1>
-      <p className="mt-2 text-caption text-ink-faint">
-        {productionCount} productions checked · {programShowCount} with
-        programs · {/* The oldest date, never the newest: quoting the
-            freshest row would overstate how fresh the rest are. */}
-        oldest check {formatCheckedLong(programsOldestVerified())}
+      <p className="mt-2 text-caption text-ink-soft">
+        {/* The oldest date, never the newest: quoting the freshest row would
+            overstate how fresh the rest are. */}
+        All rows checked since{" "}
+        {formatCheckedLong(programsOldestVerified())}
         {unverifiedCount > 0 && ` · ${unverifiedCount} unverified`}
       </p>
       <Link
@@ -39,6 +39,10 @@ export default function RushPage() {
         Enter today&apos;s lotteries, one by one
       </Link>
       <RushFeed />
+      <p className="mt-10 text-caption text-ink-faint">
+        {productionCount} productions checked; {programShowCount} have a rush,
+        lottery or standing room.
+      </p>
     </main>
   );
 }

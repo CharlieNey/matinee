@@ -164,18 +164,23 @@ export default async function ShowPage({
             </div>
           </div>
         </div>
-        <div className="mt-3 flex flex-col gap-3 web:mt-4">
-          <div className="flex">
-            <InterestedButton show={show} />
-          </div>
-          {officialTickets && (
-            <OfficialTicketsCard show={show} ticketLink={officialTickets} />
-          )}
-          {hasPrograms && <FollowShowCard show={show} />}
+        <div className="mt-3 flex web:mt-4">
+          <InterestedButton show={show} />
         </div>
       </div>
 
+      {/* What people open this page for comes first: the ways in. Following
+          and full price follow it, quieter. */}
       <ShowPrograms show={show} answer={showAnswer(show, programs)} />
+
+      {(hasPrograms || officialTickets) && (
+        <div className="mt-4 flex flex-col gap-3 px-4 web:max-w-[720px] web:px-6">
+          {hasPrograms && <FollowShowCard show={show} />}
+          {officialTickets && (
+            <OfficialTicketsCard show={show} ticketLink={officialTickets} />
+          )}
+        </div>
+      )}
 
       {/* The house (Phase 15): the program page's fact block — typeset
           straight on the ivory, no card. Data is the hand-curated theater

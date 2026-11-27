@@ -103,5 +103,5 @@ test("Rush: expanding a program reveals the official seller's entry link", async
     month: "long",
     day: "numeric",
   });
-  await expect(page.getByText(`oldest check ${long}`)).toBeVisible();
+  await expect(page.getByText(`All rows checked since ${long}`)).toBeVisible();
 });

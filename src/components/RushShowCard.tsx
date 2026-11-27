@@ -21,18 +21,22 @@ export function RushShowCard({
     <div className="rounded-card bg-paper px-4 pt-4 pb-1">
       <Link
         href={`/shows/${show.slug}`}
-        className="flex items-center gap-3.5 pb-3.5 transition-opacity duration-150 active:opacity-70"
+        className="flex items-center gap-3 pb-3 transition-opacity duration-150 active:opacity-70"
       >
         <Poster
           show={show}
-          className="size-16 rounded-thumb"
+          className="size-12 rounded-thumb"
           name={`poster-${show.slug}`}
         />
         <span className="min-w-0 flex-1">
           <span className="block truncate text-heading">{show.title}</span>
-          <span className="mt-0.5 block truncate text-caption text-ink-soft">
-            {show.tier} · {show.genre}
-          </span>
+          {/* On the board the genre says nothing; the circuit only matters
+              when it isn't Broadway. */}
+          {show.tier !== "Broadway" && (
+            <span className="mt-0.5 block truncate text-caption text-ink-soft">
+              {show.tier}
+            </span>
+          )}
         </span>
       </Link>
       <ProgramRows show={show} entries={entries} now={now} />

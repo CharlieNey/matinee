@@ -175,7 +175,7 @@ export function WrappedScreen() {
     return (
       <div className="pt-6">
         <EmptyState
-          text={`Log a show or tap “I entered” on a rush or lottery, and your ${season} recap builds here…`}
+          text={`Log a show or tap “I entered” on a rush or lottery, and your ${season} recap starts here.`}
           actionLabel="See today's windows"
           actionHref="/rush"
         />
