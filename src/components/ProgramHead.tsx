@@ -21,7 +21,7 @@ export function ProgramHead({
     <div
       className={`flex items-baseline justify-between gap-3 border-b-2 border-ink pb-2 ${className}`}
     >
-      <Tag className="font-display text-[24px] italic leading-none">{title}</Tag>
+      <Tag className="font-display text-[26px] font-bold leading-none">{title}</Tag>
       {detail !== undefined && (
         <span className="shrink-0 text-caption text-ink-soft">{detail}</span>
       )}

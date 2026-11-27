@@ -37,7 +37,7 @@ export function RushBanner() {
         </span>
       ) : (
         <span className="flex items-baseline gap-2.5">
-          <span className="font-display text-[40px] leading-none text-ink">
+          <span className="font-display text-[40px] font-bold leading-none text-ink">
             {openCount}
           </span>
           <span className="min-w-0 text-balance text-body text-ink">

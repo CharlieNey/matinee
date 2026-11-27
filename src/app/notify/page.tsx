@@ -67,7 +67,7 @@ function FollowCard({
       <div className="flex gap-4">
         <Poster show={follow.show} className="w-[56px] rounded-[4px]" />
         <div className="min-w-0 flex-1 pt-0.5">
-          <h3 className="font-display text-[22px] leading-tight">
+          <h3 className="font-display text-[22px] font-bold leading-tight">
             {follow.show.title}
           </h3>
           <p className="mt-1.5 line-clamp-2 text-body text-ink-soft">{line}</p>

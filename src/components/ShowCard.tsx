@@ -46,7 +46,7 @@ export function ShowCard({
         />
       </div>
       <div className="pt-2.5">
-        <h3 className="truncate font-display text-[19px] leading-tight">
+        <h3 className="truncate font-display text-[20px] font-bold leading-tight">
           {show.title}
         </h3>
         <p className="mt-1 flex items-baseline gap-1.5">

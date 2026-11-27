@@ -29,7 +29,7 @@ export function FilterChip({
         className={`flex h-11 shrink-0 items-center gap-1 whitespace-nowrap text-body transition-opacity active:opacity-60 ${
           active
             ? "font-semibold text-ink underline decoration-2 underline-offset-[6px]"
-            : "text-ink-soft"
+            : "text-ink"
         }`}
       >
         {label}
